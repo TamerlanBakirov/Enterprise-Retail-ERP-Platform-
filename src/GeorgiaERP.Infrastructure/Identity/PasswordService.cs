@@ -1,3 +1,5 @@
+using GeorgiaERP.Application.Common;
+
 namespace GeorgiaERP.Infrastructure.Identity;
 
 public class PasswordService : IPasswordService

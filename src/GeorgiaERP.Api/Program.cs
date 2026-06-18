@@ -45,6 +45,11 @@ try
 
     app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTimeOffset.UtcNow }));
 
+    if (args.Contains("--seed") || app.Environment.IsDevelopment())
+    {
+        await GeorgiaERP.Infrastructure.Persistence.SeedData.InitializeAsync(app.Services);
+    }
+
     Log.Information("Georgia ERP Platform starting up...");
     app.Run();
 }

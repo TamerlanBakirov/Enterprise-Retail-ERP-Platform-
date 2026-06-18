@@ -36,7 +36,10 @@ public class User : BaseEntity
         string firstName,
         string lastName,
         string? firstNameKa = null,
-        string? lastNameKa = null)
+        string? lastNameKa = null,
+        string? phone = null,
+        Guid? defaultStoreId = null,
+        string defaultLanguage = "ka")
     {
         return new User
         {
@@ -47,6 +50,9 @@ public class User : BaseEntity
             LastName = lastName,
             FirstNameKa = firstNameKa,
             LastNameKa = lastNameKa,
+            Phone = phone,
+            DefaultStoreId = defaultStoreId,
+            DefaultLanguage = defaultLanguage,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow

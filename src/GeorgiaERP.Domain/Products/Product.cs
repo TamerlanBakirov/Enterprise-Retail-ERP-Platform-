@@ -41,7 +41,19 @@ public class Product : AuditableEntity
         string unitOfMeasure,
         bool vatApplicable = true,
         string? nameKa = null,
-        string? description = null)
+        string? description = null,
+        decimal? weightKg = null,
+        decimal? volumeL = null,
+        decimal? widthCm = null,
+        decimal? heightCm = null,
+        decimal? depthCm = null,
+        decimal? minStockLevel = null,
+        decimal? maxStockLevel = null,
+        decimal? reorderPoint = null,
+        decimal? reorderQty = null,
+        bool isSerialized = false,
+        bool isBatchTracked = false,
+        bool hasExpiry = false)
     {
         return new Product
         {
@@ -52,6 +64,18 @@ public class Product : AuditableEntity
             CategoryId = categoryId,
             UnitOfMeasure = unitOfMeasure,
             VatApplicable = vatApplicable,
+            WeightKg = weightKg,
+            VolumeL = volumeL,
+            WidthCm = widthCm,
+            HeightCm = heightCm,
+            DepthCm = depthCm,
+            MinStockLevel = minStockLevel,
+            MaxStockLevel = maxStockLevel,
+            ReorderPoint = reorderPoint,
+            ReorderQty = reorderQty,
+            IsSerialized = isSerialized,
+            IsBatchTracked = isBatchTracked,
+            HasExpiry = hasExpiry,
             IsActive = true
         };
     }

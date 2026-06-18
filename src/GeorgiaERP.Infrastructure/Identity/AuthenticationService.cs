@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

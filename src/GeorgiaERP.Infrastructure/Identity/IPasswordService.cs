@@ -1,7 +1,2 @@
-namespace GeorgiaERP.Infrastructure.Identity;
-
-public interface IPasswordService
-{
-    string HashPassword(string password);
-    bool VerifyPassword(string password, string hash);
-}
+// Interface moved to GeorgiaERP.Application.Common
+// This file kept for backward compatibility - use Application.Common.IPasswordService

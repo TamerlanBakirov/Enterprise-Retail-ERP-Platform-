@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using IAuthenticationService = GeorgiaERP.Application.Common.IAuthenticationService;
+using IPasswordService = GeorgiaERP.Application.Common.IPasswordService;
 
 namespace GeorgiaERP.Infrastructure;
 
