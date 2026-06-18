@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY src/GeorgiaERP.Domain/GeorgiaERP.Domain.csproj GeorgiaERP.Domain/
+COPY src/GeorgiaERP.Application/GeorgiaERP.Application.csproj GeorgiaERP.Application/
+COPY src/GeorgiaERP.Infrastructure/GeorgiaERP.Infrastructure.csproj GeorgiaERP.Infrastructure/
+COPY src/GeorgiaERP.Api/GeorgiaERP.Api.csproj GeorgiaERP.Api/
+COPY src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj GeorgiaERP.Workers/
+
+RUN dotnet restore GeorgiaERP.Api/GeorgiaERP.Api.csproj
+
+COPY src/ .
+RUN dotnet publish GeorgiaERP.Api/GeorgiaERP.Api.csproj -c Release -o /app/publish --no-restore
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "GeorgiaERP.Api.dll"]
