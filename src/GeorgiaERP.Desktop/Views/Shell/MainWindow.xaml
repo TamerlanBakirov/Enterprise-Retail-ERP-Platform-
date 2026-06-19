@@ -1,0 +1,137 @@
+<Window x:Class="GeorgiaERP.Desktop.Views.Shell.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dashboard="clr-namespace:GeorgiaERP.Desktop.Views.Dashboard"
+        xmlns:pos="clr-namespace:GeorgiaERP.Desktop.Views.POS"
+        xmlns:products="clr-namespace:GeorgiaERP.Desktop.Views.Products"
+        xmlns:inventory="clr-namespace:GeorgiaERP.Desktop.Views.Inventory"
+        xmlns:customers="clr-namespace:GeorgiaERP.Desktop.Views.Customers"
+        xmlns:procurement="clr-namespace:GeorgiaERP.Desktop.Views.Procurement"
+        xmlns:finance="clr-namespace:GeorgiaERP.Desktop.Views.Finance"
+        xmlns:reports="clr-namespace:GeorgiaERP.Desktop.Views.Reports"
+        xmlns:settings="clr-namespace:GeorgiaERP.Desktop.Views.Settings"
+        Title="Georgia ERP"
+        Width="1400" Height="850"
+        MinWidth="1100" MinHeight="650"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Background="{StaticResource SidebarBgBrush}">
+            <DockPanel>
+                <!-- Logo area -->
+                <Border DockPanel.Dock="Top" Padding="20,24,20,20">
+                    <StackPanel>
+                        <TextBlock Text="Georgia ERP"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="White" />
+                        <TextBlock Text="{Binding UserDisplayName}"
+                                   FontSize="12"
+                                   Foreground="#94A3B8"
+                                   Margin="0,6,0,0" />
+                        <TextBlock Text="{Binding UserRole}"
+                                   FontSize="11"
+                                   Foreground="#64748B" />
+                    </StackPanel>
+                </Border>
+
+                <Border DockPanel.Dock="Top" Height="1" Background="#334155" Margin="16,0" />
+
+                <!-- Logout button at bottom -->
+                <Border DockPanel.Dock="Bottom" Padding="8,12">
+                    <Button Content="Logout"
+                            Command="{Binding LogoutCommand}"
+                            Foreground="#94A3B8"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="13"
+                            Cursor="Hand"
+                            HorizontalAlignment="Left"
+                            Padding="16,8" />
+                </Border>
+
+                <!-- Navigation -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                    <StackPanel>
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Dashboard"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Dashboard" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="POS / Sales"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="POS" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Products"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Products" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Inventory"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Inventory" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Customers"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Customers" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Procurement"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Procurement" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Finance"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Finance" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Reports"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Reports" />
+
+                        <Border Height="1" Background="#334155" Margin="16,12" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Settings"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Settings" />
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Content area -->
+        <Border Grid.Column="1" Background="{StaticResource ContentBgBrush}">
+            <Grid>
+                <dashboard:DashboardView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}" />
+                <pos:PosView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}" />
+                <products:ProductsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}" />
+                <inventory:InventoryView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}" />
+                <customers:CustomersView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
+                <procurement:ProcurementView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
+                <finance:FinanceView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
+                <reports:ReportsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
+                <settings:SettingsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,135 @@
+<UserControl x:Class="GeorgiaERP.Desktop.Views.Reports.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DockPanel Margin="24,16">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+            <TextBlock Text="Reports" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <!-- Report type tabs -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+            <RadioButton Content="Sales" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Sales}"
+                         Command="{Binding SwitchReportCommand}" CommandParameter="Sales" />
+            <RadioButton Content="Stock" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Stock}"
+                         Command="{Binding SwitchReportCommand}" CommandParameter="Stock" />
+            <RadioButton Content="VAT" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=VAT}"
+                         Command="{Binding SwitchReportCommand}" CommandParameter="VAT" />
+        </StackPanel>
+
+        <!-- Date filters for sales -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12"
+                    Visibility="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Sales}">
+            <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <DatePicker SelectedDate="{Binding DateFrom}" Width="140" />
+            <TextBlock Text="To:" VerticalAlignment="Center" Margin="16,0,8,0" />
+            <DatePicker SelectedDate="{Binding DateTo}" Width="140" />
+            <Button Content="Generate" Style="{StaticResource PrimaryButton}"
+                    Command="{Binding LoadReportCommand}" Margin="16,0,0,0" />
+        </StackPanel>
+
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3"
+                     Foreground="{StaticResource PrimaryBrush}"
+                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Sales Report -->
+                <StackPanel Visibility="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Sales}">
+                    <UniformGrid Columns="3" Margin="0,0,0,16"
+                                 Visibility="{Binding SalesReport, Converter={StaticResource NullToCollapsedConverter}}">
+                        <Border Style="{StaticResource Card}" Margin="0,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Total Revenue" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding SalesReport.TotalRevenue, Converter={StaticResource CurrencyFormatConverter}}"
+                                           FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="12,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Transactions" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding SalesReport.TransactionCount}"
+                                           FontSize="24" FontWeight="Bold" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="12,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Avg Transaction" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding SalesReport.AverageTransactionValue, Converter={StaticResource CurrencyFormatConverter}}"
+                                           FontSize="24" FontWeight="Bold" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
+
+                <!-- Stock Report -->
+                <StackPanel Visibility="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Stock}">
+                    <UniformGrid Columns="3" Margin="0,0,0,16"
+                                 Visibility="{Binding StockReport, Converter={StaticResource NullToCollapsedConverter}}">
+                        <Border Style="{StaticResource Card}" Margin="0,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Total Value" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding StockReport.TotalStockValue, Converter={StaticResource CurrencyFormatConverter}}"
+                                           FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="12,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Low Stock" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding StockReport.LowStockCount}"
+                                           FontSize="24" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="12,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Out of Stock" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding StockReport.OutOfStockCount}"
+                                           FontSize="24" FontWeight="Bold" Foreground="{StaticResource DangerBrush}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
+
+                <!-- VAT Report -->
+                <StackPanel Visibility="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=VAT}">
+                    <Button Content="Generate VAT Report" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding LoadReportCommand}" Margin="0,0,0,16" HorizontalAlignment="Left" />
+                    <UniformGrid Columns="3" Margin="0,0,0,16"
+                                 Visibility="{Binding VatReport, Converter={StaticResource NullToCollapsedConverter}}">
+                        <Border Style="{StaticResource Card}" Margin="0,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Sales VAT" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding VatReport.TotalSalesVat, Converter={StaticResource CurrencyFormatConverter}}"
+                                           FontSize="24" FontWeight="Bold" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="12,0,12,0">
+                            <StackPanel>
+                                <TextBlock Text="Purchase VAT" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding VatReport.TotalPurchaseVat, Converter={StaticResource CurrencyFormatConverter}}"
+                                           FontSize="24" FontWeight="Bold" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="12,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Net VAT Payable" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{Binding VatReport.NetVat, Converter={StaticResource CurrencyFormatConverter}}"
+                                           FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource DangerBrush}"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>
