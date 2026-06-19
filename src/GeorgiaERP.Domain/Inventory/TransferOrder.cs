@@ -45,4 +45,39 @@ public class TransferOrder : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Approve(Guid approvedBy)
+    {
+        Status = TransferOrderStatus.Approved;
+        ApprovedBy = approvedBy;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Ship()
+    {
+        Status = TransferOrderStatus.InTransit;
+        ShippedAt = DateTimeOffset.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Receive()
+    {
+        Status = TransferOrderStatus.Received;
+        ReceivedAt = DateTimeOffset.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Cancel()
+    {
+        Status = TransferOrderStatus.Cancelled;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetNotes(string? notes) => Notes = notes;
+
+    public void LinkWaybill(Guid waybillId)
+    {
+        RsGeWaybillId = waybillId;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
 }

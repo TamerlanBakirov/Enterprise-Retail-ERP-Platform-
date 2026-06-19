@@ -28,4 +28,12 @@ public class TransferOrderLine : BaseEntity
             RequestedQty = requestedQty
         };
     }
+
+    public void SetShippedQty(decimal qty) => ShippedQty = qty;
+    public void SetReceivedQty(decimal qty) => ReceivedQty = qty;
+    public void SetBatch(string? batchNumber, string? serialNumber = null)
+    {
+        BatchNumber = batchNumber;
+        SerialNumber = serialNumber;
+    }
 }

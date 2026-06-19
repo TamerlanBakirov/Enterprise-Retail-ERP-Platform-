@@ -27,4 +27,13 @@ public class StockCountLine : BaseEntity
             ExpectedQty = expectedQty
         };
     }
+
+    public void RecordCount(decimal countedQty, Guid countedBy)
+    {
+        CountedQty = countedQty;
+        CountedBy = countedBy;
+        CountedAt = DateTimeOffset.UtcNow;
+    }
+
+    public decimal Variance => (CountedQty ?? ExpectedQty) - ExpectedQty;
 }

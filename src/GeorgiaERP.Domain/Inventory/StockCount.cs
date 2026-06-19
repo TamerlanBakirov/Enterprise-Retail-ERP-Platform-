@@ -44,4 +44,22 @@ public class StockCount : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Start()
+    {
+        Status = StockCountStatus.InProgress;
+        StartedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Complete(Guid approvedBy)
+    {
+        Status = StockCountStatus.Completed;
+        ApprovedBy = approvedBy;
+        CompletedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Cancel()
+    {
+        Status = StockCountStatus.Cancelled;
+    }
 }
