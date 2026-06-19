@@ -41,4 +41,16 @@ public class GoodsReceiptLine : BaseEntity
             UnitCost = unitCost
         };
     }
+
+    public void SetQualityResult(decimal acceptedQty, decimal rejectedQty)
+    {
+        AcceptedQty = acceptedQty;
+        RejectedQty = rejectedQty;
+    }
+
+    public void SetBatch(string? batchNumber, DateTimeOffset? expiryDate)
+    {
+        BatchNumber = batchNumber;
+        ExpiryDate = expiryDate;
+    }
 }

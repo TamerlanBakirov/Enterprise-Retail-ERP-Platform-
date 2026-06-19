@@ -51,4 +51,27 @@ public class PurchaseOrder : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetTotals(decimal subtotal, decimal vatTotal, decimal total)
+    {
+        Subtotal = subtotal; VatTotal = vatTotal; Total = total; Touch();
+    }
+
+    public void SetExpectedDate(DateTimeOffset? date) { ExpectedDate = date; Touch(); }
+    public void SetNotes(string? notes) { Notes = notes; Touch(); }
+
+    public void Approve(Guid approvedBy)
+    {
+        Status = PurchaseOrderStatus.Approved;
+        ApprovedBy = approvedBy;
+        ApprovedAt = DateTimeOffset.UtcNow;
+        Touch();
+    }
+
+    public void Send() { Status = PurchaseOrderStatus.Sent; Touch(); }
+    public void MarkPartiallyReceived() { Status = PurchaseOrderStatus.PartiallyReceived; Touch(); }
+    public void MarkReceived() { Status = PurchaseOrderStatus.Received; Touch(); }
+    public void Cancel() { Status = PurchaseOrderStatus.Cancelled; Touch(); }
+
+    private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 }

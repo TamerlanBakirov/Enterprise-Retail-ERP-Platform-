@@ -38,4 +38,9 @@ public class PurchaseOrderLine : BaseEntity
             ReceivedQty = 0
         };
     }
+
+    public void SetVat(decimal vatAmount) => VatAmount = vatAmount;
+    public void SetLineTotal(decimal total) => LineTotal = total;
+    public void AddReceivedQty(decimal qty) => ReceivedQty += qty;
+    public decimal RemainingQty => OrderedQty - ReceivedQty;
 }

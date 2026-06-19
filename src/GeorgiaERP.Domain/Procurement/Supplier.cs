@@ -39,4 +39,25 @@ public class Supplier : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetContactInfo(string? contactPerson, string? phone, string? email, string? address)
+    {
+        ContactPerson = contactPerson;
+        Phone = phone;
+        Email = email;
+        Address = address;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetPaymentTerms(string? terms, decimal? creditLimit)
+    {
+        PaymentTerms = terms;
+        CreditLimit = creditLimit;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetVatPayer(bool isVatPayer) { IsVatPayer = isVatPayer; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void SetRating(int rating) { Rating = rating; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void Deactivate() { IsActive = false; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void Activate() { IsActive = true; UpdatedAt = DateTimeOffset.UtcNow; }
 }

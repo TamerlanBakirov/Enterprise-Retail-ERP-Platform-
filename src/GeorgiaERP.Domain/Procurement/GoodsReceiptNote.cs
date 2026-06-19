@@ -48,4 +48,9 @@ public class GoodsReceiptNote : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Complete() => Status = GoodsReceiptStatus.Completed;
+    public void Cancel() => Status = GoodsReceiptStatus.Cancelled;
+    public void SetNotes(string? notes) => Notes = notes;
+    public void LinkWaybill(Guid waybillId) => RsGeWaybillId = waybillId;
 }
