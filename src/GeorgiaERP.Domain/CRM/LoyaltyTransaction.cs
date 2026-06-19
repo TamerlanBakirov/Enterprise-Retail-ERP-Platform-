@@ -43,4 +43,10 @@ public class LoyaltyTransaction : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetReference(string? referenceType, Guid? referenceId)
+    {
+        ReferenceType = referenceType;
+        ReferenceId = referenceId;
+    }
 }

@@ -1,3 +1,4 @@
+using GeorgiaERP.Application.CRM.Commands;
 using GeorgiaERP.Application.CRM.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -25,4 +26,30 @@ public class CustomersController : ApiControllerBase
         var result = await _mediator.Send(new GetCustomersQuery(search, isActive, page, pageSize));
         return Ok(result);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return result.IsSuccess ? Created($"/api/v1/customers/{result.Value!.Id}", result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("{customerId:guid}/loyalty/earn")]
+    public async Task<IActionResult> EarnPoints(Guid customerId, [FromBody] EarnPointsRequest request)
+    {
+        var result = await _mediator.Send(new EarnLoyaltyPointsCommand(
+            customerId, request.Points, request.ReferenceType, request.ReferenceId, request.Description));
+        return result.IsSuccess ? Ok(new { balance = result.Value }) : BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("{customerId:guid}/loyalty/redeem")]
+    public async Task<IActionResult> RedeemPoints(Guid customerId, [FromBody] RedeemPointsRequest request)
+    {
+        var result = await _mediator.Send(new RedeemLoyaltyPointsCommand(customerId, request.Points, request.Description));
+        return result.IsSuccess ? Ok(new { balance = result.Value }) : BadRequest(new { error = result.Error });
+    }
 }
+
+public record EarnPointsRequest(int Points, string? ReferenceType = null, Guid? ReferenceId = null, string? Description = null);
+public record RedeemPointsRequest(int Points, string? Description = null);
+

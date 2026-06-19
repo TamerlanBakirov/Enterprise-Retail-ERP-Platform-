@@ -32,4 +32,9 @@ public class BankAccount : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetIban(string? iban) => Iban = iban;
+    public void LinkGlAccount(Guid glAccountId) => GlAccountId = glAccountId;
+    public void UpdateBalance(decimal amount) => CurrentBalance += amount;
+    public void Deactivate() => IsActive = false;
 }

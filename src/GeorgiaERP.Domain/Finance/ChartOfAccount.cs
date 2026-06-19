@@ -58,4 +58,8 @@ public class ChartOfAccount : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Deactivate() => IsActive = false;
+    public void Activate() => IsActive = true;
+    public void MarkSystem() => IsSystem = true;
 }

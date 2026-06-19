@@ -42,4 +42,29 @@ public class JournalEntry : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetTotals(decimal totalDebit, decimal totalCredit)
+    {
+        TotalDebit = totalDebit;
+        TotalCredit = totalCredit;
+    }
+
+    public void SetSource(string? sourceType, Guid? sourceId)
+    {
+        SourceType = sourceType;
+        SourceId = sourceId;
+    }
+
+    public void Post(Guid postedBy)
+    {
+        Status = JournalEntryStatus.Posted;
+        PostedBy = postedBy;
+        PostedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Reverse(Guid reversalEntryId)
+    {
+        Status = JournalEntryStatus.Reversed;
+        ReversedById = reversalEntryId;
+    }
 }

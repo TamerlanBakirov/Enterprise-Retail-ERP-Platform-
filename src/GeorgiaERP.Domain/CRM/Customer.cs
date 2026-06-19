@@ -49,4 +49,17 @@ public class Customer : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetContactInfo(string? phone, string? email) { Phone = phone; Email = email; Touch(); }
+    public void SetCompany(string? companyName, string? tin) { CompanyName = companyName; Tin = tin; Touch(); }
+    public void SetPersonalInfo(DateTimeOffset? dateOfBirth, string? gender) { DateOfBirth = dateOfBirth; Gender = gender; Touch(); }
+    public void SetConsent(bool sms, bool email) { ConsentSms = sms; ConsentEmail = email; Touch(); }
+    public void SetLoyaltyCard(string? cardNumber, string? tier) { LoyaltyCardNumber = cardNumber; LoyaltyTier = tier; Touch(); }
+    public void AddPoints(int points) { LoyaltyPoints += points; Touch(); }
+    public void DeductPoints(int points) { LoyaltyPoints -= points; Touch(); }
+    public void RecordVisit(decimal purchaseAmount) { TotalVisits++; TotalPurchases += purchaseAmount; LastVisitAt = DateTimeOffset.UtcNow; Touch(); }
+    public void Deactivate() { IsActive = false; Touch(); }
+    public void Activate() { IsActive = true; Touch(); }
+
+    private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 }

@@ -1,7 +1,9 @@
 using System.Text;
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
+using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Identity;
+using GeorgiaERP.Infrastructure.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
 using GeorgiaERP.Infrastructure.Persistence;
 using GeorgiaERP.Infrastructure.RsGe;
@@ -53,6 +55,8 @@ public static class DependencyInjection
         services.AddSingleton<IRabbitMqConnection, RabbitMqConnection>();
         services.AddScoped<IRsGeQueuePublisher, RabbitMqQueuePublisher>();
         services.AddScoped<IRsGeSubmissionProcessor, RsGeSubmissionProcessor>();
+
+        services.AddScoped<ILicenseValidator, LocalLicenseValidator>();
 
         return services;
     }
