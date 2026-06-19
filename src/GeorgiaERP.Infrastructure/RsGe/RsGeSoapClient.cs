@@ -116,14 +116,44 @@ public class RsGeSoapClient : IRsGeSoapClient
         return units;
     }
 
-    public Task<IReadOnlyList<RsGeTransportType>> GetTransportTypesAsync()
+    public async Task<IReadOnlyList<RsGeTransportType>> GetTransportTypesAsync()
     {
-        throw new NotImplementedException("GetTransportTypesAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "get_transport_types",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword));
+
+        var response = await SendSoapRequestAsync("get_transport_types", soapBody);
+
+        var types = response
+            .Descendants(WaybillNs + "get_transport_typesResult")
+            .Descendants()
+            .Where(e => e.Name.LocalName == "TRANSPORT_TYPE")
+            .Select(e => new RsGeTransportType(
+                Id: int.TryParse(e.Element("ID")?.Value ?? e.Element(WaybillNs + "ID")?.Value, out var id) ? id : 0,
+                Name: e.Element("NAME")?.Value ?? e.Element(WaybillNs + "NAME")?.Value ?? ""))
+            .ToList();
+
+        return types;
     }
 
-    public Task<IReadOnlyList<RsGeWaybillType>> GetWaybillTypesAsync()
+    public async Task<IReadOnlyList<RsGeWaybillType>> GetWaybillTypesAsync()
     {
-        throw new NotImplementedException("GetWaybillTypesAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "get_waybill_types",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword));
+
+        var response = await SendSoapRequestAsync("get_waybill_types", soapBody);
+
+        var types = response
+            .Descendants(WaybillNs + "get_waybill_typesResult")
+            .Descendants()
+            .Where(e => e.Name.LocalName == "WAYBILL_TYPE")
+            .Select(e => new RsGeWaybillType(
+                Id: int.TryParse(e.Element("ID")?.Value ?? e.Element(WaybillNs + "ID")?.Value, out var id) ? id : 0,
+                Name: e.Element("NAME")?.Value ?? e.Element(WaybillNs + "NAME")?.Value ?? ""))
+            .ToList();
+
+        return types;
     }
 
     public async Task<RsGeWaybillResult> SaveWaybillAsync(RsGeWaybillRequest request)
@@ -172,34 +202,114 @@ public class RsGeSoapClient : IRsGeSoapClient
         return new RsGeWaybillResult(success, waybillId, waybillNumber, errorCode, errorMessage);
     }
 
-    public Task<RsGeResult> SendWaybillAsync(int waybillId)
+    public async Task<RsGeResult> SendWaybillAsync(int waybillId)
     {
-        throw new NotImplementedException("SendWaybillAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "send_waybill",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "waybill_id", waybillId));
+
+        var response = await SendSoapRequestAsync("send_waybill", soapBody);
+        return ParseSimpleResult(response, "send_waybillResult");
     }
 
-    public Task<RsGeResult> ConfirmWaybillAsync(int waybillId)
+    public async Task<RsGeResult> ConfirmWaybillAsync(int waybillId)
     {
-        throw new NotImplementedException("ConfirmWaybillAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "confirm_waybill",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "waybill_id", waybillId));
+
+        var response = await SendSoapRequestAsync("confirm_waybill", soapBody);
+        return ParseSimpleResult(response, "confirm_waybillResult");
     }
 
-    public Task<RsGeResult> CloseWaybillAsync(int waybillId)
+    public async Task<RsGeResult> CloseWaybillAsync(int waybillId)
     {
-        throw new NotImplementedException("CloseWaybillAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "close_waybill",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "waybill_id", waybillId));
+
+        var response = await SendSoapRequestAsync("close_waybill", soapBody);
+        return ParseSimpleResult(response, "close_waybillResult");
     }
 
-    public Task<RsGeResult> RejectWaybillAsync(int waybillId)
+    public async Task<RsGeResult> RejectWaybillAsync(int waybillId)
     {
-        throw new NotImplementedException("RejectWaybillAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "reject_waybill",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "waybill_id", waybillId));
+
+        var response = await SendSoapRequestAsync("reject_waybill", soapBody);
+        return ParseSimpleResult(response, "reject_waybillResult");
     }
 
-    public Task<RsGeWaybillData?> GetWaybillAsync(int waybillId)
+    public async Task<RsGeWaybillData?> GetWaybillAsync(int waybillId)
     {
-        throw new NotImplementedException("GetWaybillAsync is not yet implemented.");
+        var soapBody = new XElement(WaybillNs + "get_waybill",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "waybill_id", waybillId));
+
+        var response = await SendSoapRequestAsync("get_waybill", soapBody);
+
+        var resultElement = response
+            .Descendants(WaybillNs + "get_waybillResult")
+            .FirstOrDefault();
+
+        if (resultElement is null)
+            return null;
+
+        return new RsGeWaybillData
+        {
+            Id = int.TryParse(resultElement.Element(WaybillNs + "ID")?.Value ?? resultElement.Element("ID")?.Value, out var id) ? id : 0,
+            WaybillNumber = resultElement.Element(WaybillNs + "WAYBILL_NUMBER")?.Value ?? resultElement.Element("WAYBILL_NUMBER")?.Value,
+            WaybillType = int.TryParse(resultElement.Element(WaybillNs + "TYPE")?.Value ?? resultElement.Element("TYPE")?.Value, out var type) ? type : 0,
+            SellerTin = resultElement.Element(WaybillNs + "SELLER_TIN")?.Value ?? resultElement.Element("SELLER_TIN")?.Value,
+            BuyerTin = resultElement.Element(WaybillNs + "BUYER_TIN")?.Value ?? resultElement.Element("BUYER_TIN")?.Value,
+            Status = int.TryParse(resultElement.Element(WaybillNs + "STATUS")?.Value ?? resultElement.Element("STATUS")?.Value, out var status) ? status : 0,
+            StatusText = resultElement.Element(WaybillNs + "STATUS_TEXT")?.Value ?? resultElement.Element("STATUS_TEXT")?.Value
+        };
     }
 
-    public Task<RsGeResult> SaveInvoiceAsync(RsGeInvoiceRequest request)
+    public async Task<RsGeResult> SaveInvoiceAsync(RsGeInvoiceRequest request)
     {
-        throw new NotImplementedException("SaveInvoiceAsync is not yet implemented.");
+        var itemsXml = new XElement(WaybillNs + "items",
+            request.Items.Select((item, i) => new XElement(WaybillNs + "ITEM",
+                new XElement(WaybillNs + "ID", i + 1),
+                new XElement(WaybillNs + "DESCRIPTION", item.Description),
+                new XElement(WaybillNs + "QUANTITY", item.Quantity),
+                new XElement(WaybillNs + "UNIT_PRICE", item.UnitPrice),
+                new XElement(WaybillNs + "VAT_AMOUNT", item.VatAmount)
+            )));
+
+        var soapBody = new XElement(WaybillNs + "save_invoice",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "buyer_tin", request.BuyerTin),
+            new XElement(WaybillNs + "buyer_name", request.BuyerName),
+            new XElement(WaybillNs + "invoice_date", request.InvoiceDate.ToString("yyyy-MM-dd")),
+            itemsXml);
+
+        var response = await SendSoapRequestAsync("save_invoice", soapBody);
+        return ParseSimpleResult(response, "save_invoiceResult");
+    }
+
+    private RsGeResult ParseSimpleResult(XDocument response, string resultElementName)
+    {
+        var resultElement = response
+            .Descendants(WaybillNs + resultElementName)
+            .FirstOrDefault();
+
+        var errorCode = resultElement?.Element(WaybillNs + "ERROR_CODE")?.Value
+            ?? resultElement?.Element("ERROR_CODE")?.Value;
+        var errorMessage = resultElement?.Element(WaybillNs + "ERROR_MESSAGE")?.Value
+            ?? resultElement?.Element("ERROR_MESSAGE")?.Value;
+
+        var success = string.IsNullOrEmpty(errorCode) || errorCode == "0";
+        return new RsGeResult(success, errorCode, errorMessage);
     }
 
     private async Task<XDocument> SendSoapRequestAsync(string soapAction, XElement bodyContent)
