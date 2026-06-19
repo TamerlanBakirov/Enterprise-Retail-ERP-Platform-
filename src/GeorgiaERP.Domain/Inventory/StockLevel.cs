@@ -29,6 +29,7 @@ public class StockLevel : BaseEntity
             QuantityOnHand = 0,
             QuantityReserved = 0,
             QuantityInTransit = 0,
+            RowVersion = Guid.NewGuid().ToByteArray(),
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
@@ -39,13 +40,19 @@ public class StockLevel : BaseEntity
     {
         if (quantity <= 0) throw new InvalidOperationException("Deduction quantity must be positive.");
         QuantityOnHand -= quantity;
-        UpdatedAt = DateTimeOffset.UtcNow;
+        Touch();
     }
 
     public void AddStock(decimal quantity)
     {
         if (quantity <= 0) throw new InvalidOperationException("Addition quantity must be positive.");
         QuantityOnHand += quantity;
+        Touch();
+    }
+
+    private void Touch()
+    {
+        RowVersion = Guid.NewGuid().ToByteArray();
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

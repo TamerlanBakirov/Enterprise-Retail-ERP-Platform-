@@ -4,7 +4,7 @@ An enterprise-grade Retail ERP platform designed for the Georgian market, built 
 
 ## Project Status
 
-**Phase: Architecture & Business Analysis** (Awaiting stakeholder approval before implementation begins)
+**Phase: Implementation** — backend (8 modules), WPF desktop client, licensing, RS.GE compliance pipeline, Docker deployment, and an automated test suite are in place.
 
 ## Architecture Documents
 
@@ -33,8 +33,8 @@ An enterprise-grade Retail ERP platform designed for the Georgian market, built 
 | Layer | Technology |
 |-------|-----------|
 | Backend | .NET 9, ASP.NET Core, Entity Framework Core |
-| Frontend | React 19, TypeScript, Ant Design |
-| Database | PostgreSQL 17 |
+| Desktop client | WPF (.NET 9), MVVM (CommunityToolkit.Mvvm) |
+| Database | PostgreSQL 16 |
 | Cache | Redis 7 |
 | Queue | RabbitMQ 4 |
 | Mobile | Flutter 3 (Phase 3) |
@@ -55,7 +55,46 @@ The platform integrates with Georgian Revenue Service through SOAP web services:
 
 ## Getting Started
 
-> Implementation has not yet begun. This repository currently contains architecture documentation only. See the [MVP Definition & Roadmap](docs/05-MVP-DEFINITION-AND-ROADMAP.md) for the planned implementation timeline.
+### Prerequisites
+- .NET 9 SDK
+- PostgreSQL 16 and RabbitMQ 3.13 (or use Docker Compose, below)
+
+### Run with Docker Compose
+```bash
+docker compose up --build
+```
+This starts PostgreSQL, RabbitMQ, the API, and the background workers. The API runs on port 5000.
+
+### Run the API locally
+```bash
+# Applies migrations and seeds roles + admin user automatically in Development.
+dotnet run --project src/GeorgiaERP.Api
+# Optionally load a realistic demo dataset (company, store, products, stock, open POS session):
+dotnet run --project src/GeorgiaERP.Api -- --seed-demo
+```
+Default admin credentials: `admin` / `Admin@123!`
+
+### API documentation
+Swagger UI is served at `/swagger` in Development (and when `Swagger:Enabled=true`).
+
+### Desktop client (Windows)
+```bash
+dotnet build src/GeorgiaERP.Desktop   # requires Windows (WPF / net9.0-windows)
+```
+The installer is built from `installer/GeorgiaERP.iss` (Inno Setup).
+
+### Tests
+```bash
+dotnet test tests/GeorgiaERP.Tests
+```
+
+### Database backup
+```bash
+PGPASSWORD=... ./scripts/backup-db.sh   # compressed pg_dump with rolling retention
+```
+
+### Continuous integration
+GitHub Actions (`.github/workflows/ci.yml`) builds the server projects + runs tests on Linux (with a PostgreSQL service), and builds the WPF desktop client on Windows.
 
 ## License
 

@@ -42,4 +42,16 @@ public class Warehouse : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void LinkToStore(Guid storeId)
+    {
+        LinkedStoreId = storeId;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
 }

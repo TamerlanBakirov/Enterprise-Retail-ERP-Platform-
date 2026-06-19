@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "claude/**" ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: "9.0.x"
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  build-test:
+    name: Build & Test (server)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: erp_user
+          POSTGRES_PASSWORD: erp_dev_password
+          POSTGRES_DB: georgia_erp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U erp_user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore (server projects)
+        run: |
+          dotnet restore src/GeorgiaERP.Domain/GeorgiaERP.Domain.csproj
+          dotnet restore src/GeorgiaERP.Application/GeorgiaERP.Application.csproj
+          dotnet restore src/GeorgiaERP.Infrastructure/GeorgiaERP.Infrastructure.csproj
+          dotnet restore src/GeorgiaERP.Api/GeorgiaERP.Api.csproj
+          dotnet restore src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj
+          dotnet restore tests/GeorgiaERP.Tests/GeorgiaERP.Tests.csproj
+
+      - name: Build API
+        run: dotnet build src/GeorgiaERP.Api/GeorgiaERP.Api.csproj --configuration Release --no-restore
+
+      - name: Build Workers
+        run: dotnet build src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/GeorgiaERP.Tests/GeorgiaERP.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/test-results.trx"
+
+  build-desktop:
+    name: Build Desktop (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Desktop
+        run: dotnet restore src/GeorgiaERP.Desktop/GeorgiaERP.Desktop.csproj
+
+      - name: Build Desktop
+        run: dotnet build src/GeorgiaERP.Desktop/GeorgiaERP.Desktop.csproj --configuration Release --no-restore
