@@ -32,4 +32,20 @@ public class StockLevel : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public decimal AvailableQuantity => QuantityOnHand - QuantityReserved;
+
+    public void Deduct(decimal quantity)
+    {
+        if (quantity <= 0) throw new InvalidOperationException("Deduction quantity must be positive.");
+        QuantityOnHand -= quantity;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void AddStock(decimal quantity)
+    {
+        if (quantity <= 0) throw new InvalidOperationException("Addition quantity must be positive.");
+        QuantityOnHand += quantity;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
 }

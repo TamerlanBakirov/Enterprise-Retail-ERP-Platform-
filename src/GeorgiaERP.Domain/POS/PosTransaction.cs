@@ -61,4 +61,31 @@ public class PosTransaction : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetTotals(decimal subtotal, decimal discountTotal, decimal vatTotal, decimal total)
+    {
+        Subtotal = subtotal;
+        DiscountTotal = discountTotal;
+        VatTotal = vatTotal;
+        Total = total;
+    }
+
+    public void SetCustomer(Guid? customerId)
+    {
+        CustomerId = customerId;
+    }
+
+    public void Complete(string? fiscalReceiptId = null)
+    {
+        Status = PosTransactionStatus.Completed;
+        FiscalReceiptId = fiscalReceiptId;
+    }
+
+    public void Void(Guid voidedBy, string reason)
+    {
+        Status = PosTransactionStatus.Voided;
+        VoidedBy = voidedBy;
+        VoidedAt = DateTimeOffset.UtcNow;
+        VoidReason = reason;
+    }
 }

@@ -39,4 +39,15 @@ public class PosSession : BaseEntity
             Status = PosSessionStatus.Open
         };
     }
+
+    public void Close(decimal closingBalance, decimal expectedBalance)
+    {
+        Status = PosSessionStatus.Closed;
+        ClosingBalance = closingBalance;
+        ExpectedBalance = expectedBalance;
+        CashDifference = closingBalance - expectedBalance;
+        ClosedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetNotes(string? notes) => Notes = notes;
 }

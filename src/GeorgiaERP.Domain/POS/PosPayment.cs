@@ -38,4 +38,12 @@ public class PosPayment : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetReference(string? reference, string? terminalRef = null)
+    {
+        Reference = reference;
+        TerminalRef = terminalRef;
+    }
+
+    public void SetChange(decimal changeAmount) => ChangeAmount = changeAmount;
 }

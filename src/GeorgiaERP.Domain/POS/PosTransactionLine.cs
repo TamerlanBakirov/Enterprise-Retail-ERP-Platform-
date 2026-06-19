@@ -42,4 +42,18 @@ public class PosTransactionLine : BaseEntity
             UnitPrice = unitPrice
         };
     }
+
+    public void SetVariant(Guid? variantId) => VariantId = variantId;
+    public void SetBarcode(string? barcode) => Barcode = barcode;
+    public void SetCostPrice(decimal costPrice) => CostPrice = costPrice;
+    public void SetVat(decimal vatAmount) => VatAmount = vatAmount;
+
+    public void SetDiscount(decimal amount, string? reason = null)
+    {
+        DiscountAmount = amount;
+        DiscountReason = reason;
+    }
+
+    public void SetLineTotal(decimal total) => LineTotal = total;
+    public void SetPromotion(Guid? promotionId) => PromotionId = promotionId;
 }
