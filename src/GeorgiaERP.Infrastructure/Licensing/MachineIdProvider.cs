@@ -1,7 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
+using GeorgiaERP.Application.Licensing;
 
 namespace GeorgiaERP.Infrastructure.Licensing;
+
+public class MachineIdProviderService : IMachineIdProvider
+{
+    public string GetMachineId() => MachineIdProvider.GetMachineId();
+}
 
 public static class MachineIdProvider
 {

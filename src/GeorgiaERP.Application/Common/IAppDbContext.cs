@@ -8,6 +8,7 @@ using GeorgiaERP.Domain.Procurement;
 using GeorgiaERP.Domain.Compliance;
 using GeorgiaERP.Domain.Finance;
 using GeorgiaERP.Domain.CRM;
+using GeorgiaERP.Domain.Licensing;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Application.Common;
@@ -58,6 +59,7 @@ public interface IAppDbContext
     DbSet<BankAccount> BankAccounts { get; }
     DbSet<Customer> Customers { get; }
     DbSet<LoyaltyTransaction> LoyaltyTransactions { get; }
+    DbSet<License> Licenses { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

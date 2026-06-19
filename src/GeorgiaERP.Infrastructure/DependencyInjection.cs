@@ -57,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<IRsGeSubmissionProcessor, RsGeSubmissionProcessor>();
 
         services.AddScoped<ILicenseValidator, LocalLicenseValidator>();
+        services.AddSingleton<IMachineIdProvider, MachineIdProviderService>();
 
         return services;
     }

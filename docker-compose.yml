@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: georgia-erp-db
+    environment:
+      POSTGRES_DB: georgia_erp
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: erp_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d georgia_erp"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: georgia-erp-mq
+    environment:
+      RABBITMQ_DEFAULT_USER: erp_user
+      RABBITMQ_DEFAULT_PASS: erp_dev_password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./src
+      dockerfile: ../Dockerfile
+    container_name: georgia-erp-api
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=erp_dev_password"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: erp_user
+      RabbitMq__Password: erp_dev_password
+      Jwt__SecretKey: "dev-secret-key-change-in-production-min-32-chars!"
+      Jwt__Issuer: GeorgiaERP
+      Jwt__Audience: GeorgiaERP.Client
+      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_ENVIRONMENT: Development
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  workers:
+    build:
+      context: ./src
+      dockerfile: ../Dockerfile.workers
+    container_name: georgia-erp-workers
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=erp_dev_password"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: erp_user
+      RabbitMq__Password: erp_dev_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

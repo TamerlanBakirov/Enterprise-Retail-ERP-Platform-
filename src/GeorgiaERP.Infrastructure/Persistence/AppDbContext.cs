@@ -5,6 +5,7 @@ using GeorgiaERP.Domain.CRM;
 using GeorgiaERP.Domain.Finance;
 using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Inventory;
+using GeorgiaERP.Domain.Licensing;
 using GeorgiaERP.Domain.Organization;
 using GeorgiaERP.Domain.POS;
 using GeorgiaERP.Domain.Pricing;
@@ -87,6 +88,9 @@ public class AppDbContext : DbContext, IAppDbContext
     // CRM
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<LoyaltyTransaction> LoyaltyTransactions => Set<LoyaltyTransaction>();
+
+    // Licensing
+    public DbSet<License> Licenses => Set<License>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
