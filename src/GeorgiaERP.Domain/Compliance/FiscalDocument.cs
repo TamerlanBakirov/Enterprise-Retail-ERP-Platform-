@@ -59,4 +59,71 @@ public class FiscalDocument : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetDocumentData(string json)
+    {
+        DocumentData = json;
+        Touch();
+    }
+
+    public void SetSubmissionDeadline(DateTimeOffset deadline)
+    {
+        SubmissionDeadline = deadline;
+        Touch();
+    }
+
+    /// <summary>Transitions the document into the queue, ready for asynchronous RS.GE submission.</summary>
+    public void MarkQueued()
+    {
+        Status = FiscalDocumentStatus.Queued;
+        Touch();
+    }
+
+    /// <summary>The request reached RS.GE and a server-side identifier was assigned.</summary>
+    public void MarkSubmitted(string? rsGeId, string? documentNumber = null)
+    {
+        Status = FiscalDocumentStatus.Submitted;
+        RsGeId = rsGeId;
+        if (documentNumber is not null)
+            DocumentNumber = documentNumber;
+        SubmittedAt = DateTimeOffset.UtcNow;
+        LastError = null;
+        Touch();
+    }
+
+    /// <summary>RS.GE accepted and confirmed the document (terminal success).</summary>
+    public void MarkConfirmed(string? rsGeStatus = null)
+    {
+        Status = FiscalDocumentStatus.Confirmed;
+        RsGeStatus = rsGeStatus;
+        ConfirmedAt = DateTimeOffset.UtcNow;
+        LastError = null;
+        Touch();
+    }
+
+    /// <summary>RS.GE rejected the document (terminal failure requiring manual correction).</summary>
+    public void MarkRejected(string? error)
+    {
+        Status = FiscalDocumentStatus.Rejected;
+        LastError = error;
+        Touch();
+    }
+
+    /// <summary>A transient failure occurred; the document remains eligible for retry.</summary>
+    public void MarkFailed(string? error)
+    {
+        Status = FiscalDocumentStatus.Failed;
+        LastError = error;
+        Touch();
+    }
+
+    public void IncrementRetry()
+    {
+        RetryCount++;
+        Touch();
+    }
+
+    public bool HasExceededRetries(int maxRetries) => RetryCount >= maxRetries;
+
+    private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 }

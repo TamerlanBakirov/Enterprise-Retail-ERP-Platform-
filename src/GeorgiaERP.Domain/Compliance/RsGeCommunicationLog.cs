@@ -42,4 +42,18 @@ public class RsGeCommunicationLog : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetRequest(string? requestPayload, Guid correlationId)
+    {
+        RequestPayload = requestPayload;
+        CorrelationId = correlationId;
+    }
+
+    public void SetResponse(string? responsePayload, int? httpStatus, int? durationMs, string? errorMessage)
+    {
+        ResponsePayload = responsePayload;
+        HttpStatus = httpStatus;
+        DurationMs = durationMs;
+        ErrorMessage = errorMessage;
+    }
 }

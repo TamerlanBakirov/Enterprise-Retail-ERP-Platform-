@@ -1,6 +1,8 @@
 using System.Text;
 using GeorgiaERP.Application.Common;
+using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Infrastructure.Identity;
+using GeorgiaERP.Infrastructure.Messaging;
 using GeorgiaERP.Infrastructure.Persistence;
 using GeorgiaERP.Infrastructure.RsGe;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,6 +36,35 @@ public static class DependencyInjection
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 
+        services.AddSingleton<IPasswordService, PasswordService>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+        services.AddHttpClient<IRsGeSoapClient, RsGeSoapClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(
+                int.TryParse(configuration["RsGe:TimeoutSeconds"], out var timeout) ? timeout : 30);
+            client.DefaultRequestHeaders.Add("Accept", "text/xml");
+        });
+        services.AddScoped<IRsGeCommunicationLogger, RsGeCommunicationLogger>();
+
+        // RS.GE compliance queue + submission pipeline
+        services.Configure<RsGeQueueOptions>(configuration.GetSection(RsGeQueueOptions.SectionName));
+        services.AddSingleton<IRabbitMqConnection, RabbitMqConnection>();
+        services.AddScoped<IRsGeQueuePublisher, RabbitMqQueuePublisher>();
+        services.AddScoped<IRsGeSubmissionProcessor, RsGeSubmissionProcessor>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Web-only JWT bearer authentication + authorization. Kept separate from
+    /// <see cref="AddInfrastructure"/> so non-web hosts (the Workers service)
+    /// can share the data/RS.GE stack without pulling in ASP.NET Core routing
+    /// services that authorization depends on.
+    /// </summary>
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
         var jwtSecretKey = configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("Jwt:SecretKey is not configured.");
 
@@ -58,18 +89,6 @@ public static class DependencyInjection
         });
 
         services.AddAuthorization();
-
-        services.AddSingleton<IPasswordService, PasswordService>();
-        services.AddSingleton<IJwtTokenService, JwtTokenService>();
-        services.AddScoped<IAuthenticationService, AuthenticationService>();
-
-        services.AddHttpClient<IRsGeSoapClient, RsGeSoapClient>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(
-                int.TryParse(configuration["RsGe:TimeoutSeconds"], out var timeout) ? timeout : 30);
-            client.DefaultRequestHeaders.Add("Accept", "text/xml");
-        });
-        services.AddScoped<IRsGeCommunicationLogger, RsGeCommunicationLogger>();
 
         return services;
     }

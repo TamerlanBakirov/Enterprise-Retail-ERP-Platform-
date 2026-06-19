@@ -52,4 +52,68 @@ public class RsGeWaybill : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void SetParties(string? sellerTin, string? sellerName, string? buyerTin, string? buyerName)
+    {
+        SellerTin = sellerTin;
+        SellerName = sellerName;
+        BuyerTin = buyerTin;
+        BuyerName = buyerName;
+        Touch();
+    }
+
+    public void SetTransport(string? transporterTin, string? transportType, string? vehicleNumber, string? driverTin, string? startAddress, string? endAddress)
+    {
+        TransporterTin = transporterTin;
+        TransportType = transportType;
+        VehicleNumber = vehicleNumber;
+        DriverTin = driverTin;
+        StartAddress = startAddress;
+        EndAddress = endAddress;
+        Touch();
+    }
+
+    public void SetGoods(string goodsJson, decimal totalAmount)
+    {
+        GoodsData = goodsJson;
+        TotalAmount = totalAmount;
+        Touch();
+    }
+
+    /// <summary>RS.GE save_waybill succeeded: a draft waybill now exists server-side.</summary>
+    public void MarkSaved(string? waybillNumber)
+    {
+        WaybillNumber = waybillNumber;
+        Status = WaybillStatus.Saved;
+        Touch();
+    }
+
+    /// <summary>RS.GE send_waybill succeeded: the waybill is active and goods may move.</summary>
+    public void MarkActive(DateTimeOffset activateDate)
+    {
+        Status = WaybillStatus.Active;
+        ActivateDate = activateDate;
+        Touch();
+    }
+
+    public void MarkConfirmed()
+    {
+        Status = WaybillStatus.Confirmed;
+        Touch();
+    }
+
+    public void MarkClosed(DateTimeOffset deliveryDate)
+    {
+        Status = WaybillStatus.Closed;
+        DeliveryDate = deliveryDate;
+        Touch();
+    }
+
+    public void MarkRejected()
+    {
+        Status = WaybillStatus.Rejected;
+        Touch();
+    }
+
+    private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 }

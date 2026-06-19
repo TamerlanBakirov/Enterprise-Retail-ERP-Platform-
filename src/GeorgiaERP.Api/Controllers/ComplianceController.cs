@@ -1,5 +1,8 @@
 using GeorgiaERP.Application.Common;
+using GeorgiaERP.Application.Compliance;
+using GeorgiaERP.Application.Compliance.Commands;
 using GeorgiaERP.Infrastructure.RsGe;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +14,13 @@ public class ComplianceController : ApiControllerBase
 {
     private readonly IRsGeSoapClient _rsGeClient;
     private readonly IAppDbContext _dbContext;
+    private readonly IMediator _mediator;
 
-    public ComplianceController(IRsGeSoapClient rsGeClient, IAppDbContext dbContext)
+    public ComplianceController(IRsGeSoapClient rsGeClient, IAppDbContext dbContext, IMediator mediator)
     {
         _rsGeClient = rsGeClient;
         _dbContext = dbContext;
+        _mediator = mediator;
     }
 
     [HttpGet("rsge/health")]
@@ -77,6 +82,31 @@ public class ComplianceController : ApiControllerBase
     {
         var isVatPayer = await _rsGeClient.IsVatPayerAsync(tin);
         return Ok(new { Tin = tin, IsVatPayer = isVatPayer });
+    }
+
+    [HttpPost("waybills")]
+    public async Task<IActionResult> CreateWaybill([FromBody] CreateWaybillCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        if (result.IsFailure)
+            return BadRequest(new { error = result.Error });
+
+        return Accepted(result.Value);
+    }
+
+    [HttpPost("waybills/{fiscalDocumentId:guid}/confirm")]
+    public async Task<IActionResult> ConfirmWaybill(Guid fiscalDocumentId)
+    {
+        var result = await _mediator.Send(new EnqueueWaybillOperationCommand(fiscalDocumentId, RsGeOperation.ConfirmWaybill));
+        return result.IsSuccess ? Accepted() : BadRequest(new { error = result.Error });
+    }
+
+    [HttpPost("waybills/{fiscalDocumentId:guid}/close")]
+    public async Task<IActionResult> CloseWaybill(Guid fiscalDocumentId)
+    {
+        var result = await _mediator.Send(new EnqueueWaybillOperationCommand(fiscalDocumentId, RsGeOperation.CloseWaybill));
+        return result.IsSuccess ? Accepted() : BadRequest(new { error = result.Error });
     }
 
     [HttpGet("waybills")]
