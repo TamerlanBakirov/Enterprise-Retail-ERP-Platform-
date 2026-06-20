@@ -1,0 +1,74 @@
+<Window x:Class="GeorgiaERP.Desktop.Views.Login.LicenseActivationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Georgia ERP — License Activation"
+        Width="480" Height="600"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource ContentBgBrush}">
+
+    <Grid>
+        <Border Style="{StaticResource Card}" Margin="40,40" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="License Activation"
+                           FontSize="24" FontWeight="Bold"
+                           Foreground="{StaticResource PrimaryBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,8" />
+                <TextBlock Text="Enter your license key to activate"
+                           FontSize="13"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,28" />
+
+                <!-- Server URL -->
+                <TextBlock Text="Server URL" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding ServerUrl, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,16" />
+
+                <!-- License Key -->
+                <TextBlock Text="License Key" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding LicenseKey, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,16"
+                         FontFamily="Consolas" FontSize="15" CharacterCasing="Upper" />
+
+                <!-- Company Name -->
+                <TextBlock Text="Company Name" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding CompanyName, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,16" />
+
+                <!-- Contact Email -->
+                <TextBlock Text="Contact Email (optional)" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding ContactEmail, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,24" />
+
+                <!-- Error -->
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="{StaticResource DangerBrush}"
+                           TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+
+                <!-- Success -->
+                <TextBlock Text="{Binding SuccessMessage}"
+                           Foreground="{StaticResource SuccessBrush}"
+                           TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                           Visibility="{Binding SuccessMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+
+                <!-- Activate Button -->
+                <Button Content="Activate License"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding ActivateCommand}"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}"
+                        HorizontalAlignment="Stretch" />
+
+                <ProgressBar IsIndeterminate="True" Height="3" Margin="0,12,0,0"
+                             Foreground="{StaticResource PrimaryBrush}"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

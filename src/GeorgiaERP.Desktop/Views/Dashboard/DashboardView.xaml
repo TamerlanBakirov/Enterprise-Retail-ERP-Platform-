@@ -1,0 +1,63 @@
+<UserControl x:Class="GeorgiaERP.Desktop.Views.Dashboard.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,24">
+        <StackPanel>
+            <!-- Header -->
+            <TextBlock Text="{Binding WelcomeMessage}"
+                       FontSize="24" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Margin="0,0,0,24" />
+
+            <!-- KPI Cards -->
+            <UniformGrid Columns="4" Margin="0,0,0,24">
+                <!-- Today Revenue -->
+                <Border Style="{StaticResource Card}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="Today's Revenue" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding TodayRevenue, Converter={StaticResource CurrencyFormatConverter}}"
+                                   FontSize="28" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Transactions -->
+                <Border Style="{StaticResource Card}" Margin="12,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="Transactions" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding TodayTransactions}"
+                                   FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Stock Value -->
+                <Border Style="{StaticResource Card}" Margin="12,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="Stock Value" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding TotalStockValue, Converter={StaticResource CurrencyFormatConverter}}"
+                                   FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Low Stock -->
+                <Border Style="{StaticResource Card}" Margin="12,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Low Stock Alerts" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding LowStockCount}"
+                                   FontSize="28" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Loading / Error -->
+            <ProgressBar IsIndeterminate="True" Height="3" Margin="0,0,0,12"
+                         Foreground="{StaticResource PrimaryBrush}"
+                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{StaticResource DangerBrush}"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

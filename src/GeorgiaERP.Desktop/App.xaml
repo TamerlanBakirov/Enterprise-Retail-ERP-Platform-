@@ -1,0 +1,20 @@
+<Application x:Class="GeorgiaERP.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:GeorgiaERP.Desktop.Converters"
+             >
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Colors.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter" />
+            <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter" />
+            <converters:StringEqualsConverter x:Key="StringEqualsConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

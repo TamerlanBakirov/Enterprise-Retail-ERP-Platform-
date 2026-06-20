@@ -4,7 +4,7 @@ An enterprise-grade Retail ERP platform designed for the Georgian market, built 
 
 ## Project Status
 
-**Phase: Architecture & Business Analysis** (Awaiting stakeholder approval before implementation begins)
+**Phase: Implementation** - backend modules, WPF desktop client, signed licensing, RS.GE queue processing, Docker Compose, and automated tests are in place. External certification and production validation remain outstanding.
 
 ## Architecture Documents
 
@@ -22,40 +22,89 @@ An enterprise-grade Retail ERP platform designed for the Georgian market, built 
 - **Architecture Style**: Modular Monolith with event-driven internals
 - **RS.GE Integration**: Queue-based SOAP communication with retry logic and full audit trail
 - **Backend**: .NET 9 (ASP.NET Core) — chosen for native SOAP support critical for RS.GE
-- **Database**: PostgreSQL 17 with schema-per-tenant multi-tenancy
-- **Frontend**: React 19 + TypeScript + Ant Design
+- **Database**: PostgreSQL with a single application schema (multi-company isolation is deferred)
+- **Frontend**: WPF desktop client using CommunityToolkit.Mvvm
 - **Mobile**: Flutter (Phase 3)
 - **Queue**: RabbitMQ for reliable RS.GE message delivery
-- **Cache**: Redis for sessions and reference data
+- **Cache**: Redis is available in the development Compose stack; application caching is deferred
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Backend | .NET 9, ASP.NET Core, Entity Framework Core |
-| Frontend | React 19, TypeScript, Ant Design |
-| Database | PostgreSQL 17 |
-| Cache | Redis 7 |
+| Desktop client | WPF (.NET 9), MVVM (CommunityToolkit.Mvvm) |
+| Database | PostgreSQL 16 |
+| Cache | Redis 7 (planned application integration) |
 | Queue | RabbitMQ 4 |
 | Mobile | Flutter 3 (Phase 3) |
-| Infrastructure | Docker, Kubernetes, AWS/Azure |
+| Infrastructure | Docker Compose; Kubernetes/cloud deployment is planned |
 | CI/CD | GitHub Actions |
-| Monitoring | Prometheus, Grafana, Seq |
+| Monitoring | Serilog file/console logging; metrics dashboards are planned |
 
 ## RS.GE Compliance
 
 The platform integrates with Georgian Revenue Service through SOAP web services:
 
 - **Electronic Waybills**: Full lifecycle management (create → send → confirm → close)
-- **Invoice Upload**: Automated upload with 30-day deadline tracking
+- **Invoice Upload**: Queue-based upload with 30-day deadline tracking and at-risk API reporting
 - **VAT Engine**: 18% Georgian VAT calculation and monthly declaration
 - **TIN Validation**: Real-time taxpayer identification verification
 - **Audit Trail**: Complete request/response logging for all RS.GE communications
 - **Retry Queue**: Automatic retry with exponential backoff for failed submissions
 
+## Production Readiness
+
+The repository builds and its automated suite covers domain behavior, API authentication/authorization, licensing, and selected workflows. Production launch still requires work that depends on the target environment:
+
+- RS.GE staging credentials, fixed-IP registration, conformance testing, and sign-off
+- Integration tests against real PostgreSQL, RabbitMQ, and RS.GE staging services
+- Load, penetration, backup-restore, disaster-recovery, and user-acceptance tests
+- Fiscal/thermal printer, payment-terminal, bank, and local accounting acceptance testing
+- Production secrets, TLS certificates, monitoring/alerting, and an operator runbook
+
 ## Getting Started
 
-> Implementation has not yet begun. This repository currently contains architecture documentation only. See the [MVP Definition & Roadmap](docs/05-MVP-DEFINITION-AND-ROADMAP.md) for the planned implementation timeline.
+### Prerequisites
+- .NET 9 SDK
+- PostgreSQL 16 and RabbitMQ 3.13 (or use Docker Compose, below)
+
+### Run with Docker Compose
+```bash
+docker compose up --build
+```
+This starts PostgreSQL, RabbitMQ, the API, and the background workers. The API runs on port 5000.
+
+### Run the API locally
+```bash
+# Applies migrations and seeds roles + admin user automatically in Development.
+dotnet run --project src/GeorgiaERP.Api
+# Optionally load a realistic demo dataset (company, store, products, stock, open POS session):
+dotnet run --project src/GeorgiaERP.Api -- --seed-demo
+```
+Development-only admin credentials: `admin` / `Admin@123!`. Change or disable this account outside local development.
+
+### API documentation
+Swagger UI is served at `/swagger` in Development (and when `Swagger:Enabled=true`).
+
+### Desktop client (Windows)
+```bash
+dotnet build src/GeorgiaERP.Desktop   # requires Windows (WPF / net9.0-windows)
+```
+The installer is built from `installer/GeorgiaERP.iss` (Inno Setup).
+
+### Tests
+```bash
+dotnet test tests/GeorgiaERP.Tests
+```
+
+### Database backup
+```bash
+PGPASSWORD=... ./scripts/backup-db.sh   # compressed pg_dump with rolling retention
+```
+
+### Continuous integration
+GitHub Actions (`.github/workflows/ci.yml`) builds the server projects + runs tests on Linux (with a PostgreSQL service), and builds the WPF desktop client on Windows.
 
 ## License
 

@@ -1,0 +1,47 @@
+## .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.cache
+*.vs/
+.vscode/
+*.DotSettings.user
+project.lock.json
+*.nupkg
+*.snupkg
+
+## Node
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+
+## IDE
+.idea/
+*.swp
+*.swo
+*~
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Docker
+docker/postgres_data/
+
+## Test
+TestResults/
+
+## Logs
+logs/
+*.log
+
+## Secrets
+*.pfx
+*.key
+*.pem
+appsettings.Local.json

@@ -1,0 +1,87 @@
+<UserControl x:Class="GeorgiaERP.Desktop.Views.Finance.FinanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded">
+
+    <DockPanel Margin="24,16">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+            <TextBlock Text="Finance" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+            <Button Content="Refresh" Style="{StaticResource PrimaryButton}"
+                    Command="{Binding LoadCommand}" HorizontalAlignment="Right" />
+        </DockPanel>
+
+        <!-- Tabs -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+            <RadioButton Content="Chart of Accounts" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Accounts}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="Accounts" />
+            <RadioButton Content="Journal Entries" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=JournalEntries}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="JournalEntries" />
+            <RadioButton Content="Bank Accounts" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=BankAccounts}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="BankAccounts" />
+        </StackPanel>
+
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3"
+                     Foreground="{StaticResource PrimaryBrush}"
+                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+        <!-- Chart of Accounts -->
+        <Border Style="{StaticResource Card}" Padding="0"
+                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Accounts}">
+            <DataGrid Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding Accounts}"
+                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                      RowStyle="{StaticResource ModernDataGridRow}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="100" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="Type" Binding="{Binding AccountType}" Width="120" />
+                    <DataGridCheckBoxColumn Header="System" Binding="{Binding IsSystem}" Width="60" />
+                    <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="60" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Journal Entries -->
+        <Border Style="{StaticResource Card}" Padding="0"
+                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=JournalEntries}">
+            <DataGrid Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding JournalEntries}"
+                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                      RowStyle="{StaticResource ModernDataGridRow}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Entry #" Binding="{Binding EntryNumber}" Width="120" />
+                    <DataGridTextColumn Header="Date" Binding="{Binding EntryDate, StringFormat=d}" Width="100" />
+                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" />
+                    <DataGridTextColumn Header="Debit" Binding="{Binding TotalDebit, StringFormat=N2}" Width="100" />
+                    <DataGridTextColumn Header="Credit" Binding="{Binding TotalCredit, StringFormat=N2}" Width="100" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Bank Accounts -->
+        <Border Style="{StaticResource Card}" Padding="0"
+                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=BankAccounts}">
+            <DataGrid Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding BankAccounts}"
+                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                      RowStyle="{StaticResource ModernDataGridRow}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="Bank" Binding="{Binding BankName}" Width="150" />
+                    <DataGridTextColumn Header="Account #" Binding="{Binding AccountNumber}" Width="150" />
+                    <DataGridTextColumn Header="IBAN" Binding="{Binding Iban}" Width="200" />
+                    <DataGridTextColumn Header="Balance" Binding="{Binding Balance, StringFormat=N2}" Width="120" />
+                    <DataGridTextColumn Header="Currency" Binding="{Binding Currency}" Width="70" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </DockPanel>
+</UserControl>

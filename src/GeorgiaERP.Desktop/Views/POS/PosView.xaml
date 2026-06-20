@@ -1,0 +1,132 @@
+<UserControl x:Class="GeorgiaERP.Desktop.Views.POS.PosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="24,16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="340" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: Cart -->
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="Point of Sale" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16" />
+
+            <!-- Barcode scanner -->
+            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,16,12" Padding="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Style="{StaticResource ModernTextBox}"
+                             Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}"
+                             x:Name="BarcodeBox"
+                             KeyDown="OnBarcodeKeyDown" />
+                    <Button Grid.Column="1" Content="Add"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding ScanBarcodeCommand}"
+                            Margin="8,0,0,0" />
+                </Grid>
+            </Border>
+
+            <!-- Cart items -->
+            <Border Style="{StaticResource Card}" Margin="0,0,16,0" Padding="0">
+                <DataGrid Style="{StaticResource ModernDataGrid}"
+                          ItemsSource="{Binding CartItems}"
+                          ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                          RowStyle="{StaticResource ModernDataGridRow}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                        <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="90" />
+                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="60" />
+                        <DataGridTextColumn Header="Discount" Binding="{Binding DiscountAmount, StringFormat=N2}" Width="80" />
+                        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="100" />
+                        <DataGridTemplateColumn Width="60">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="X"
+                                            Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Foreground="{StaticResource DangerBrush}"
+                                            Background="Transparent" BorderThickness="0"
+                                            Cursor="Hand" FontWeight="Bold" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </DockPanel>
+
+        <!-- Right: Payment panel -->
+        <Border Grid.Column="1" Style="{StaticResource Card}">
+            <StackPanel>
+                <TextBlock Text="Payment" FontSize="18" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20" />
+
+                <!-- Totals -->
+                <Grid Margin="0,0,0,6">
+                    <TextBlock Text="Subtotal" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding SubTotal, StringFormat=N2}" HorizontalAlignment="Right" />
+                </Grid>
+                <Grid Margin="0,0,0,6">
+                    <TextBlock Text="VAT (18%)" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding TotalVat, StringFormat=N2}" HorizontalAlignment="Right" />
+                </Grid>
+                <Grid Margin="0,0,0,6">
+                    <TextBlock Text="Discount" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding TotalDiscount, StringFormat=N2}" HorizontalAlignment="Right" />
+                </Grid>
+
+                <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+
+                <Grid Margin="0,0,0,20">
+                    <TextBlock Text="TOTAL" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBlock Text="{Binding GrandTotal, StringFormat=N2}" FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Right" />
+                </Grid>
+
+                <!-- Payment method -->
+                <TextBlock Text="Payment Method" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <ComboBox ItemsSource="{Binding PaymentMethods}"
+                          SelectedItem="{Binding SelectedPaymentMethod}"
+                          Margin="0,0,0,16" Padding="8,6" />
+
+                <!-- Cash received -->
+                <TextBlock Text="Cash Received" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <TextBox Style="{StaticResource ModernTextBox}"
+                         Text="{Binding CashReceived, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,8" />
+
+                <Grid Margin="0,0,0,20">
+                    <TextBlock Text="Change" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding ChangeAmount, StringFormat=N2}" FontWeight="Bold"
+                               Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Right" />
+                </Grid>
+
+                <!-- Action buttons -->
+                <Button Content="Complete Sale"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding CompleteSaleCommand}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,8" />
+                <Button Content="Clear Cart"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ClearCartCommand}"
+                        HorizontalAlignment="Stretch" />
+
+                <!-- Messages -->
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                           Margin="0,12,0,0"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+                <TextBlock Text="{Binding SuccessMessage}"
+                           Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap"
+                           Margin="0,12,0,0"
+                           Visibility="{Binding SuccessMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

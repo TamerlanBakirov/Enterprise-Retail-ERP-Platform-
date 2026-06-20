@@ -1,0 +1,93 @@
+<UserControl x:Class="GeorgiaERP.Desktop.Views.Inventory.InventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded">
+
+    <DockPanel Margin="24,16">
+        <!-- Header -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+            <TextBlock Text="Inventory" FontSize="22" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ComboBox ItemsSource="{Binding Warehouses}" DisplayMemberPath="Name"
+                          SelectedItem="{Binding SelectedWarehouse}" Width="200" Padding="8,6" Margin="0,0,8,0" />
+                <CheckBox Content="Low Stock Only" IsChecked="{Binding LowStockOnly}"
+                          VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button Content="Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding LoadCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Tabs -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+            <RadioButton Content="Stock Levels" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=StockLevels}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="StockLevels" />
+            <RadioButton Content="Movements" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Movements}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="Movements" />
+            <RadioButton Content="Transfers" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Transfers}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="Transfers" />
+        </StackPanel>
+
+        <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3"
+                     Foreground="{StaticResource PrimaryBrush}"
+                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+        <!-- Stock Levels -->
+        <Border Style="{StaticResource Card}" Padding="0"
+                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=StockLevels}">
+            <DataGrid Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding StockLevels}"
+                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                      RowStyle="{StaticResource ModernDataGridRow}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="SKU" Binding="{Binding Sku}" Width="100" />
+                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                    <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="140" />
+                    <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, StringFormat=N2}" Width="100" />
+                    <DataGridTextColumn Header="Reorder Pt" Binding="{Binding ReorderPoint, StringFormat=N0}" Width="90" />
+                    <DataGridCheckBoxColumn Header="Low" Binding="{Binding IsLowStock}" Width="50" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Movements -->
+        <Border Style="{StaticResource Card}" Padding="0"
+                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Movements}">
+            <DataGrid Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding Movements}"
+                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                      RowStyle="{StaticResource ModernDataGridRow}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=g}" Width="140" />
+                    <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                    <DataGridTextColumn Header="Type" Binding="{Binding MovementType}" Width="100" />
+                    <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, StringFormat=N2}" Width="100" />
+                    <DataGridTextColumn Header="Reference" Binding="{Binding Reference}" Width="150" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Transfers -->
+        <Border Style="{StaticResource Card}" Padding="0"
+                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Transfers}">
+            <DataGrid Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding Transfers}"
+                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                      RowStyle="{StaticResource ModernDataGridRow}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Transfer #" Binding="{Binding TransferNumber}" Width="130" />
+                    <DataGridTextColumn Header="From" Binding="{Binding SourceWarehouseName}" Width="*" />
+                    <DataGridTextColumn Header="To" Binding="{Binding DestinationWarehouseName}" Width="*" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                    <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=d}" Width="100" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </DockPanel>
+</UserControl>
