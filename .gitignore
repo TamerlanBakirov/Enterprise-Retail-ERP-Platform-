@@ -33,6 +33,9 @@ Thumbs.db
 ## Docker
 docker/postgres_data/
 
+## Test
+TestResults/
+
 ## Logs
 logs/
 *.log
