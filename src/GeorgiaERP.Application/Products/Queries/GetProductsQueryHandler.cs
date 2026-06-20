@@ -40,6 +40,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
             .OrderBy(p => p.Name)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
+            .AsSplitQuery()
             .Select(p => new ProductDto(
                 p.Id,
                 p.Sku,
@@ -58,7 +59,6 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
                 p.CreatedAt,
                 p.Barcodes.Select(b => new ProductBarcodeDto(b.Id, b.Barcode, b.BarcodeType.ToString(), b.IsPrimary)).ToList(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.Name, v.Attributes, v.IsActive)).ToList()))
-            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
         return new PagedResult<ProductDto>
@@ -85,6 +85,7 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
         return await _dbContext.Products
             .AsNoTracking()
             .Where(p => p.Id == request.Id)
+            .AsSplitQuery()
             .Select(p => new ProductDto(
                 p.Id,
                 p.Sku,
@@ -103,7 +104,6 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
                 p.CreatedAt,
                 p.Barcodes.Select(b => new ProductBarcodeDto(b.Id, b.Barcode, b.BarcodeType.ToString(), b.IsPrimary)).ToList(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.Name, v.Attributes, v.IsActive)).ToList()))
-            .AsSplitQuery()
             .FirstOrDefaultAsync(cancellationToken);
     }
 }
