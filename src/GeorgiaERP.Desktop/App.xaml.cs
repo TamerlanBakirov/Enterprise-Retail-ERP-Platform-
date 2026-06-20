@@ -12,27 +12,37 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        base.OnStartup(e);
+
         var services = new ServiceCollection();
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
-        var licenseService = Services.GetRequiredService<ILicenseService>();
-        var licenseInfo = await licenseService.GetStatusAsync();
-
-        if (licenseInfo is null || !licenseInfo.IsValid)
+        try
         {
-            var activationWindow = new LicenseActivationWindow();
-            activationWindow.Show();
-            MainWindow = activationWindow;
-        }
-        else
-        {
-            var loginWindow = new LoginWindow();
-            loginWindow.Show();
-            MainWindow = loginWindow;
-        }
+            var licenseService = Services.GetRequiredService<ILicenseService>();
+            var licenseInfo = await licenseService.GetStatusAsync();
 
-        base.OnStartup(e);
+            if (licenseInfo is null || !licenseInfo.IsValid)
+            {
+                var activationWindow = new LicenseActivationWindow();
+                activationWindow.Show();
+                MainWindow = activationWindow;
+            }
+            else
+            {
+                var loginWindow = new LoginWindow();
+                loginWindow.Show();
+                MainWindow = loginWindow;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Failed to start: {ex.Message}\n\nPlease check that the API server is running.",
+                "Georgia ERP", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
     }
 
     private static void ConfigureServices(IServiceCollection services)

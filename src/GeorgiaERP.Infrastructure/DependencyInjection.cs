@@ -39,6 +39,8 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
 
         services.AddSingleton<IPasswordService, PasswordService>();
+        services.AddSingleton<ITotpVerifier, TotpVerifier>();
+        services.AddSingleton<ITotpSecretProtector, AesTotpSecretProtector>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
 
@@ -57,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<IRsGeSubmissionProcessor, RsGeSubmissionProcessor>();
 
         services.AddScoped<ILicenseValidator, LocalLicenseValidator>();
+        services.AddSingleton<ILicenseKeyValidator, HmacLicenseKeyValidator>();
         services.AddSingleton<IMachineIdProvider, MachineIdProviderService>();
 
         return services;
@@ -72,6 +75,8 @@ public static class DependencyInjection
     {
         var jwtSecretKey = configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("Jwt:SecretKey is not configured.");
+        if (jwtSecretKey.Length < 32 || jwtSecretKey.Contains("${", StringComparison.Ordinal))
+            throw new InvalidOperationException("Jwt:SecretKey must be a resolved secret containing at least 32 characters.");
 
         services.AddAuthentication(options =>
         {

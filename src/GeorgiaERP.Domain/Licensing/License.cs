@@ -49,7 +49,16 @@ public class License : BaseEntity
     public void RecordCheck() => LastCheckedAt = DateTimeOffset.UtcNow;
     public void Suspend() => Status = LicenseStatus.Suspended;
     public void Revoke() => Status = LicenseStatus.Revoked;
-    public void Renew(DateTimeOffset newExpiry) { ExpiresAt = newExpiry; Status = LicenseStatus.Active; }
+    public void Renew(string newLicenseKey, DateTimeOffset newExpiry, int maxUsers, int maxStores)
+    {
+        if (newExpiry <= ExpiresAt)
+            throw new InvalidOperationException("A renewal must extend the current expiry date.");
+        LicenseKey = newLicenseKey;
+        ExpiresAt = newExpiry;
+        MaxUsers = maxUsers;
+        MaxStores = maxStores;
+        Status = LicenseStatus.Active;
+    }
     public void SetContactEmail(string email) => ContactEmail = email;
     public void SetFeatures(string features) => Features = features;
 }

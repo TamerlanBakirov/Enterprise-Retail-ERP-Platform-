@@ -95,7 +95,7 @@ public class RsGeRecoveryWorker : BackgroundService
 
         foreach (var doc in stuck)
         {
-            var operation = doc.DocumentType == FiscalDocumentType.Invoice
+            var operation = doc.DocumentType is FiscalDocumentType.Invoice or FiscalDocumentType.FiscalReceipt
                 ? RsGeOperation.SubmitInvoice
                 : RsGeOperation.SubmitWaybill;
 

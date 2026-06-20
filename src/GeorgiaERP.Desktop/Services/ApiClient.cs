@@ -30,7 +30,7 @@ public class ApiClient : IApiClient
     {
         var client = CreateClient();
         var response = await client.GetAsync(endpoint, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode) return default;
         return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
     }
 
@@ -38,7 +38,7 @@ public class ApiClient : IApiClient
     {
         var client = CreateClient();
         var response = await client.PostAsJsonAsync(endpoint, body, JsonOptions, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode) return default;
         return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, ct);
     }
 

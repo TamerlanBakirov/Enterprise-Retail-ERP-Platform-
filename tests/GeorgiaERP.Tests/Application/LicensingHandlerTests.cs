@@ -9,6 +9,12 @@ namespace GeorgiaERP.Tests.Application;
 
 public class LicensingHandlerTests
 {
+    private sealed class FakeLicenseKeyValidator : ILicenseKeyValidator
+    {
+        public LicenseKeyValidationResult Validate(string key) => string.IsNullOrWhiteSpace(key)
+            ? LicenseKeyValidationResult.Invalid("Missing key")
+            : new(true, "Acme LLC", DateTimeOffset.UtcNow.AddYears(1), 5, 1, null);
+    }
     private sealed class FakeMachineIdProvider : IMachineIdProvider
     {
         private readonly string _id;
@@ -25,7 +31,7 @@ public class LicensingHandlerTests
     public async Task Activate_CreatesActiveLicense_ForOneYear()
     {
         await using var db = NewContext();
-        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"));
+        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"), new FakeLicenseKeyValidator());
 
         var result = await handler.Handle(
             new ActivateLicenseCommand("KEY-1", "Acme LLC", "owner@acme.ge"),
@@ -44,7 +50,7 @@ public class LicensingHandlerTests
     public async Task Activate_Fails_WhenLicenseKeyMissing()
     {
         await using var db = NewContext();
-        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"));
+        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"), new FakeLicenseKeyValidator());
 
         var result = await handler.Handle(
             new ActivateLicenseCommand("", "Acme LLC", null),
@@ -60,9 +66,9 @@ public class LicensingHandlerTests
         db.Licenses.Add(License.Create("KEY-OLD", "Existing Co", "MID-1", DateTimeOffset.UtcNow.AddMonths(6)));
         await db.SaveChangesAsync();
 
-        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"));
+        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"), new FakeLicenseKeyValidator());
         var result = await handler.Handle(
-            new ActivateLicenseCommand("KEY-NEW", "New Co", null),
+            new ActivateLicenseCommand("KEY-NEW", "Acme LLC", null),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -77,7 +83,7 @@ public class LicensingHandlerTests
         db.Licenses.Add(License.Create("KEY-1", "Acme LLC", "OTHER-MACHINE", DateTimeOffset.UtcNow.AddYears(1)));
         await db.SaveChangesAsync();
 
-        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"));
+        var handler = new ActivateLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"), new FakeLicenseKeyValidator());
         var result = await handler.Handle(
             new ActivateLicenseCommand("KEY-1", "Acme LLC", null),
             CancellationToken.None);
@@ -94,7 +100,7 @@ public class LicensingHandlerTests
         db.Licenses.Add(license);
         await db.SaveChangesAsync();
 
-        var handler = new RenewLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"));
+        var handler = new RenewLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"), new FakeLicenseKeyValidator());
         var result = await handler.Handle(new RenewLicenseCommand("KEY-1"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -106,7 +112,7 @@ public class LicensingHandlerTests
     public async Task Renew_Fails_WhenLicenseNotFound()
     {
         await using var db = NewContext();
-        var handler = new RenewLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"));
+        var handler = new RenewLicenseCommandHandler(db, new FakeMachineIdProvider("MID-1"), new FakeLicenseKeyValidator());
 
         var result = await handler.Handle(new RenewLicenseCommand("MISSING"), CancellationToken.None);
 

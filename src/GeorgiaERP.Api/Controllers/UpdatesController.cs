@@ -17,12 +17,14 @@ public class UpdatesController : ControllerBase
         var version = _configuration["App:LatestVersion"] ?? "1.0.0";
         var downloadUrl = _configuration["App:DownloadUrl"];
         var releaseNotes = _configuration["App:ReleaseNotes"];
+        var sha256 = _configuration["App:Sha256"];
 
         return Ok(new
         {
             version,
             downloadUrl,
             releaseNotes,
+            sha256,
             fileSize = 0L
         });
     }

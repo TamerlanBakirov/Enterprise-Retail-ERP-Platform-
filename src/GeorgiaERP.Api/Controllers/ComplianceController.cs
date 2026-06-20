@@ -202,4 +202,43 @@ public class ComplianceController : ApiControllerBase
             Currency = "GEL"
         });
     }
+
+    [HttpGet("deadlines")]
+    public async Task<IActionResult> GetSubmissionDeadlines([FromQuery] int warningDays = 7)
+    {
+        warningDays = Math.Clamp(warningDays, 1, 30);
+        var now = DateTimeOffset.UtcNow;
+        var warningCutoff = now.AddDays(warningDays);
+        var pendingStatuses = new[]
+        {
+            Domain.Compliance.FiscalDocumentStatus.Pending,
+            Domain.Compliance.FiscalDocumentStatus.Queued,
+            Domain.Compliance.FiscalDocumentStatus.Failed
+        };
+
+        var atRisk = await _dbContext.FiscalDocuments
+            .Where(d => d.SubmissionDeadline != null && pendingStatuses.Contains(d.Status) &&
+                        d.SubmissionDeadline <= warningCutoff)
+            .OrderBy(d => d.SubmissionDeadline)
+            .Select(d => new
+            {
+                d.Id,
+                Type = d.DocumentType.ToString(),
+                d.InternalRef,
+                Status = d.Status.ToString(),
+                Deadline = d.SubmissionDeadline,
+                IsOverdue = d.SubmissionDeadline < now,
+                d.LastError
+            })
+            .Take(200)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            CheckedAt = now,
+            OverdueCount = atRisk.Count(d => d.IsOverdue),
+            DueSoonCount = atRisk.Count(d => !d.IsOverdue),
+            Documents = atRisk
+        });
+    }
 }

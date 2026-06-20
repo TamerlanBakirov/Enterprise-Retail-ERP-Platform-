@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace GeorgiaERP.Desktop.Services;
 
 public interface ISettingsService
@@ -14,7 +16,7 @@ public class SettingsService : ISettingsService
 {
     private readonly string _settingsPath;
 
-    public string ApiBaseUrl { get; set; } = "http://localhost:5000/api/v1/";
+    public string ApiBaseUrl { get; set; } = "http://localhost:5262/api/v1/";
     public string? AccessToken { get; set; }
     public string? RefreshToken { get; set; }
     public string Language { get; set; } = "ka";

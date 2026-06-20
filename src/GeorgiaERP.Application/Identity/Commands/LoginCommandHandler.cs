@@ -21,6 +21,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
         var authResult = await _authService.LoginAsync(
             request.Username,
             request.Password,
+            request.TwoFactorCode,
             request.IpAddress,
             request.DeviceInfo);
 

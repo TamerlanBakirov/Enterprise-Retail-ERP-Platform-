@@ -32,7 +32,10 @@ public static class SeedData
     private static async Task SeedRolesAndPermissionsAsync(AppDbContext dbContext)
     {
         if (await dbContext.Roles.AnyAsync())
+        {
+            await ReconcileSystemRolePermissionsAsync(dbContext);
             return;
+        }
 
         var modules = new[] { "identity", "products", "inventory", "pos", "procurement", "compliance", "finance", "crm", "organization", "reports" };
         var actions = new[] { "read", "create", "update", "delete", "manage" };
@@ -74,7 +77,7 @@ public static class SeedData
 
         var cashierRole = roles[3];
         var cashierPermissions = permissions.Where(p =>
-            p.Module is "pos" or "products" or "inventory" && p.Action is "read" or "create").ToList();
+            (p.Module is "pos" or "products" or "inventory") && p.Action is "read" or "create").ToList();
         foreach (var p in cashierPermissions)
         {
             dbContext.RolePermissions.Add(RolePermission.Create(cashierRole.Id, p.Id));
@@ -88,7 +91,48 @@ public static class SeedData
         }
 
         await dbContext.SaveChangesAsync();
+        await ReconcileSystemRolePermissionsAsync(dbContext);
     }
+
+    private static async Task ReconcileSystemRolePermissionsAsync(AppDbContext dbContext)
+    {
+        var roles = await dbContext.Roles.Where(r => r.IsSystem).ToListAsync();
+        var permissions = await dbContext.Permissions.ToListAsync();
+        var roleIds = roles.Select(r => r.Id).ToList();
+        var existing = await dbContext.RolePermissions.Where(rp => roleIds.Contains(rp.RoleId)).ToListAsync();
+
+        foreach (var role in roles)
+        {
+            var desiredIds = permissions
+                .Where(permission => IsPermissionAllowed(role.Code, permission.Module, permission.Action))
+                .Select(permission => permission.Id)
+                .ToHashSet();
+            var current = existing.Where(rp => rp.RoleId == role.Id).ToList();
+
+            dbContext.RolePermissions.RemoveRange(current.Where(rp => !desiredIds.Contains(rp.PermissionId)));
+            var currentIds = current.Select(rp => rp.PermissionId).ToHashSet();
+            dbContext.RolePermissions.AddRange(desiredIds
+                .Where(id => !currentIds.Contains(id))
+                .Select(id => RolePermission.Create(role.Id, id)));
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static bool IsPermissionAllowed(string role, string module, string action) => role switch
+    {
+        "super_admin" or "company_admin" => true,
+        "store_manager" => module is "products" or "inventory" or "pos" or "crm" or "organization" or "reports",
+        "cashier" => (module == "pos" && action is "read" or "create" or "manage") ||
+                     (module is "products" or "inventory" && action == "read") ||
+                     (module == "crm" && action is "read" or "create"),
+        "warehouse_manager" => module is "products" or "inventory" && action is "read" or "create" or "update" or "manage",
+        "accountant" => module is "finance" or "compliance" or "reports" && action is not "delete",
+        "procurement_officer" => module is "procurement" or "products" or "inventory" && action is not "delete",
+        "inventory_clerk" => module is "inventory" or "products" && action is "read" or "create" or "update",
+        "auditor" or "viewer" => action == "read",
+        _ => false
+    };
 
     private static async Task SeedAdminUserAsync(AppDbContext dbContext, IPasswordService passwordService)
     {

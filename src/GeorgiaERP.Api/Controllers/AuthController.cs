@@ -51,8 +51,10 @@ public class AuthController : ApiControllerBase
 
     [Authorize]
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
     {
+        var result = await _mediator.Send(new RevokeRefreshTokenCommand(request.RefreshToken));
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
         return Ok(new { message = "Logged out successfully" });
     }
 
@@ -68,4 +70,30 @@ public class AuthController : ApiControllerBase
             Claims = claims
         });
     }
+
+    [Authorize]
+    [HttpPost("2fa/setup")]
+    public async Task<IActionResult> BeginTwoFactorSetup()
+    {
+        var result = await _mediator.Send(new BeginTwoFactorSetupCommand(CurrentUserId));
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    [Authorize]
+    [HttpPost("2fa/confirm")]
+    public async Task<IActionResult> ConfirmTwoFactorSetup([FromBody] TwoFactorCodeRequest request)
+    {
+        var result = await _mediator.Send(new ConfirmTwoFactorSetupCommand(CurrentUserId, request.Code));
+        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+    }
+
+    [Authorize]
+    [HttpPost("2fa/disable")]
+    public async Task<IActionResult> DisableTwoFactor([FromBody] TwoFactorCodeRequest request)
+    {
+        var result = await _mediator.Send(new DisableTwoFactorCommand(CurrentUserId, request.Code));
+        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+    }
+
+    public record TwoFactorCodeRequest(string Code);
 }

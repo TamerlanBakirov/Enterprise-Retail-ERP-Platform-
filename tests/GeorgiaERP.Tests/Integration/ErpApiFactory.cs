@@ -25,7 +25,8 @@ public class ErpApiFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=fake_for_test",
-                ["RsGe:Queue:HostName"] = "localhost"
+                ["RsGe:Queue:HostName"] = "localhost",
+                ["Licensing:SigningKey"] = "TEST-LICENSE-SIGNING-KEY-WITH-AT-LEAST-THIRTY-TWO-CHARS"
             });
         });
 

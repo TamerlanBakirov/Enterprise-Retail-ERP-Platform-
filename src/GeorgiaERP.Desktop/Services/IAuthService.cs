@@ -9,7 +9,7 @@ public interface IAuthService
 {
     UserInfo? CurrentUser { get; }
     bool IsLoggedIn { get; }
-    Task<(bool Success, string? Error)> LoginAsync(string username, string password);
+    Task<(bool Success, string? Error)> LoginAsync(string username, string password, string? twoFactorCode = null);
     Task LogoutAsync();
     event Action? AuthStateChanged;
 }
@@ -30,12 +30,12 @@ public class AuthService : IAuthService
         _settings = settings;
     }
 
-    public async Task<(bool Success, string? Error)> LoginAsync(string username, string password)
+    public async Task<(bool Success, string? Error)> LoginAsync(string username, string password, string? twoFactorCode = null)
     {
         try
         {
             var client = _httpClientFactory.CreateClient("api");
-            var response = await client.PostAsJsonAsync("auth/login", new LoginRequest(username, password));
+            var response = await client.PostAsJsonAsync("auth/login", new LoginRequest(username, password, twoFactorCode));
 
             if (!response.IsSuccessStatusCode)
             {
@@ -67,7 +67,8 @@ public class AuthService : IAuthService
         try
         {
             var client = _httpClientFactory.CreateClient("api-auth");
-            await client.PostAsync("auth/logout", null);
+            if (!string.IsNullOrWhiteSpace(_settings.RefreshToken))
+                await client.PostAsJsonAsync("auth/logout", new RefreshTokenRequest(_settings.RefreshToken));
         }
         catch { }
 

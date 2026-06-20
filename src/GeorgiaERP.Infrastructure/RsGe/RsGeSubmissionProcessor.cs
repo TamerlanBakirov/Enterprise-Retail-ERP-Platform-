@@ -57,8 +57,60 @@ public class RsGeSubmissionProcessor : IRsGeSubmissionProcessor
             RsGeOperation.SubmitWaybill => await SubmitWaybillAsync(document, cancellationToken),
             RsGeOperation.ConfirmWaybill => await ConfirmWaybillAsync(document, cancellationToken),
             RsGeOperation.CloseWaybill => await CloseWaybillAsync(document, cancellationToken),
+            RsGeOperation.SubmitInvoice => await SubmitInvoiceAsync(document, cancellationToken),
             _ => RsGeSubmissionResult.Permanent($"Unsupported operation {message.Operation}")
         };
+    }
+
+    private async Task<RsGeSubmissionResult> SubmitInvoiceAsync(FiscalDocument document, CancellationToken cancellationToken)
+    {
+        if (document.DocumentType is not (FiscalDocumentType.Invoice or FiscalDocumentType.FiscalReceipt))
+            return await FailPermanentAsync(document, "Document is not an invoice or fiscal receipt", cancellationToken);
+
+        InvoiceDocumentData? data;
+        try
+        {
+            data = JsonSerializer.Deserialize<InvoiceDocumentData>(document.DocumentData ?? "", JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            return await FailPermanentAsync(document, $"Invalid invoice document data: {ex.Message}", cancellationToken);
+        }
+
+        if (data is null || data.Lines.Count == 0)
+            return await FailPermanentAsync(document, "Invoice has no lines", cancellationToken);
+
+        var request = new RsGeInvoiceRequest
+        {
+            BuyerTin = data.BuyerTin ?? "",
+            BuyerName = data.BuyerName ?? "Retail customer",
+            InvoiceDate = data.InvoiceDate ?? document.CreatedAt,
+            Items = data.Lines.Select(line => new RsGeInvoiceItem(
+                line.ProductName, line.Quantity, line.UnitPrice, line.VatAmount)).ToList()
+        };
+
+        var log = StartLog(document.Id, "save_invoice", SerializeForAudit(request));
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await _soapClient.SaveInvoiceAsync(request);
+            stopwatch.Stop();
+            CompleteLog(log, SerializeForAudit(result), 200, (int)stopwatch.ElapsedMilliseconds,
+                result.Success ? null : $"{result.ErrorCode}: {result.ErrorMessage}");
+            if (!result.Success)
+                return await FailPermanentAsync(document, result.ErrorMessage, cancellationToken);
+
+            document.MarkSubmitted(result.ErrorCode, document.InternalRef);
+            document.MarkConfirmed("SUBMITTED");
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return RsGeSubmissionResult.Success(document.InternalRef);
+        }
+        catch (HttpRequestException ex)
+        {
+            stopwatch.Stop();
+            CompleteLog(log, null, 0, (int)stopwatch.ElapsedMilliseconds, ex.Message);
+            return await FailTransientAsync(document, ex.Message, cancellationToken);
+        }
     }
 
     private async Task<RsGeSubmissionResult> SubmitWaybillAsync(FiscalDocument document, CancellationToken cancellationToken)
@@ -247,4 +299,14 @@ public class RsGeSubmissionProcessor : IRsGeSubmissionProcessor
     }
 
     private static string SerializeForAudit(object value) => JsonSerializer.Serialize(value, JsonOptions);
+
+    private sealed record InvoiceDocumentData
+    {
+        public string? BuyerTin { get; init; }
+        public string? BuyerName { get; init; }
+        public DateTimeOffset? InvoiceDate { get; init; }
+        public List<InvoiceDocumentLine> Lines { get; init; } = [];
+    }
+
+    private sealed record InvoiceDocumentLine(string ProductName, decimal Quantity, decimal UnitPrice, decimal VatAmount);
 }

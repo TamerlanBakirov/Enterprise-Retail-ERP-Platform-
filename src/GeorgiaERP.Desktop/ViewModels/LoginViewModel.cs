@@ -23,7 +23,7 @@ public partial class LoginViewModel : ObservableObject
         _serverUrl = settings.ApiBaseUrl.Replace("/api/v1/", "");
     }
 
-    public async Task LoginAsync(string password)
+    public async Task LoginAsync(string password, string? twoFactorCode)
     {
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(password))
         {
@@ -39,13 +39,19 @@ public partial class LoginViewModel : ObservableObject
             if (!string.IsNullOrWhiteSpace(ServerUrl))
             {
                 var url = ServerUrl.TrimEnd('/');
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var serverUri) ||
+                    (serverUri.Scheme != Uri.UriSchemeHttps && !serverUri.IsLoopback))
+                {
+                    ErrorMessage = "Remote servers must use HTTPS";
+                    return;
+                }
                 if (!url.EndsWith("/api/v1")) url += "/api/v1/";
                 else url += "/";
                 _settings.ApiBaseUrl = url;
                 _settings.Save();
             }
 
-            var (success, error) = await _authService.LoginAsync(Username, password);
+            var (success, error) = await _authService.LoginAsync(Username, password, twoFactorCode);
             if (success)
             {
                 var mainWindow = new MainWindow();

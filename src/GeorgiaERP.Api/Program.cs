@@ -29,7 +29,8 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
-    builder.Services.AddControllers();
+    builder.Services.AddControllers(options =>
+        options.Filters.Add<GeorgiaERP.Api.Middleware.PermissionAuthorizationFilter>());
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {

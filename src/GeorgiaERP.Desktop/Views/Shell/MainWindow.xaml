@@ -122,15 +122,19 @@
         <!-- Content area -->
         <Border Grid.Column="1" Background="{StaticResource ContentBgBrush}">
             <Grid>
-                <dashboard:DashboardView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}" />
-                <pos:PosView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}" />
-                <products:ProductsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}" />
-                <inventory:InventoryView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}" />
-                <customers:CustomersView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
-                <procurement:ProcurementView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
-                <finance:FinanceView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
-                <reports:ReportsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
-                <settings:SettingsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
+                <!-- Each view sets its own DataContext (its ViewModel), so the visibility
+                     binding must reach up to the Window's DataContext (MainViewModel) to
+                     read CurrentView; otherwise the binding fails and every view stays
+                     Visible, stacking on top of each other. -->
+                <dashboard:DashboardView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}" />
+                <pos:PosView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}" />
+                <products:ProductsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}" />
+                <inventory:InventoryView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}" />
+                <customers:CustomersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
+                <procurement:ProcurementView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
+                <finance:FinanceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
+                <reports:ReportsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
+                <settings:SettingsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
             </Grid>
         </Border>
     </Grid>

@@ -40,12 +40,13 @@ services:
     container_name: georgia-erp-api
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=erp_dev_password"
-      RabbitMq__Host: rabbitmq
-      RabbitMq__Username: erp_user
-      RabbitMq__Password: erp_dev_password
+      RsGe__Queue__HostName: rabbitmq
+      RsGe__Queue__UserName: erp_user
+      RsGe__Queue__Password: erp_dev_password
       Jwt__SecretKey: "dev-secret-key-change-in-production-min-32-chars!"
       Jwt__Issuer: GeorgiaERP
       Jwt__Audience: GeorgiaERP.Client
+      Licensing__SigningKey: "DEVELOPMENT-ONLY-LICENSE-SIGNING-KEY-CHANGE-IN-PRODUCTION-64-CHARS"
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: Development
     ports:
@@ -63,9 +64,9 @@ services:
     container_name: georgia-erp-workers
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=erp_dev_password"
-      RabbitMq__Host: rabbitmq
-      RabbitMq__Username: erp_user
-      RabbitMq__Password: erp_dev_password
+      RsGe__Queue__HostName: rabbitmq
+      RsGe__Queue__UserName: erp_user
+      RsGe__Queue__Password: erp_dev_password
     depends_on:
       postgres:
         condition: service_healthy

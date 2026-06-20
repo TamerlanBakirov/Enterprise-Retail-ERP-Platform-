@@ -1,6 +1,8 @@
 using GeorgiaERP.Application.Licensing;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -18,6 +20,7 @@ public class LicenseController : ControllerBase
     }
 
     [HttpGet("status")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetStatus()
     {
         var info = await _licenseValidator.ValidateAsync();
@@ -25,6 +28,8 @@ public class LicenseController : ControllerBase
     }
 
     [HttpPost("activate")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Activate([FromBody] ActivateLicenseCommand command)
     {
         var result = await _mediator.Send(command);
@@ -32,6 +37,7 @@ public class LicenseController : ControllerBase
     }
 
     [HttpPost("deactivate")]
+    [Authorize(Roles = "super_admin,company_admin")]
     public async Task<IActionResult> Deactivate()
     {
         var result = await _mediator.Send(new DeactivateLicenseCommand());
@@ -39,6 +45,7 @@ public class LicenseController : ControllerBase
     }
 
     [HttpPost("renew")]
+    [Authorize(Roles = "super_admin,company_admin")]
     public async Task<IActionResult> Renew([FromBody] RenewLicenseCommand command)
     {
         var result = await _mediator.Send(command);
