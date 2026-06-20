@@ -56,5 +56,14 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
             .HasForeignKey(w => w.LinkedStoreId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // Linked store lookup (find warehouse for a store)
+        builder.HasIndex(w => w.LinkedStoreId)
+            .HasDatabaseName("IX_warehouses_linked_store")
+            .HasFilter("\"LinkedStoreId\" IS NOT NULL");
+
+        // Active warehouse filtering
+        builder.HasIndex(w => w.IsActive)
+            .HasDatabaseName("IX_warehouses_active");
     }
 }

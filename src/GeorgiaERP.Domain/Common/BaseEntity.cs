@@ -4,6 +4,13 @@ public abstract class BaseEntity
 {
     public Guid Id { get; private set; }
 
+    private readonly List<DomainEvent> _domainEvents = [];
+
+    /// <summary>
+    /// Domain events raised by this entity, to be dispatched after persistence.
+    /// </summary>
+    public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
     protected BaseEntity()
     {
         Id = Guid.NewGuid();
@@ -12,6 +19,22 @@ public abstract class BaseEntity
     protected BaseEntity(Guid id)
     {
         Id = id;
+    }
+
+    /// <summary>
+    /// Raises a domain event that will be dispatched after the entity is persisted.
+    /// </summary>
+    protected void RaiseDomainEvent(DomainEvent domainEvent)
+    {
+        _domainEvents.Add(domainEvent);
+    }
+
+    /// <summary>
+    /// Clears all pending domain events. Called by the infrastructure after dispatching.
+    /// </summary>
+    public void ClearDomainEvents()
+    {
+        _domainEvents.Clear();
     }
 
     public override bool Equals(object? obj)

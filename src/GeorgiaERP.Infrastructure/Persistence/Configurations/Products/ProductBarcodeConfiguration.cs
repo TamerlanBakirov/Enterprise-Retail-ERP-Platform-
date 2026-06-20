@@ -40,5 +40,9 @@ public class ProductBarcodeConfiguration : IEntityTypeConfiguration<ProductBarco
             .HasForeignKey(b => b.VariantId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // FK index for product barcode lookups
+        builder.HasIndex(b => b.ProductId)
+            .HasDatabaseName("IX_product_barcodes_product");
     }
 }

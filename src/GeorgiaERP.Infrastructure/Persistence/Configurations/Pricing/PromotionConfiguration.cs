@@ -51,5 +51,9 @@ public class PromotionConfiguration : IEntityTypeConfiguration<Promotion>
             .HasDefaultValue(0);
 
         builder.Property(p => p.CreatedAt);
+
+        // Active promotions with validity window - POS promotion lookup
+        builder.HasIndex(p => new { p.IsActive, p.ValidFrom, p.ValidTo })
+            .HasDatabaseName("IX_promotions_active_validity");
     }
 }

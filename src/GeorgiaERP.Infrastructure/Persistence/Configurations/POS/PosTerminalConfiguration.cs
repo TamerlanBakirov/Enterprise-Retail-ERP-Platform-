@@ -39,5 +39,9 @@ public class PosTerminalConfiguration : IEntityTypeConfiguration<PosTerminal>
         builder.HasMany(t => t.Sessions)
             .WithOne(s => s.Terminal)
             .HasForeignKey(s => s.TerminalId);
+
+        // FK index for store terminal lookups
+        builder.HasIndex(t => t.StoreId)
+            .HasDatabaseName("IX_pos_terminals_store");
     }
 }

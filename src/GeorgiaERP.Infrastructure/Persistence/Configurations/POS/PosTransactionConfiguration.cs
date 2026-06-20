@@ -70,6 +70,25 @@ public class PosTransactionConfiguration : IEntityTypeConfiguration<PosTransacti
             .WithOne(p => p.Transaction)
             .HasForeignKey(p => p.TransactionId);
 
-        builder.HasIndex(t => new { t.StoreId, t.CreatedAt });
+        // Composite index for store-level date queries (sales reports, daily closings)
+        builder.HasIndex(t => new { t.StoreId, t.CreatedAt })
+            .HasDatabaseName("IX_pos_transactions_store_date");
+
+        // Session lookup - high-frequency join from POS session detail views
+        builder.HasIndex(t => t.SessionId)
+            .HasDatabaseName("IX_pos_transactions_session");
+
+        // Status filter - used for pending/voided transaction queries
+        builder.HasIndex(t => t.Status)
+            .HasDatabaseName("IX_pos_transactions_status");
+
+        // Date range queries - sales reports, compliance reporting
+        builder.HasIndex(t => t.CreatedAt)
+            .HasDatabaseName("IX_pos_transactions_created_at");
+
+        // Customer purchase history lookups
+        builder.HasIndex(t => t.CustomerId)
+            .HasDatabaseName("IX_pos_transactions_customer")
+            .HasFilter("\"CustomerId\" IS NOT NULL");
     }
 }

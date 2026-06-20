@@ -11,6 +11,7 @@ using GeorgiaERP.Domain.POS;
 using GeorgiaERP.Domain.Pricing;
 using GeorgiaERP.Domain.Procurement;
 using GeorgiaERP.Domain.Products;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Infrastructure.Persistence;
@@ -18,10 +19,12 @@ namespace GeorgiaERP.Infrastructure.Persistence;
 public class AppDbContext : DbContext, IAppDbContext
 {
     private readonly string _schema;
+    private readonly IMediator? _mediator;
 
-    public AppDbContext(DbContextOptions<AppDbContext> options, string schema = "public")
+    public AppDbContext(DbContextOptions<AppDbContext> options, IMediator? mediator = null, string schema = "public")
         : base(options)
     {
+        _mediator = mediator;
         _schema = schema;
     }
 
@@ -140,6 +143,32 @@ public class AppDbContext : DbContext, IAppDbContext
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        // Collect domain events before saving so they survive the Clear below.
+        var entitiesWithEvents = ChangeTracker.Entries<BaseEntity>()
+            .Where(e => e.Entity.DomainEvents.Count > 0)
+            .Select(e => e.Entity)
+            .ToList();
+
+        var domainEvents = entitiesWithEvents
+            .SelectMany(e => e.DomainEvents)
+            .ToList();
+
+        // Clear events before dispatching to prevent re-entrancy issues
+        // if a handler triggers another SaveChangesAsync call.
+        foreach (var entity in entitiesWithEvents)
+            entity.ClearDomainEvents();
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // Dispatch domain events after successful persistence.
+        // Events are dispatched via MediatR as INotification (the DomainEvent
+        // base record implements INotification), enabling decoupled handlers.
+        if (_mediator is not null)
+        {
+            foreach (var domainEvent in domainEvents)
+                await _mediator.Publish(domainEvent, cancellationToken);
+        }
+
+        return result;
     }
 }

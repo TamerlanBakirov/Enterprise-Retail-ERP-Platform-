@@ -46,5 +46,17 @@ public class GoodsReceiptLineConfiguration : IEntityTypeConfiguration<GoodsRecei
             .WithMany()
             .HasForeignKey(g => g.PoLineId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // FK index for GRN line lookups
+        builder.HasIndex(g => g.GrnId)
+            .HasDatabaseName("IX_goods_receipt_lines_grn");
+
+        // FK index for PO line receipt tracking
+        builder.HasIndex(g => g.PoLineId)
+            .HasDatabaseName("IX_goods_receipt_lines_po_line");
+
+        // Product receipt tracking
+        builder.HasIndex(g => g.ProductId)
+            .HasDatabaseName("IX_goods_receipt_lines_product");
     }
 }

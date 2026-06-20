@@ -10,6 +10,7 @@
         xmlns:finance="clr-namespace:GeorgiaERP.Desktop.Views.Finance"
         xmlns:reports="clr-namespace:GeorgiaERP.Desktop.Views.Reports"
         xmlns:settings="clr-namespace:GeorgiaERP.Desktop.Views.Settings"
+        xmlns:admin="clr-namespace:GeorgiaERP.Desktop.Views.Admin"
         Title="Georgia ERP"
         Width="1400" Height="850"
         MinWidth="1100" MinHeight="650"
@@ -148,6 +149,12 @@
                         <Border Height="1" Background="#334155" Margin="16,12" />
 
                         <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Users"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Users}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Users" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
                                      Content="Settings"
                                      IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}"
                                      Command="{Binding NavigateCommand}"
@@ -168,6 +175,7 @@
                 <procurement:ProcurementView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
                 <finance:FinanceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
                 <reports:ReportsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
+                <admin:UsersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Users}" />
                 <settings:SettingsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
             </Grid>
         </Border>

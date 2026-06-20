@@ -36,6 +36,12 @@ public class LoyaltyTransactionConfiguration : IEntityTypeConfiguration<LoyaltyT
             .HasForeignKey(l => l.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(l => new { l.CustomerId, l.CreatedAt });
+        // Composite for customer loyalty history ordered by date
+        builder.HasIndex(l => new { l.CustomerId, l.CreatedAt })
+            .HasDatabaseName("IX_loyalty_transactions_customer_date");
+
+        // Transaction type filtering (EARN, REDEEM, etc.)
+        builder.HasIndex(l => l.TransactionType)
+            .HasDatabaseName("IX_loyalty_transactions_type");
     }
 }

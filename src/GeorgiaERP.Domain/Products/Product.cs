@@ -1,4 +1,5 @@
 using GeorgiaERP.Domain.Common;
+using GeorgiaERP.Domain.Products.Events;
 
 namespace GeorgiaERP.Domain.Products;
 
@@ -55,7 +56,7 @@ public class Product : AuditableEntity
         bool isBatchTracked = false,
         bool hasExpiry = false)
     {
-        return new Product
+        var product = new Product
         {
             Sku = sku,
             Name = name,
@@ -78,5 +79,16 @@ public class Product : AuditableEntity
             HasExpiry = hasExpiry,
             IsActive = true
         };
+
+        product.RaiseDomainEvent(new ProductCreatedEvent
+        {
+            ProductId = product.Id,
+            Sku = sku,
+            Name = name,
+            CategoryId = categoryId,
+            VatApplicable = vatApplicable
+        });
+
+        return product;
     }
 }

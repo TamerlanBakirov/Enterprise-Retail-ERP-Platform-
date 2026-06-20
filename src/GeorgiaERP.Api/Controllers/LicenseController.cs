@@ -1,14 +1,12 @@
 using GeorgiaERP.Application.Licensing;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
-[ApiController]
-[Route("api/v1/[controller]")]
-public class LicenseController : ControllerBase
+public class LicenseController : ApiControllerBase
 {
     private readonly ILicenseValidator _licenseValidator;
     private readonly IMediator _mediator;
@@ -33,7 +31,7 @@ public class LicenseController : ControllerBase
     public async Task<IActionResult> Activate([FromBody] ActivateLicenseCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [HttpPost("deactivate")]
@@ -41,7 +39,7 @@ public class LicenseController : ControllerBase
     public async Task<IActionResult> Deactivate()
     {
         var result = await _mediator.Send(new DeactivateLicenseCommand());
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [HttpPost("renew")]
@@ -49,6 +47,6 @@ public class LicenseController : ControllerBase
     public async Task<IActionResult> Renew([FromBody] RenewLicenseCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 }

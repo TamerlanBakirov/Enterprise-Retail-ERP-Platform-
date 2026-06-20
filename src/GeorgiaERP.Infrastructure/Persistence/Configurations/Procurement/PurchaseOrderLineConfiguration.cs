@@ -39,5 +39,13 @@ public class PurchaseOrderLineConfiguration : IEntityTypeConfiguration<PurchaseO
             .WithMany(po => po.Lines)
             .HasForeignKey(p => p.PurchaseOrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for purchase order line lookups
+        builder.HasIndex(p => p.PurchaseOrderId)
+            .HasDatabaseName("IX_purchase_order_lines_purchase_order");
+
+        // Product procurement history
+        builder.HasIndex(p => p.ProductId)
+            .HasDatabaseName("IX_purchase_order_lines_product");
     }
 }

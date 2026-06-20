@@ -8,7 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GeorgiaERP.Infrastructure.Identity;
 
-public class JwtTokenService : IJwtTokenService
+public class JwtTokenService : Application.Common.IJwtTokenService
 {
     private readonly IConfiguration _configuration;
     private readonly SymmetricSecurityKey _signingKey;

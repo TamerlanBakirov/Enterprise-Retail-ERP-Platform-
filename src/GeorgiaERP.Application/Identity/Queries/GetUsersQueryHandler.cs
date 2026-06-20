@@ -16,7 +16,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
 
     public async Task<PagedResult<UserDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Users.AsQueryable();
+        var query = _dbContext.Users.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

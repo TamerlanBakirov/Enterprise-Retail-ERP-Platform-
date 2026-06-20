@@ -46,5 +46,17 @@ public class PosSessionConfiguration : IEntityTypeConfiguration<PosSession>
         builder.HasMany(s => s.Transactions)
             .WithOne(t => t.Session)
             .HasForeignKey(t => t.SessionId);
+
+        // FK index for terminal session lookups
+        builder.HasIndex(s => s.TerminalId)
+            .HasDatabaseName("IX_pos_sessions_terminal");
+
+        // Cashier session history and audit
+        builder.HasIndex(s => s.CashierId)
+            .HasDatabaseName("IX_pos_sessions_cashier");
+
+        // Status filter for finding open/active sessions
+        builder.HasIndex(s => s.Status)
+            .HasDatabaseName("IX_pos_sessions_status");
     }
 }

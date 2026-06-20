@@ -31,7 +31,9 @@ public class CustomersController : ApiControllerBase
     public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/customers/{result.Value!.Id}", result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/customers/{result.Value!.Id}", result.Value);
     }
 
     [HttpPost("{customerId:guid}/loyalty/earn")]
@@ -39,14 +41,18 @@ public class CustomersController : ApiControllerBase
     {
         var result = await _mediator.Send(new EarnLoyaltyPointsCommand(
             customerId, request.Points, request.ReferenceType, request.ReferenceId, request.Description));
-        return result.IsSuccess ? Ok(new { balance = result.Value }) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Ok(new { balance = result.Value });
     }
 
     [HttpPost("{customerId:guid}/loyalty/redeem")]
     public async Task<IActionResult> RedeemPoints(Guid customerId, [FromBody] RedeemPointsRequest request)
     {
         var result = await _mediator.Send(new RedeemLoyaltyPointsCommand(customerId, request.Points, request.Description));
-        return result.IsSuccess ? Ok(new { balance = result.Value }) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Ok(new { balance = result.Value });
     }
 }
 

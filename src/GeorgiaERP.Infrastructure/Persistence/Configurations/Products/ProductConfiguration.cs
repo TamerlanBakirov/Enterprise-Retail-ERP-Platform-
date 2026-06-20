@@ -95,5 +95,17 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasMany(p => p.Barcodes)
             .WithOne(b => b.Product)
             .HasForeignKey(b => b.ProductId);
+
+        // Category FK index with active filter for product listings
+        builder.HasIndex(p => p.CategoryId)
+            .HasDatabaseName("IX_products_category");
+
+        // Active product filtering (most queries filter by IsActive)
+        builder.HasIndex(p => p.IsActive)
+            .HasDatabaseName("IX_products_active");
+
+        // Name search support
+        builder.HasIndex(p => p.Name)
+            .HasDatabaseName("IX_products_name");
     }
 }

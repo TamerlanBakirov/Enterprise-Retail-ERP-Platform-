@@ -3,9 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace GeorgiaERP.Api.Controllers;
 
-[ApiController]
-[Route("api/v1/[controller]")]
-public class UpdatesController : ControllerBase
+public class UpdatesController : ApiControllerBase
 {
     private readonly IConfiguration _configuration;
 
