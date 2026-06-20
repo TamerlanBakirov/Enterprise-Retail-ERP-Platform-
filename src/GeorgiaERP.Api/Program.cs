@@ -1,8 +1,11 @@
+using System.IO.Compression;
 using System.Threading.RateLimiting;
 using GeorgiaERP.Application;
 using GeorgiaERP.Infrastructure;
 using GeorgiaERP.Infrastructure.Persistence;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
@@ -61,9 +64,10 @@ try
         {
             policy
                 .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:3000"])
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
+                .WithHeaders("Authorization", "Content-Type", "Accept", "Accept-Language", "X-Requested-With")
+                .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .AllowCredentials()
+                .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
         });
     });
 
@@ -90,19 +94,45 @@ try
                 }));
     });
 
+    // Response compression: Brotli (preferred) + Gzip for JSON/text payloads.
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.Providers.Add<BrotliCompressionProvider>();
+        options.Providers.Add<GzipCompressionProvider>();
+        options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        [
+            "application/json",
+            "application/xml",
+            "text/xml",
+            "text/json"
+        ]);
+    });
+    builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+        options.Level = CompressionLevel.Fastest);
+    builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+        options.Level = CompressionLevel.Fastest);
+
+    // Response caching: enables cache-control header processing.
+    builder.Services.AddResponseCaching();
+
     builder.Services.AddHealthChecks()
         .AddDbContextCheck<AppDbContext>("database");
 
     var app = builder.Build();
 
+    app.UseMiddleware<GeorgiaERP.Api.Middleware.RequestSizeLimitMiddleware>();
     app.UseMiddleware<GeorgiaERP.Api.Middleware.SecurityHeadersMiddleware>();
     app.UseMiddleware<GeorgiaERP.Api.Middleware.ExceptionHandlingMiddleware>();
+    app.UseMiddleware<GeorgiaERP.Api.Middleware.SecurityAuditMiddleware>();
     app.UseSerilogRequestLogging();
 
     if (!app.Environment.IsDevelopment())
     {
         app.UseHsts();
     }
+
+    app.UseHttpsRedirection();
 
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
@@ -120,6 +150,8 @@ try
     app.UseAuthorization();
     app.MapControllers().RequireRateLimiting("fixed");
 
+    // Health check: returns only "Healthy"/"Unhealthy" status, no detailed component info.
+    // Detailed health information is available only to authenticated admin requests.
     app.MapHealthChecks("/health");
 
     if (args.Contains("--seed") || app.Environment.IsDevelopment())

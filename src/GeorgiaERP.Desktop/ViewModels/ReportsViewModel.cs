@@ -55,6 +55,23 @@ public partial class ReportsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void Export()
+    {
+        switch (ActiveReport)
+        {
+            case "Sales" when SalesReport is not null:
+                CsvExportService.ExportSalesReport(SalesReport);
+                break;
+            case "Stock" when StockReport is not null:
+                CsvExportService.ExportStockReport(StockReport);
+                break;
+            case "VAT" when VatReport is not null:
+                CsvExportService.ExportVatReport(VatReport);
+                break;
+        }
+    }
+
+    [RelayCommand]
     private async Task SwitchReportAsync(string report)
     {
         ActiveReport = report;

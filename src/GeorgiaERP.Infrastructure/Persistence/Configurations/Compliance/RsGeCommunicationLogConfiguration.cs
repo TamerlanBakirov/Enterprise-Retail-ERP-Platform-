@@ -38,7 +38,9 @@ public class RsGeCommunicationLogConfiguration : IEntityTypeConfiguration<RsGeCo
 
         builder.Property(c => c.CorrelationId);
 
-        builder.HasIndex(c => c.CorrelationId);
+        // Correlation ID for tracing request/response pairs
+        builder.HasIndex(c => c.CorrelationId)
+            .HasDatabaseName("IX_rsge_comm_logs_correlation");
 
         builder.Property(c => c.CreatedAt);
 
@@ -46,5 +48,21 @@ public class RsGeCommunicationLogConfiguration : IEntityTypeConfiguration<RsGeCo
             .WithMany(fd => fd.CommunicationLogs)
             .HasForeignKey(c => c.FiscalDocumentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for fiscal document communication history
+        builder.HasIndex(c => c.FiscalDocumentId)
+            .HasDatabaseName("IX_rsge_comm_logs_fiscal_document");
+
+        // Timestamp for chronological log queries and retention
+        builder.HasIndex(c => c.CreatedAt)
+            .HasDatabaseName("IX_rsge_comm_logs_created_at");
+
+        // Error investigation - find failed communications
+        builder.HasIndex(c => c.HttpStatus)
+            .HasDatabaseName("IX_rsge_comm_logs_http_status");
+
+        // Operation type filtering
+        builder.HasIndex(c => c.Operation)
+            .HasDatabaseName("IX_rsge_comm_logs_operation");
     }
 }

@@ -37,5 +37,9 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
             .WithMany(p => p.Variants)
             .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for product variant lookups
+        builder.HasIndex(v => v.ProductId)
+            .HasDatabaseName("IX_product_variants_product");
     }
 }

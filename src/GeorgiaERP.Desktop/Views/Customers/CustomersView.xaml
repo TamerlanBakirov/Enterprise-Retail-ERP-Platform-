@@ -12,6 +12,8 @@
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                 <Button Content="Search" Style="{StaticResource PrimaryButton}"
                         Command="{Binding SearchCommand}" Margin="8,0,0,0" />
+                <Button Content="+ Add Customer" Style="{StaticResource PrimaryButton}"
+                        Click="OnAddCustomer" Margin="8,0,0,0" />
             </StackPanel>
         </DockPanel>
 

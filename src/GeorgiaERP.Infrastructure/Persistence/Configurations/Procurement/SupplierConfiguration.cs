@@ -65,5 +65,14 @@ public class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.HasMany(s => s.PurchaseOrders)
             .WithOne(po => po.Supplier)
             .HasForeignKey(po => po.SupplierId);
+
+        // TIN lookup for RS.GE supplier matching
+        builder.HasIndex(s => s.Tin)
+            .HasDatabaseName("IX_suppliers_tin")
+            .HasFilter("\"Tin\" IS NOT NULL");
+
+        // Active supplier filtering
+        builder.HasIndex(s => s.IsActive)
+            .HasDatabaseName("IX_suppliers_active");
     }
 }

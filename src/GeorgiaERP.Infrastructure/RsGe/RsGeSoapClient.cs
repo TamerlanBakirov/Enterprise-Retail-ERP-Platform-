@@ -1,11 +1,12 @@
 using System.Text;
 using System.Xml.Linq;
+using GeorgiaERP.Application.Compliance;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace GeorgiaERP.Infrastructure.RsGe;
 
-public class RsGeSoapClient : IRsGeSoapClient
+public class RsGeSoapClient : Application.Compliance.IRsGeSoapClient
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
@@ -324,7 +325,9 @@ public class RsGeSoapClient : IRsGeSoapClient
 
         var xmlString = soapEnvelope.Declaration + soapEnvelope.ToString();
 
-        _logger.LogDebug("RS.GE SOAP Request [{SoapAction}]: {Request}", soapAction, xmlString);
+        // SECURITY: Log only the SOAP action, never the raw XML which contains
+        // RS.GE service credentials (<su> and <sp> elements).
+        _logger.LogDebug("RS.GE SOAP Request [{SoapAction}] sent to {Endpoint}", soapAction, _baseUrl);
 
         var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl)
         {
@@ -346,8 +349,10 @@ public class RsGeSoapClient : IRsGeSoapClient
 
         var responseContent = await response.Content.ReadAsStringAsync();
 
-        _logger.LogDebug("RS.GE SOAP Response [{SoapAction}] (HTTP {StatusCode}): {Response}",
-            soapAction, (int)response.StatusCode, responseContent);
+        // SECURITY: Do not log full response XML at Debug level; it may contain
+        // TIN numbers, buyer details, and other PII. Log only metadata.
+        _logger.LogDebug("RS.GE SOAP Response [{SoapAction}] HTTP {StatusCode}, Length={ContentLength}",
+            soapAction, (int)response.StatusCode, responseContent.Length);
 
         if (!response.IsSuccessStatusCode)
         {

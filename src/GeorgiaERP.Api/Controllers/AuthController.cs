@@ -37,6 +37,7 @@ public class AuthController : ApiControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
@@ -62,12 +63,21 @@ public class AuthController : ApiControllerBase
     [HttpGet("me")]
     public IActionResult GetCurrentUser()
     {
-        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        // SECURITY: Return only non-sensitive claim types. Never expose
+        // raw token internals, permission lists, or internal IDs that
+        // could aid privilege-escalation reconnaissance.
+        var roles = User.Claims
+            .Where(c => c.Type == "roles")
+            .Select(c => c.Value)
+            .ToList();
+
         return Ok(new
         {
             UserId = CurrentUserId,
             CompanyId = CurrentCompanyId,
-            Claims = claims
+            Username = User.FindFirst("username")?.Value,
+            Email = User.FindFirst("email")?.Value,
+            Roles = roles
         });
     }
 

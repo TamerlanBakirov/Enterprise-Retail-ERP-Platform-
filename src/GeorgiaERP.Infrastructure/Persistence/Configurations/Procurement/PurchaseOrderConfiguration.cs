@@ -60,5 +60,25 @@ public class PurchaseOrderConfiguration : IEntityTypeConfiguration<PurchaseOrder
         builder.HasMany(p => p.Lines)
             .WithOne(l => l.PurchaseOrder)
             .HasForeignKey(l => l.PurchaseOrderId);
+
+        // FK index for supplier purchase order lookups
+        builder.HasIndex(p => p.SupplierId)
+            .HasDatabaseName("IX_purchase_orders_supplier");
+
+        // FK index for warehouse purchase order lookups
+        builder.HasIndex(p => p.WarehouseId)
+            .HasDatabaseName("IX_purchase_orders_warehouse");
+
+        // Status filter for pending/approved/received orders
+        builder.HasIndex(p => p.Status)
+            .HasDatabaseName("IX_purchase_orders_status");
+
+        // Order date for procurement reports
+        builder.HasIndex(p => p.OrderDate)
+            .HasDatabaseName("IX_purchase_orders_order_date");
+
+        // Date ordering for chronological listing
+        builder.HasIndex(p => p.CreatedAt)
+            .HasDatabaseName("IX_purchase_orders_created_at");
     }
 }

@@ -46,5 +46,21 @@ public class TransferOrderConfiguration : IEntityTypeConfiguration<TransferOrder
         builder.HasMany(t => t.Lines)
             .WithOne(l => l.TransferOrder)
             .HasForeignKey(l => l.TransferOrderId);
+
+        // FK index for source warehouse transfer lookups
+        builder.HasIndex(t => t.SourceWarehouseId)
+            .HasDatabaseName("IX_transfer_orders_source_warehouse");
+
+        // FK index for destination warehouse transfer lookups
+        builder.HasIndex(t => t.DestWarehouseId)
+            .HasDatabaseName("IX_transfer_orders_dest_warehouse");
+
+        // Status filter for pending/in-transit orders
+        builder.HasIndex(t => t.Status)
+            .HasDatabaseName("IX_transfer_orders_status");
+
+        // Date ordering for transfer history
+        builder.HasIndex(t => t.CreatedAt)
+            .HasDatabaseName("IX_transfer_orders_created_at");
     }
 }

@@ -36,6 +36,11 @@ public class VatDeclarationConfiguration : IEntityTypeConfiguration<VatDeclarati
         builder.Property(v => v.CreatedAt);
 
         builder.HasIndex(v => new { v.PeriodStart, v.PeriodEnd })
-            .IsUnique();
+            .IsUnique()
+            .HasDatabaseName("IX_vat_declarations_period");
+
+        // Status filter for draft/submitted declarations
+        builder.HasIndex(v => v.Status)
+            .HasDatabaseName("IX_vat_declarations_status");
     }
 }

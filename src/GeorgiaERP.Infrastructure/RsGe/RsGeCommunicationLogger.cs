@@ -12,7 +12,7 @@ namespace GeorgiaERP.Infrastructure.RsGe;
 /// exists for fire-and-forget logging from paths that are not part of a
 /// document's submission transaction.
 /// </summary>
-public class RsGeCommunicationLogger : IRsGeCommunicationLogger
+public class RsGeCommunicationLogger : Application.Compliance.IRsGeCommunicationLogger
 {
     private readonly AppDbContext _dbContext;
     private readonly ILogger<RsGeCommunicationLogger> _logger;

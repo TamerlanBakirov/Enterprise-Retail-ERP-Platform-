@@ -44,6 +44,11 @@ public class DailyClosingConfiguration : IEntityTypeConfiguration<DailyClosing>
         builder.Property(d => d.ClosedAt);
 
         builder.HasIndex(d => new { d.StoreId, d.ClosingDate })
-            .IsUnique();
+            .IsUnique()
+            .HasDatabaseName("IX_daily_closings_store_date");
+
+        // Status filter for draft/finalized closings
+        builder.HasIndex(d => d.Status)
+            .HasDatabaseName("IX_daily_closings_status");
     }
 }

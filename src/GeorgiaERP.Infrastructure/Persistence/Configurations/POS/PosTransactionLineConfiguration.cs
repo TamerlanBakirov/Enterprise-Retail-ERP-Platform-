@@ -54,5 +54,13 @@ public class PosTransactionLineConfiguration : IEntityTypeConfiguration<PosTrans
             .WithMany(t => t.Lines)
             .HasForeignKey(l => l.TransactionId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for transaction line lookups (JOIN from transaction detail)
+        builder.HasIndex(l => l.TransactionId)
+            .HasDatabaseName("IX_pos_transaction_lines_transaction");
+
+        // Product sales analysis - which products sell most
+        builder.HasIndex(l => l.ProductId)
+            .HasDatabaseName("IX_pos_transaction_lines_product");
     }
 }

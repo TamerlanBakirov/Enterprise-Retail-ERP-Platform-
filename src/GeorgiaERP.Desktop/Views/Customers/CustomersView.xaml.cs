@@ -21,4 +21,13 @@ public partial class CustomersView : UserControl
         if (_viewModel.Customers.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    private async void OnAddCustomer(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<CustomerEditViewModel>();
+        var window = new CustomerEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved)
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
 }

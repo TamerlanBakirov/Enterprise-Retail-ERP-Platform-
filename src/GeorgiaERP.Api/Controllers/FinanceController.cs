@@ -20,7 +20,9 @@ public class FinanceController : ApiControllerBase
     }
 
     [HttpGet("chart-of-accounts")]
-    public async Task<IActionResult> GetChartOfAccounts([FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetChartOfAccounts(
+        [FromQuery] bool? isActive = null,
+        CancellationToken cancellationToken = default)
     {
         var query = _dbContext.ChartOfAccounts.AsQueryable();
 
@@ -36,7 +38,7 @@ public class FinanceController : ApiControllerBase
                 a.ParentId, a.IsHeader, a.IsSystem,
                 BalanceType = a.BalanceType.ToString(), a.IsActive
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(accounts);
     }
@@ -45,14 +47,17 @@ public class FinanceController : ApiControllerBase
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/finance/chart-of-accounts/{result.Value}", new { id = result.Value }) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/finance/chart-of-accounts/{result.Value}", new { id = result.Value });
     }
 
     [HttpGet("journal-entries")]
     public async Task<IActionResult> GetJournalEntries(
         [FromQuery] string? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         var query = _dbContext.JournalEntries.AsQueryable();
 
@@ -60,7 +65,7 @@ public class FinanceController : ApiControllerBase
             Enum.TryParse<Domain.Finance.JournalEntryStatus>(status, true, out var entryStatus))
             query = query.Where(j => j.Status == entryStatus);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var entries = await query
             .OrderByDescending(j => j.EntryDate)
@@ -71,7 +76,7 @@ public class FinanceController : ApiControllerBase
                 j.Id, j.EntryNumber, j.EntryDate, j.Description,
                 Status = j.Status.ToString(), j.TotalDebit, j.TotalCredit, j.PostedAt, j.CreatedAt
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(new { Items = entries, TotalCount = totalCount, Page = page, PageSize = pageSize });
     }
@@ -80,18 +85,20 @@ public class FinanceController : ApiControllerBase
     public async Task<IActionResult> CreateJournalEntry([FromBody] CreateJournalEntryCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/finance/journal-entries/{result.Value!.Id}", result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/finance/journal-entries/{result.Value!.Id}", result.Value);
     }
 
     [HttpPost("journal-entries/{id:guid}/post")]
     public async Task<IActionResult> PostJournalEntry(Guid id)
     {
         var result = await _mediator.Send(new PostJournalEntryCommand(id, CurrentUserId));
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [HttpGet("bank-accounts")]
-    public async Task<IActionResult> GetBankAccounts()
+    public async Task<IActionResult> GetBankAccounts(CancellationToken cancellationToken = default)
     {
         var accounts = await _dbContext.BankAccounts
             .OrderBy(a => a.AccountName)
@@ -100,7 +107,7 @@ public class FinanceController : ApiControllerBase
                 a.Id, a.AccountName, a.BankName, a.AccountNumber,
                 a.Iban, a.Currency, a.CurrentBalance, a.IsActive
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(accounts);
     }
@@ -109,6 +116,8 @@ public class FinanceController : ApiControllerBase
     public async Task<IActionResult> CreateBankAccount([FromBody] CreateBankAccountCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/finance/bank-accounts/{result.Value}", new { id = result.Value }) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/finance/bank-accounts/{result.Value}", new { id = result.Value });
     }
 }

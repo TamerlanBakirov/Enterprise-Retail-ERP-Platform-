@@ -1,4 +1,5 @@
 using GeorgiaERP.Domain.Common;
+using GeorgiaERP.Domain.Compliance.Events;
 
 namespace GeorgiaERP.Domain.Compliance;
 
@@ -78,6 +79,15 @@ public class RsGeWaybill : BaseEntity
         GoodsData = goodsJson;
         TotalAmount = totalAmount;
         Touch();
+
+        RaiseDomainEvent(new WaybillSubmittedEvent
+        {
+            FiscalDocumentId = FiscalDocumentId,
+            WaybillId = Id,
+            SellerTin = SellerTin,
+            BuyerTin = BuyerTin,
+            TotalAmount = totalAmount
+        });
     }
 
     /// <summary>RS.GE save_waybill succeeded: a draft waybill now exists server-side.</summary>
@@ -100,6 +110,13 @@ public class RsGeWaybill : BaseEntity
     {
         Status = WaybillStatus.Confirmed;
         Touch();
+
+        RaiseDomainEvent(new WaybillConfirmedEvent
+        {
+            FiscalDocumentId = FiscalDocumentId,
+            WaybillId = Id,
+            WaybillNumber = WaybillNumber
+        });
     }
 
     public void MarkClosed(DateTimeOffset deliveryDate)

@@ -1,4 +1,5 @@
 using GeorgiaERP.Domain.Common;
+using GeorgiaERP.Domain.POS.Events;
 
 namespace GeorgiaERP.Domain.POS;
 
@@ -79,6 +80,17 @@ public class PosTransaction : BaseEntity
     {
         Status = PosTransactionStatus.Completed;
         FiscalReceiptId = fiscalReceiptId;
+
+        RaiseDomainEvent(new OrderPlacedEvent
+        {
+            TransactionId = Id,
+            TransactionNumber = TransactionNumber,
+            StoreId = StoreId,
+            CustomerId = CustomerId,
+            Total = Total,
+            VatTotal = VatTotal,
+            TransactionType = TransactionType
+        });
     }
 
     public void Void(Guid voidedBy, string reason)

@@ -1,4 +1,5 @@
 using GeorgiaERP.Domain.Common;
+using GeorgiaERP.Domain.Inventory.Events;
 
 namespace GeorgiaERP.Domain.Inventory;
 
@@ -36,18 +37,40 @@ public class StockLevel : BaseEntity
 
     public decimal AvailableQuantity => QuantityOnHand - QuantityReserved;
 
-    public void Deduct(decimal quantity)
+    public void Deduct(decimal quantity, MovementType movementType = MovementType.Dispatch, Guid? referenceId = null)
     {
         if (quantity <= 0) throw new InvalidOperationException("Deduction quantity must be positive.");
         QuantityOnHand -= quantity;
         Touch();
+
+        RaiseDomainEvent(new StockAdjustedEvent
+        {
+            ProductId = ProductId,
+            WarehouseId = WarehouseId,
+            VariantId = VariantId,
+            QuantityChange = -quantity,
+            NewQuantityOnHand = QuantityOnHand,
+            MovementType = movementType,
+            ReferenceId = referenceId
+        });
     }
 
-    public void AddStock(decimal quantity)
+    public void AddStock(decimal quantity, MovementType movementType = MovementType.Receipt, Guid? referenceId = null)
     {
         if (quantity <= 0) throw new InvalidOperationException("Addition quantity must be positive.");
         QuantityOnHand += quantity;
         Touch();
+
+        RaiseDomainEvent(new StockAdjustedEvent
+        {
+            ProductId = ProductId,
+            WarehouseId = WarehouseId,
+            VariantId = VariantId,
+            QuantityChange = quantity,
+            NewQuantityOnHand = QuantityOnHand,
+            MovementType = movementType,
+            ReferenceId = referenceId
+        });
     }
 
     private void Touch()

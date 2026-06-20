@@ -33,5 +33,13 @@ public class StockCountConfiguration : IEntityTypeConfiguration<StockCount>
         builder.HasMany(s => s.Lines)
             .WithOne(l => l.StockCount)
             .HasForeignKey(l => l.StockCountId);
+
+        // FK index for warehouse stock count lookups
+        builder.HasIndex(s => s.WarehouseId)
+            .HasDatabaseName("IX_stock_counts_warehouse");
+
+        // Status filter for finding active/in-progress counts
+        builder.HasIndex(s => s.Status)
+            .HasDatabaseName("IX_stock_counts_status");
     }
 }
