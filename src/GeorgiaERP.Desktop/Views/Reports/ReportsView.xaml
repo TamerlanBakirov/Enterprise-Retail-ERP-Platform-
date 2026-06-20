@@ -33,6 +33,8 @@
             <DatePicker SelectedDate="{Binding DateTo}" Width="140" />
             <Button Content="Generate" Style="{StaticResource PrimaryButton}"
                     Command="{Binding LoadReportCommand}" Margin="16,0,0,0" />
+            <Button Content="Export CSV" Style="{StaticResource SecondaryButton}"
+                    Command="{Binding ExportCommand}" Margin="8,0,0,0" />
         </StackPanel>
 
         <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3"
@@ -99,8 +101,12 @@
 
                 <!-- VAT Report -->
                 <StackPanel Visibility="{Binding ActiveReport, Converter={StaticResource StringEqualsConverter}, ConverterParameter=VAT}">
-                    <Button Content="Generate VAT Report" Style="{StaticResource PrimaryButton}"
-                            Command="{Binding LoadReportCommand}" Margin="0,0,0,16" HorizontalAlignment="Left" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <Button Content="Generate VAT Report" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding LoadReportCommand}" />
+                        <Button Content="Export CSV" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ExportCommand}" Margin="8,0,0,0" />
+                    </StackPanel>
                     <UniformGrid Columns="3" Margin="0,0,0,16"
                                  Visibility="{Binding VatReport, Converter={StaticResource NullToCollapsedConverter}}">
                         <Border Style="{StaticResource Card}" Margin="0,0,12,0">

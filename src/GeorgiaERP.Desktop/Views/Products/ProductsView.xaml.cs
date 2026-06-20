@@ -21,4 +21,14 @@ public partial class ProductsView : UserControl
         if (_viewModel.Products.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    private async void OnAddProduct(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<ProductEditViewModel>();
+        await vm.LoadCategoriesAsync();
+        var window = new ProductEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved)
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
 }

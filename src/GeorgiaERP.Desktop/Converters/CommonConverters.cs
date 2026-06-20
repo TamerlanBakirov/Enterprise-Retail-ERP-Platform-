@@ -25,7 +25,12 @@ public class InverseBoolConverter : IValueConverter
 public class NullToCollapsedConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value is null or "" ? Visibility.Collapsed : Visibility.Visible;
+        value switch
+        {
+            null or "" => Visibility.Collapsed,
+            0 or 0m or 0L => Visibility.Collapsed,
+            _ => Visibility.Visible
+        };
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();

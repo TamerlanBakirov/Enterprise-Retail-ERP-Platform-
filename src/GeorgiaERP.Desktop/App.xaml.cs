@@ -97,6 +97,7 @@ public partial class App : Application
         services.AddSingleton<IFinanceService, FinanceService>();
         services.AddSingleton<IReportService, ReportService>();
         services.AddSingleton<IOrganizationService, OrganizationService>();
+        services.AddSingleton<IUserService, UserService>();
 
         services.AddTransient<LoginViewModel>();
         services.AddTransient<LicenseActivationViewModel>();
@@ -110,6 +111,10 @@ public partial class App : Application
         services.AddTransient<FinanceViewModel>();
         services.AddTransient<ReportsViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddTransient<UsersViewModel>();
+        services.AddTransient<UserCreateViewModel>();
+        services.AddTransient<ProductEditViewModel>();
+        services.AddTransient<CustomerEditViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)
