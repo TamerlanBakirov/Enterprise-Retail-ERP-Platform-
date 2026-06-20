@@ -1,5 +1,8 @@
+using System.Threading.RateLimiting;
 using GeorgiaERP.Application;
 using GeorgiaERP.Infrastructure;
+using GeorgiaERP.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
@@ -63,10 +66,42 @@ try
         });
     });
 
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        options.AddPolicy("fixed", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 100,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+
+        options.AddPolicy("auth", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+    });
+
+    builder.Services.AddHealthChecks()
+        .AddDbContextCheck<AppDbContext>("database");
+
     var app = builder.Build();
 
+    app.UseMiddleware<GeorgiaERP.Api.Middleware.SecurityHeadersMiddleware>();
     app.UseMiddleware<GeorgiaERP.Api.Middleware.ExceptionHandlingMiddleware>();
     app.UseSerilogRequestLogging();
+
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHsts();
+    }
 
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
@@ -79,20 +114,21 @@ try
     }
 
     app.UseCors("AllowFrontend");
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapControllers();
+    app.MapControllers().RequireRateLimiting("fixed");
 
-    app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTimeOffset.UtcNow }));
+    app.MapHealthChecks("/health");
 
     if (args.Contains("--seed") || app.Environment.IsDevelopment())
     {
-        await GeorgiaERP.Infrastructure.Persistence.SeedData.InitializeAsync(app.Services);
+        await SeedData.InitializeAsync(app.Services);
     }
 
     if (args.Contains("--seed-demo") || app.Configuration.GetValue<bool>("Seed:Demo"))
     {
-        await GeorgiaERP.Infrastructure.Persistence.SeedDemoData.InitializeAsync(app.Services);
+        await SeedDemoData.InitializeAsync(app.Services);
     }
 
     Log.Information("Georgia ERP Platform starting up...");
