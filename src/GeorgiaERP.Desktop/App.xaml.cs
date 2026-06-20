@@ -1,4 +1,6 @@
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using GeorgiaERP.Desktop.Services;
 using GeorgiaERP.Desktop.ViewModels;
 using GeorgiaERP.Desktop.Views.Login;
@@ -13,6 +15,9 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
         var services = new ServiceCollection();
         ConfigureServices(services);
@@ -45,11 +50,26 @@ public partial class App : Application
         }
     }
 
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        MessageBox.Show(
+            $"An unexpected error occurred:\n\n{e.Exception.Message}",
+            "Georgia ERP — Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        e.Handled = true;
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        e.SetObserved();
+    }
+
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<IOfflineQueueService, OfflineQueueService>();
+        services.AddSingleton<ILocalizationService, LocalizationService>();
 
         services.AddHttpClient("api", (sp, client) =>
         {

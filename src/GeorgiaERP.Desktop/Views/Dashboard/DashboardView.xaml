@@ -11,9 +11,8 @@
                        Foreground="{StaticResource TextPrimaryBrush}"
                        Margin="0,0,0,24" />
 
-            <!-- KPI Cards -->
-            <UniformGrid Columns="4" Margin="0,0,0,24">
-                <!-- Today Revenue -->
+            <!-- KPI Cards Row 1 -->
+            <UniformGrid Columns="4" Margin="0,0,0,16">
                 <Border Style="{StaticResource Card}" Margin="0,0,12,0">
                     <StackPanel>
                         <TextBlock Text="Today's Revenue" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
@@ -22,7 +21,6 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Transactions -->
                 <Border Style="{StaticResource Card}" Margin="12,0,12,0">
                     <StackPanel>
                         <TextBlock Text="Transactions" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
@@ -31,21 +29,51 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Stock Value -->
                 <Border Style="{StaticResource Card}" Margin="12,0,12,0">
                     <StackPanel>
-                        <TextBlock Text="Stock Value" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
-                        <TextBlock Text="{Binding TotalStockValue, Converter={StaticResource CurrencyFormatConverter}}"
+                        <TextBlock Text="Total Products" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding TotalProducts}"
                                    FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,8,0,0" />
                     </StackPanel>
                 </Border>
 
-                <!-- Low Stock -->
                 <Border Style="{StaticResource Card}" Margin="12,0,0,0">
                     <StackPanel>
                         <TextBlock Text="Low Stock Alerts" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
                         <TextBlock Text="{Binding LowStockCount}"
                                    FontSize="28" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- KPI Cards Row 2 -->
+            <UniformGrid Columns="2" Margin="0,0,0,24">
+                <Border Style="{StaticResource Card}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="Stock Value" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding TotalStockValue, Converter={StaticResource CurrencyFormatConverter}}"
+                                   FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="12,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                        <WrapPanel>
+                            <Button Content="New Sale" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding GoToPosCommand}"
+                                    Margin="0,0,8,8" Padding="16,8" FontSize="12" />
+                            <Button Content="Add Product" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding GoToProductsCommand}"
+                                    Margin="0,0,8,8" Padding="16,8" FontSize="12" />
+                            <Button Content="Stock Count" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding GoToInventoryCommand}"
+                                    Margin="0,0,8,8" Padding="16,8" FontSize="12" />
+                            <Button Content="Reports" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding GoToReportsCommand}"
+                                    Margin="0,0,8,8" Padding="16,8" FontSize="12" />
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
             </UniformGrid>
@@ -56,7 +84,7 @@
                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
 
             <TextBlock Text="{Binding ErrorMessage}"
-                       Foreground="{StaticResource DangerBrush}"
+                       Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
                        Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsedConverter}}" />
         </StackPanel>
     </ScrollViewer>

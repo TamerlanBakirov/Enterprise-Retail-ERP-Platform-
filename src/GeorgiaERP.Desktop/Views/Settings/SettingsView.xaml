@@ -1,24 +1,30 @@
 <UserControl x:Class="GeorgiaERP.Desktop.Views.Settings.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,24">
-        <StackPanel MaxWidth="500" HorizontalAlignment="Left">
+        <StackPanel MaxWidth="600" HorizontalAlignment="Left">
             <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"
                        Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,24" />
 
-            <Border Style="{StaticResource Card}">
+            <!-- General Settings -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
+                    <TextBlock Text="General" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16" />
+
                     <TextBlock Text="Server URL" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
                     <TextBox Style="{StaticResource ModernTextBox}"
                              Text="{Binding ServerUrl, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,0,20" />
+                             Margin="0,0,0,16" />
 
                     <TextBlock Text="Language" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
-                    <ComboBox SelectedValue="{Binding Language}" Padding="8,6" Margin="0,0,0,24">
-                        <ComboBoxItem Content="Georgian" Tag="ka" />
-                        <ComboBoxItem Content="English" Tag="en" />
-                    </ComboBox>
+                    <ComboBox ItemsSource="{Binding Languages}"
+                              DisplayMemberPath="Display"
+                              SelectedValuePath="Code"
+                              SelectedValue="{Binding Language}"
+                              Padding="8,6" Margin="0,0,0,20" />
 
                     <Button Content="Save Settings"
                             Style="{StaticResource PrimaryButton}"
@@ -29,6 +35,69 @@
                                Foreground="{StaticResource SuccessBrush}"
                                Margin="0,12,0,0"
                                Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsedConverter}}" />
+                </StackPanel>
+            </Border>
+
+            <!-- License Info -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="License" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16" />
+
+                    <Grid Margin="0,0,0,8">
+                        <TextBlock Text="Status" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding LicenseStatus}" FontWeight="SemiBold" HorizontalAlignment="Right"
+                                   Foreground="{StaticResource SuccessBrush}" />
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <TextBlock Text="Company" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding LicenseCompany}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <TextBlock Text="Expires" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding LicenseExpires, StringFormat=d}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <TextBlock Text="Max Users" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding LicenseMaxUsers}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid>
+                        <TextBlock Text="Max Stores" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding LicenseMaxStores}" HorizontalAlignment="Right" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Updates -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Updates" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16" />
+
+                    <Grid Margin="0,0,0,12">
+                        <TextBlock Text="Current Version" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <TextBlock Text="{Binding CurrentVersion}" HorizontalAlignment="Right" />
+                    </Grid>
+
+                    <Button Content="Check for Updates"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding CheckUpdatesCommand}"
+                            HorizontalAlignment="Left" />
+
+                    <TextBlock Text="{Binding UpdateStatus}"
+                               Margin="0,12,0,0"
+                               Visibility="{Binding UpdateStatus, Converter={StaticResource NullToCollapsedConverter}}" />
+                </StackPanel>
+            </Border>
+
+            <!-- About -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="About" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                    <TextBlock Text="Georgia ERP — Enterprise Retail Platform" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="Designed for Georgian retail businesses with RS.GE compliance."
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0" />
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using GeorgiaERP.Desktop.Models;
 using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
@@ -8,8 +7,8 @@ namespace GeorgiaERP.Desktop.ViewModels;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly IReportService _reportService;
-    private readonly IInventoryService _inventoryService;
     private readonly IAuthService _authService;
+    private readonly INavigationService _navigationService;
 
     [ObservableProperty] private decimal _todayRevenue;
     [ObservableProperty] private int _todayTransactions;
@@ -20,11 +19,11 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private string _welcomeMessage = string.Empty;
 
-    public DashboardViewModel(IReportService reportService, IInventoryService inventoryService, IAuthService authService)
+    public DashboardViewModel(IReportService reportService, IAuthService authService, INavigationService navigationService)
     {
         _reportService = reportService;
-        _inventoryService = inventoryService;
         _authService = authService;
+        _navigationService = navigationService;
         WelcomeMessage = $"Welcome, {authService.CurrentUser?.FullName ?? "User"}";
     }
 
@@ -65,4 +64,16 @@ public partial class DashboardViewModel : ObservableObject
             IsLoading = false;
         }
     }
+
+    [RelayCommand]
+    private void GoToPos() => _navigationService.NavigateTo("POS");
+
+    [RelayCommand]
+    private void GoToProducts() => _navigationService.NavigateTo("Products");
+
+    [RelayCommand]
+    private void GoToInventory() => _navigationService.NavigateTo("Inventory");
+
+    [RelayCommand]
+    private void GoToReports() => _navigationService.NavigateTo("Reports");
 }
