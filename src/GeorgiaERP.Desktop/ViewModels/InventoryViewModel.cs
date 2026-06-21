@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using GeorgiaERP.Desktop.Models;
 using GeorgiaERP.Desktop.Services;
 
@@ -16,6 +17,7 @@ public partial class InventoryViewModel : TabbedPagedViewModel
     public ObservableCollection<StockLevelDto> StockLevels { get; } = [];
     public ObservableCollection<StockMovementDto> Movements { get; } = [];
     public ObservableCollection<TransferOrderDto> Transfers { get; } = [];
+    public ObservableCollection<StockCountDto> StockCounts { get; } = [];
     public ObservableCollection<WarehouseDto> Warehouses { get; } = [];
 
     public InventoryViewModel(IInventoryService inventoryService, IOrganizationService organizationService)
@@ -55,6 +57,21 @@ public partial class InventoryViewModel : TabbedPagedViewModel
                 ReplaceItems(Transfers, transfers.Items);
                 TotalPages = transfers.TotalPages;
                 break;
+
+            case "StockCounts":
+                var counts = await _inventoryService.GetStockCountsAsync(
+                    SelectedWarehouse?.Id, page: CurrentPage);
+                ReplaceItems(StockCounts, counts.Items);
+                TotalPages = counts.TotalPages;
+                break;
         }
+    }
+
+    [RelayCommand]
+    private async Task CompleteStockCountAsync(StockCountDto count)
+    {
+        var result = await _inventoryService.CompleteStockCountAsync(count.Id);
+        if (result.IsSuccess) await LoadAsync();
+        else ErrorMessage = result.Error;
     }
 }

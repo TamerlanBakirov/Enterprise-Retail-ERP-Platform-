@@ -69,6 +69,8 @@
 
         <!-- Receiving Orders -->
         <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Receiving}">
+            <Button DockPanel.Dock="Top" Content="+ Create Receiving Order" Style="{StaticResource PrimaryButton}"
+                    Click="OnCreateReceiving" HorizontalAlignment="Left" Margin="0,0,0,8" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Left">
                 <Button Content="Start Receiving" Style="{StaticResource PrimaryButton}"
                         Command="{Binding StartReceivingCommand}" Margin="0,0,8,0" />
@@ -98,6 +100,8 @@
 
         <!-- Shipping Orders -->
         <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Shipping}">
+            <Button DockPanel.Dock="Top" Content="+ Create Shipping Order" Style="{StaticResource PrimaryButton}"
+                    Click="OnCreateShipping" HorizontalAlignment="Left" Margin="0,0,0,8" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Left">
                 <Button Content="Start Picking" Style="{StaticResource PrimaryButton}"
                         Command="{Binding StartPickingCommand}" Margin="0,0,8,0" />
@@ -129,8 +133,10 @@
         </DockPanel>
 
         <!-- Locations -->
-        <Border Style="{StaticResource Card}" Padding="0"
-                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Locations}">
+        <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Locations}">
+            <Button DockPanel.Dock="Top" Content="+ Create Location" Style="{StaticResource PrimaryButton}"
+                    Click="OnCreateLocation" HorizontalAlignment="Left" Margin="0,0,0,8" />
+            <Border Style="{StaticResource Card}" Padding="0">
             <DataGrid Style="{StaticResource ModernDataGrid}"
                       ItemsSource="{Binding Locations}"
                       ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
@@ -144,6 +150,7 @@
                     <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" />
                 </DataGrid.Columns>
             </DataGrid>
-        </Border>
+            </Border>
+        </DockPanel>
     </DockPanel>
 </UserControl>

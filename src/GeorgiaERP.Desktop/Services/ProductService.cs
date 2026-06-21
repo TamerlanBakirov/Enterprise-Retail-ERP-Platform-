@@ -8,6 +8,8 @@ public interface IProductService
     Task<ProductDto?> GetProductAsync(Guid id);
     Task<ProductDto?> CreateProductAsync(CreateProductRequest request);
     Task<List<CategoryDto>> GetCategoriesAsync(Guid? parentId = null);
+    Task<ApiResult> UpdateProductAsync(Guid id, UpdateProductRequest request);
+    Task<ApiResult> DeleteProductAsync(Guid id);
 }
 
 public class ProductService : IProductService
@@ -35,4 +37,10 @@ public class ProductService : IProductService
         if (parentId.HasValue) query += $"?parentId={parentId}";
         return _api.GetAsync<List<CategoryDto>>(query)!;
     }
+
+    public Task<ApiResult> UpdateProductAsync(Guid id, UpdateProductRequest request) =>
+        _api.PutAsync("products/" + id, request);
+
+    public Task<ApiResult> DeleteProductAsync(Guid id) =>
+        _api.DeleteAsync("products/" + id);
 }

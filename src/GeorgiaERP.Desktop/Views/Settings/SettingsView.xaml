@@ -90,6 +90,18 @@
                 </StackPanel>
             </Border>
 
+            <!-- Two-Factor Authentication -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Two-Factor Authentication" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16" />
+                    <TextBlock Text="Add an extra layer of security to your account with a TOTP authenticator app."
+                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                    <Button Content="Manage 2FA" Style="{StaticResource SecondaryButton}"
+                            Click="OnManage2FA" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
             <!-- About -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>

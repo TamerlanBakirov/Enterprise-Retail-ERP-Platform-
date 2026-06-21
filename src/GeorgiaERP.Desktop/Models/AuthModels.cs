@@ -25,3 +25,7 @@ public record UserInfo(
 }
 
 public record RefreshTokenRequest(string RefreshToken);
+
+public record TwoFactorSetupResponse(string SharedKey, string? QrCodeUri);
+public record TwoFactorConfirmRequest(string Code);
+public record TwoFactorDisableRequest(string Code);

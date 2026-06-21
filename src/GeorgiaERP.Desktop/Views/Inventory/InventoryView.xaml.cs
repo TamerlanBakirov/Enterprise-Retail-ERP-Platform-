@@ -21,4 +21,22 @@ public partial class InventoryView : UserControl
         if (_viewModel.StockLevels.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    private async void OnCreateTransfer(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<TransferOrderEditViewModel>();
+        await vm.LoadDataAsync();
+        var window = new TransferOrderEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    private async void OnCreateStockCount(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<StockCountEditViewModel>();
+        await vm.LoadDataAsync();
+        var window = new StockCountEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
 }

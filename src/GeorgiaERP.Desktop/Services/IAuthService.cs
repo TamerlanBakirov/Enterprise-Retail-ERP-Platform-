@@ -11,6 +11,9 @@ public interface IAuthService
     bool IsLoggedIn { get; }
     Task<(bool Success, string? Error)> LoginAsync(string username, string password, string? twoFactorCode = null);
     Task LogoutAsync();
+    Task<TwoFactorSetupResponse?> BeginTwoFactorSetupAsync();
+    Task<(bool Success, string? Error)> ConfirmTwoFactorSetupAsync(string code);
+    Task<(bool Success, string? Error)> DisableTwoFactorAsync(string code);
     event Action? AuthStateChanged;
 }
 
@@ -76,5 +79,31 @@ public class AuthService : IAuthService
         _settings.RefreshToken = null;
         CurrentUser = null;
         AuthStateChanged?.Invoke();
+    }
+
+    public async Task<TwoFactorSetupResponse?> BeginTwoFactorSetupAsync()
+    {
+        var client = _httpClientFactory.CreateClient("api-auth");
+        var response = await client.PostAsync("auth/2fa/setup", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<TwoFactorSetupResponse>(JsonOptions);
+    }
+
+    public async Task<(bool Success, string? Error)> ConfirmTwoFactorSetupAsync(string code)
+    {
+        var client = _httpClientFactory.CreateClient("api-auth");
+        var response = await client.PostAsJsonAsync("auth/2fa/confirm", new TwoFactorConfirmRequest(code));
+        if (!response.IsSuccessStatusCode)
+            return (false, await response.Content.ReadAsStringAsync());
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> DisableTwoFactorAsync(string code)
+    {
+        var client = _httpClientFactory.CreateClient("api-auth");
+        var response = await client.PostAsJsonAsync("auth/2fa/disable", new TwoFactorDisableRequest(code));
+        if (!response.IsSuccessStatusCode)
+            return (false, await response.Content.ReadAsStringAsync());
+        return (true, null);
     }
 }

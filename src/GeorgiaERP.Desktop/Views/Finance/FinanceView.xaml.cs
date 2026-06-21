@@ -21,4 +21,31 @@ public partial class FinanceView : UserControl
         if (_viewModel.Accounts.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    private async void OnAddAccount(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<AccountEditViewModel>();
+        await vm.LoadAccountsAsync();
+        var window = new AccountEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    private async void OnAddJournalEntry(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<JournalEntryEditViewModel>();
+        await vm.LoadAccountsAsync();
+        var window = new JournalEntryEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    private async void OnAddBankAccount(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<BankAccountEditViewModel>();
+        await vm.LoadAccountsAsync();
+        var window = new BankAccountEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
 }
