@@ -1,10 +1,7 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using GeorgiaERP.Application.Common;
-using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Inventory;
 using GeorgiaERP.Domain.Organization;
 using GeorgiaERP.Domain.Products;
@@ -16,47 +13,12 @@ using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 namespace GeorgiaERP.Tests.Integration;
 
 [Collection("Integration")]
-public class ReportApiTests
+public class ReportApiTests : IntegrationTestBase
 {
-    private readonly ErpApiFactory _factory;
+    public ReportApiTests(ErpApiFactory factory) : base(factory) { }
 
-    public ReportApiTests(ErpApiFactory factory) => _factory = factory;
-
-    private HttpClient NewClient() => _factory.CreateClient();
-
-    private async Task<HttpClient> AuthenticatedClient()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-
-        if (!db.Users.Any(u => u.Username == "rpt_admin"))
-        {
-            var role = db.Roles.FirstOrDefault(r => r.Code == "super_admin");
-            if (role is null)
-            {
-                role = Role.Create("super_admin", "Super Admin", "სუპერ ადმინი", "Full access", true);
-                db.Roles.Add(role);
-            }
-
-            var user = User.Create("rpt_admin", "rptadmin@test.local",
-                passwordService.HashPassword("Admin@123!"),
-                "Rpt", "Admin");
-            db.Users.Add(user);
-            db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
-            await db.SaveChangesAsync();
-        }
-
-        var client = NewClient();
-        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new { username = "rpt_admin", password = "Admin@123!" });
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var token = body.GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
+    private Task<HttpClient> AuthenticatedClient()
+        => AuthenticatedClient("rpt_admin", "rptadmin@test.local", "Rpt");
 
     // ===== Auth guard tests =====
 
@@ -105,7 +67,7 @@ public class ReportApiTests
     public async Task StockReport_WithData_ReturnsStockValues()
     {
         // Seed product, warehouse, and stock level
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var category = Category.Create($"CAT-{Guid.NewGuid():N}"[..10], "Test Category");

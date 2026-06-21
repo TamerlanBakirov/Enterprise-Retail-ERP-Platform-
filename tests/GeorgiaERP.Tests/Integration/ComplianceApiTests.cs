@@ -1,58 +1,18 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using GeorgiaERP.Application.Common;
-using GeorgiaERP.Domain.Identity;
-using GeorgiaERP.Infrastructure.Persistence;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace GeorgiaERP.Tests.Integration;
 
 [Collection("Integration")]
-public class ComplianceApiTests
+public class ComplianceApiTests : IntegrationTestBase
 {
-    private readonly ErpApiFactory _factory;
+    public ComplianceApiTests(ErpApiFactory factory) : base(factory) { }
 
-    public ComplianceApiTests(ErpApiFactory factory) => _factory = factory;
-
-    private HttpClient NewClient() => _factory.CreateClient();
-
-    private async Task<HttpClient> AuthenticatedClient()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-
-        if (!db.Users.Any(u => u.Username == "comp_admin"))
-        {
-            var role = db.Roles.FirstOrDefault(r => r.Code == "super_admin");
-            if (role is null)
-            {
-                role = Role.Create("super_admin", "Super Admin", "სუპერ ადმინი", "Full access", true);
-                db.Roles.Add(role);
-            }
-
-            var user = User.Create("comp_admin", "compadmin@test.local",
-                passwordService.HashPassword("Admin@123!"),
-                "Compliance", "Admin", "ტესტ", "ადმინი", "ka");
-            db.Users.Add(user);
-            db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
-            await db.SaveChangesAsync();
-        }
-
-        var client = NewClient();
-        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new { username = "comp_admin", password = "Admin@123!" });
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var token = body.GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
+    private Task<HttpClient> AuthenticatedClient()
+        => AuthenticatedClient("comp_admin", "compadmin@test.local", "Compliance", "Admin", "ტესტ");
 
     // === RS.GE Health ===
 

@@ -1,58 +1,18 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using GeorgiaERP.Application.Common;
-using GeorgiaERP.Domain.Identity;
-using GeorgiaERP.Infrastructure.Persistence;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace GeorgiaERP.Tests.Integration;
 
 [Collection("Integration")]
-public class FinanceApiTests
+public class FinanceApiTests : IntegrationTestBase
 {
-    private readonly ErpApiFactory _factory;
+    public FinanceApiTests(ErpApiFactory factory) : base(factory) { }
 
-    public FinanceApiTests(ErpApiFactory factory) => _factory = factory;
-
-    private HttpClient NewClient() => _factory.CreateClient();
-
-    private async Task<HttpClient> AuthenticatedClient()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-
-        if (!db.Users.Any(u => u.Username == "fin_admin"))
-        {
-            var role = db.Roles.FirstOrDefault(r => r.Code == "super_admin");
-            if (role is null)
-            {
-                role = Role.Create("super_admin", "Super Admin", "სუპერ ადმინი", "Full access", true);
-                db.Roles.Add(role);
-            }
-
-            var user = User.Create("fin_admin", "finadmin@test.local",
-                passwordService.HashPassword("Admin@123!"),
-                "Fin", "Admin", "ფინანსები", "ადმინი", "ka");
-            db.Users.Add(user);
-            db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
-            await db.SaveChangesAsync();
-        }
-
-        var client = NewClient();
-        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new { username = "fin_admin", password = "Admin@123!" });
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var token = body.GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
+    private Task<HttpClient> AuthenticatedClient()
+        => AuthenticatedClient("fin_admin", "finadmin@test.local", "Fin", "Admin", "ფინანსები");
 
     // === Auth ===
 

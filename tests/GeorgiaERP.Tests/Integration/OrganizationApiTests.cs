@@ -1,10 +1,7 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using GeorgiaERP.Application.Common;
-using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Organization;
 using GeorgiaERP.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,47 +11,12 @@ using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 namespace GeorgiaERP.Tests.Integration;
 
 [Collection("Integration")]
-public class OrganizationApiTests
+public class OrganizationApiTests : IntegrationTestBase
 {
-    private readonly ErpApiFactory _factory;
+    public OrganizationApiTests(ErpApiFactory factory) : base(factory) { }
 
-    public OrganizationApiTests(ErpApiFactory factory) => _factory = factory;
-
-    private HttpClient NewClient() => _factory.CreateClient();
-
-    private async Task<HttpClient> AuthenticatedClient()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-
-        if (!db.Users.Any(u => u.Username == "org_admin"))
-        {
-            var role = db.Roles.FirstOrDefault(r => r.Code == "super_admin");
-            if (role is null)
-            {
-                role = Role.Create("super_admin", "Super Admin", "სუპერ ადმინი", "Full access", true);
-                db.Roles.Add(role);
-            }
-
-            var user = User.Create("org_admin", "orgadmin@test.local",
-                passwordService.HashPassword("Admin@123!"),
-                "Org", "Admin", "ორგ", "ადმინი", "ka");
-            db.Users.Add(user);
-            db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
-            await db.SaveChangesAsync();
-        }
-
-        var client = NewClient();
-        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new { username = "org_admin", password = "Admin@123!" });
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var token = body.GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
+    private Task<HttpClient> AuthenticatedClient()
+        => AuthenticatedClient("org_admin", "orgadmin@test.local", "Org", "Admin", "ორგ");
 
     // === Auth Guard ===
 
@@ -98,7 +60,7 @@ public class OrganizationApiTests
     public async Task Stores_FilterActive_Works()
     {
         // Seed an active store
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var code = $"ST-{Guid.NewGuid():N}"[..10];
@@ -147,7 +109,7 @@ public class OrganizationApiTests
     public async Task Warehouses_FilterActive_Works()
     {
         // Seed an active warehouse
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var code = $"WH-{Guid.NewGuid():N}"[..10];

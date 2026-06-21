@@ -1,10 +1,7 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using GeorgiaERP.Application.Common;
-using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Organization;
 using GeorgiaERP.Domain.Products;
 using GeorgiaERP.Infrastructure.Persistence;
@@ -15,51 +12,16 @@ using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 namespace GeorgiaERP.Tests.Integration;
 
 [Collection("Integration")]
-public class WarehouseApiTests
+public class WarehouseApiTests : IntegrationTestBase
 {
-    private readonly ErpApiFactory _factory;
+    public WarehouseApiTests(ErpApiFactory factory) : base(factory) { }
 
-    public WarehouseApiTests(ErpApiFactory factory) => _factory = factory;
-
-    private HttpClient NewClient() => _factory.CreateClient();
-
-    private async Task<HttpClient> AuthenticatedClient()
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-
-        if (!db.Users.Any(u => u.Username == "wh_admin"))
-        {
-            var role = db.Roles.FirstOrDefault(r => r.Code == "super_admin");
-            if (role is null)
-            {
-                role = Role.Create("super_admin", "Super Admin", "სუპერ ადმინი", "Full access", true);
-                db.Roles.Add(role);
-            }
-
-            var user = User.Create("wh_admin", "whadmin@test.local",
-                passwordService.HashPassword("Admin@123!"),
-                "WH", "Admin", "საწყობი", "ადმინი", "ka");
-            db.Users.Add(user);
-            db.UserRoles.Add(UserRole.Create(user.Id, role.Id));
-            await db.SaveChangesAsync();
-        }
-
-        var client = NewClient();
-        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login",
-            new { username = "wh_admin", password = "Admin@123!" });
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var token = body.GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
+    private Task<HttpClient> AuthenticatedClient()
+        => AuthenticatedClient("wh_admin", "whadmin@test.local", "WH", "Admin", "საწყობი");
 
     private async Task<Guid> SeedWarehouse()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var wh = WarehouseEntity.Create($"WH-{Guid.NewGuid():N}"[..15], "Test Warehouse", WarehouseType.Central);
         db.Warehouses.Add(wh);
@@ -69,7 +31,7 @@ public class WarehouseApiTests
 
     private async Task<Guid> SeedProduct()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var category = db.Categories.FirstOrDefault();
