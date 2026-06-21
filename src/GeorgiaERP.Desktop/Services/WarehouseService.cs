@@ -15,6 +15,10 @@ public interface IWarehouseService
     Task<ApiResult> PackOrderAsync(Guid orderId);
     Task<ApiResult> ShipOrderAsync(Guid orderId, string? trackingNumber = null);
     Task<ApiResult> CancelShippingAsync(Guid orderId);
+    Task<WarehouseDetailDto?> CreateWarehouseAsync(CreateWarehouseRequest request);
+    Task<WarehouseLocationDto?> CreateLocationAsync(Guid warehouseId, CreateLocationRequest request);
+    Task<ReceivingOrderDto?> CreateReceivingOrderAsync(CreateReceivingOrderRequest request);
+    Task<ShippingOrderDto?> CreateShippingOrderAsync(CreateShippingOrderRequest request);
 }
 
 public class WarehouseService : IWarehouseService
@@ -73,4 +77,16 @@ public class WarehouseService : IWarehouseService
 
     public Task<ApiResult> CancelShippingAsync(Guid orderId) =>
         _api.PostAsync($"warehouse/shipping/{orderId}/cancel");
+
+    public Task<WarehouseDetailDto?> CreateWarehouseAsync(CreateWarehouseRequest request) =>
+        _api.PostAsync<CreateWarehouseRequest, WarehouseDetailDto>("warehouse", request);
+
+    public Task<WarehouseLocationDto?> CreateLocationAsync(Guid warehouseId, CreateLocationRequest request) =>
+        _api.PostAsync<CreateLocationRequest, WarehouseLocationDto>($"warehouse/{warehouseId}/locations", request);
+
+    public Task<ReceivingOrderDto?> CreateReceivingOrderAsync(CreateReceivingOrderRequest request) =>
+        _api.PostAsync<CreateReceivingOrderRequest, ReceivingOrderDto>("warehouse/receiving", request);
+
+    public Task<ShippingOrderDto?> CreateShippingOrderAsync(CreateShippingOrderRequest request) =>
+        _api.PostAsync<CreateShippingOrderRequest, ShippingOrderDto>("warehouse/shipping", request);
 }

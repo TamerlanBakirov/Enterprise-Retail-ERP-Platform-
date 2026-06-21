@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using GeorgiaERP.Desktop.Models;
 using GeorgiaERP.Desktop.Services;
 
@@ -7,6 +8,8 @@ namespace GeorgiaERP.Desktop.ViewModels;
 public partial class UsersViewModel : PagedViewModel
 {
     private readonly IUserService _userService;
+
+    [ObservableProperty] private UserListDto? _selectedUser;
 
     public ObservableCollection<UserListDto> Users { get; } = [];
 

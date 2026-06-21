@@ -31,4 +31,20 @@ public partial class ProductsView : UserControl
         if (vm.Saved)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    private async void OnEditProduct(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedProduct is null)
+        {
+            MessageBox.Show("Please select a product first.", "Georgia ERP");
+            return;
+        }
+        var vm = App.Services.GetRequiredService<ProductEditViewModel>();
+        await vm.LoadCategoriesAsync();
+        vm.LoadProduct(_viewModel.SelectedProduct);
+        var window = new ProductEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved)
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
 }

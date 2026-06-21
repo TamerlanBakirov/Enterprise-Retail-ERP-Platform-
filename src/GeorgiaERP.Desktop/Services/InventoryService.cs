@@ -12,6 +12,10 @@ public interface IInventoryService
     Task<ApiResult> ShipTransferAsync(Guid id);
     Task<ApiResult> ReceiveTransferAsync(Guid id);
     Task<PagedResult<StockCountDto>> GetStockCountsAsync(Guid? warehouseId = null, string? status = null, int page = 1, int pageSize = 20);
+    Task<TransferOrderDto?> CreateTransferAsync(CreateTransferOrderRequest request);
+    Task<StockCountDto?> CreateStockCountAsync(CreateStockCountRequest request);
+    Task<ApiResult> RecordCountLineAsync(Guid countId, Guid lineId, decimal countedQty);
+    Task<ApiResult> CompleteStockCountAsync(Guid countId);
 }
 
 public class InventoryService : IInventoryService
@@ -58,4 +62,16 @@ public class InventoryService : IInventoryService
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
         return _api.GetAsync<PagedResult<StockCountDto>>(q)!;
     }
+
+    public Task<TransferOrderDto?> CreateTransferAsync(CreateTransferOrderRequest request) =>
+        _api.PostAsync<CreateTransferOrderRequest, TransferOrderDto>("inventory/transfers", request);
+
+    public Task<StockCountDto?> CreateStockCountAsync(CreateStockCountRequest request) =>
+        _api.PostAsync<CreateStockCountRequest, StockCountDto>("inventory/counts", request);
+
+    public Task<ApiResult> RecordCountLineAsync(Guid countId, Guid lineId, decimal countedQty) =>
+        _api.PostAsync($"inventory/counts/{countId}/lines/{lineId}/record", new { countedQuantity = countedQty });
+
+    public Task<ApiResult> CompleteStockCountAsync(Guid countId) =>
+        _api.PostAsync($"inventory/counts/{countId}/complete");
 }

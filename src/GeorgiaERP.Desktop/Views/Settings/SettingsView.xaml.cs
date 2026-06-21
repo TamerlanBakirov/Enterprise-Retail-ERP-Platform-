@@ -20,4 +20,11 @@ public partial class SettingsView : UserControl
     {
         await _viewModel.LoadLicenseCommand.ExecuteAsync(null);
     }
+
+    private void OnManage2FA(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<TwoFactorSetupViewModel>();
+        var window = new TwoFactorSetupWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+    }
 }

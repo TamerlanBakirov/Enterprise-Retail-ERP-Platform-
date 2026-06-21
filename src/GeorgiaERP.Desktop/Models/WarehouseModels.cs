@@ -89,3 +89,53 @@ public record ShippingOrderLineDto(
     string? BatchNumber,
     string? SerialNumber,
     string? Notes);
+
+public record CreateWarehouseRequest(
+    string Code,
+    string Name,
+    string? NameKa,
+    string WarehouseType,
+    string? Address,
+    string? City,
+    string? Region,
+    Guid? LinkedStoreId);
+
+public record CreateLocationRequest(
+    string Code,
+    string Name,
+    string? NameKa,
+    string LocationType,
+    Guid? ParentLocationId,
+    int SortOrder,
+    int? MaxCapacity,
+    string? Notes);
+
+public record CreateReceivingOrderRequest(
+    Guid WarehouseId,
+    string Source,
+    Guid? SourceOrderId,
+    Guid? SupplierId,
+    DateTimeOffset? ExpectedDate,
+    Guid? LocationId,
+    string? Notes,
+    List<ReceivingLineInput> Lines);
+
+public record ReceivingLineInput(
+    Guid ProductId,
+    decimal ExpectedQty);
+
+public record CreateShippingOrderRequest(
+    Guid WarehouseId,
+    string OrderType,
+    Guid? SourceOrderId,
+    Guid? CustomerId,
+    Guid? DestWarehouseId,
+    string? ShippingAddress,
+    string? Carrier,
+    DateTimeOffset? ExpectedShipDate,
+    string? Notes,
+    List<ShippingLineInput> Lines);
+
+public record ShippingLineInput(
+    Guid ProductId,
+    decimal OrderedQty);

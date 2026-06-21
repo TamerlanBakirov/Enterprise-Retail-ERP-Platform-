@@ -26,7 +26,7 @@ public class JwtTokenService : Application.Common.IJwtTokenService
 
         _signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         _issuer = _configuration["Jwt:Issuer"] ?? "GeorgiaERP";
-        _audience = _configuration["Jwt:Audience"] ?? "GeorgiaERP";
+        _audience = _configuration["Jwt:Audience"] ?? "GeorgiaERP.Client";
         _accessTokenExpiryMinutes = int.TryParse(_configuration["Jwt:AccessTokenExpiryMinutes"], out var expMin) ? expMin : 15;
         _refreshTokenExpiryDays = int.TryParse(_configuration["Jwt:RefreshTokenExpiryDays"], out var expDays) ? expDays : 7;
     }

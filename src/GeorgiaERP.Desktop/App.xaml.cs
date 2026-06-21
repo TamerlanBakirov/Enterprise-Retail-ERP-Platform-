@@ -99,6 +99,8 @@ public partial class App : Application
         services.AddSingleton<IOrganizationService, OrganizationService>();
         services.AddSingleton<IWarehouseService, WarehouseService>();
         services.AddSingleton<IUserService, UserService>();
+        services.AddSingleton<IPricingService, PricingService>();
+        services.AddSingleton<IComplianceService, ComplianceService>();
 
         services.AddTransient<LoginViewModel>();
         services.AddTransient<LicenseActivationViewModel>();
@@ -117,6 +119,24 @@ public partial class App : Application
         services.AddTransient<ProductEditViewModel>();
         services.AddTransient<CustomerEditViewModel>();
         services.AddTransient<WarehouseViewModel>();
+        services.AddTransient<AccountEditViewModel>();
+        services.AddTransient<JournalEntryEditViewModel>();
+        services.AddTransient<BankAccountEditViewModel>();
+        services.AddTransient<SupplierEditViewModel>();
+        services.AddTransient<PurchaseOrderEditViewModel>();
+        services.AddTransient<TransferOrderEditViewModel>();
+        services.AddTransient<StockCountEditViewModel>();
+        services.AddTransient<TwoFactorSetupViewModel>();
+        services.AddTransient<ComplianceViewModel>();
+        services.AddTransient<WaybillEditViewModel>();
+        services.AddTransient<PricingViewModel>();
+        services.AddTransient<PriceListEditViewModel>();
+        services.AddTransient<PromotionEditViewModel>();
+        services.AddTransient<SetPriceViewModel>();
+        services.AddTransient<WarehouseEditViewModel>();
+        services.AddTransient<LocationEditViewModel>();
+        services.AddTransient<ReceivingOrderEditViewModel>();
+        services.AddTransient<ShippingOrderEditViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)

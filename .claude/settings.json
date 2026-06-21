@@ -1,36 +1,44 @@
 {
   "hooks": {
-    "PreToolCall": [
+    "PreToolUse": [
       {
-        "matcher": "Bash(git commit*)",
-        "command": "echo '[AUTO-GATE] Commit attempt detected. BEFORE committing, you MUST run: 1) @code-reviewer on all changed files 2) @security-auditor on auth/security changes 3) @test-strategist to verify test coverage. Do NOT proceed with commit until all applicable agents have passed.'"
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[AUTO-GATE] Commit attempt detected. BEFORE committing, you MUST run: 1) @code-reviewer on all changed files 2) @security-auditor on auth/security changes 3) @test-strategist to verify test coverage. Do NOT proceed with commit until all applicable agents have passed.'"
+          }
+        ]
       }
     ],
-    "PostToolCall": [
+    "PostToolUse": [
       {
-        "matcher": "Edit(**/src/**)",
-        "command": "echo '[AUTO] Source file edited. After you finish the current task, run @code-reviewer on changed files before committing.'"
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[AUTO] Source file edited. After you finish the current task, run @code-reviewer on changed files before committing.'"
+          }
+        ]
       },
       {
-        "matcher": "Write(**/src/**)",
-        "command": "echo '[AUTO] New source file created. Run @security-auditor and @test-strategist on this file before committing.'"
-      },
-      {
-        "matcher": "Edit(**/Migrations/**)",
-        "command": "echo '[AUTO] Database migration changed. Run @database-planner and @sql-expert to review schema changes.'"
-      },
-      {
-        "matcher": "Edit(**/docker*)",
-        "command": "echo '[AUTO] Docker config changed. Run @deployment-troubleshooter to verify deployment configuration.'"
-      },
-      {
-        "matcher": "Edit(**/*Auth*)",
-        "command": "echo '[AUTO] Authentication code changed. Run @security-auditor immediately — auth changes are high-risk.'"
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[AUTO] New source file created. Run @security-auditor and @test-strategist on this file before committing.'"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "command": "echo '[AUTO-CHECKLIST] Session ending. Verify: 1) All code changes reviewed by @code-reviewer 2) Security-sensitive changes audited by @security-auditor 3) Tests exist for new code via @test-strategist 4) DB changes validated by @sql-expert 5) Documentation updated by @documentation-writer if public API changed.'"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[AUTO-CHECKLIST] Session ending. Verify: 1) All code changes reviewed by @code-reviewer 2) Security-sensitive changes audited by @security-auditor 3) Tests exist for new code via @test-strategist 4) DB changes validated by @sql-expert 5) Documentation updated by @documentation-writer if public API changed.'"
+          }
+        ]
       }
     ]
   }

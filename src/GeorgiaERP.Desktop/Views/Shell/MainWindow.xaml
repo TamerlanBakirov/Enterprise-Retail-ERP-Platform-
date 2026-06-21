@@ -12,6 +12,8 @@
         xmlns:settings="clr-namespace:GeorgiaERP.Desktop.Views.Settings"
         xmlns:warehouse="clr-namespace:GeorgiaERP.Desktop.Views.Warehouse"
         xmlns:admin="clr-namespace:GeorgiaERP.Desktop.Views.Admin"
+        xmlns:pricing="clr-namespace:GeorgiaERP.Desktop.Views.Pricing"
+        xmlns:compliance="clr-namespace:GeorgiaERP.Desktop.Views.Compliance"
         Title="Georgia ERP"
         Width="1400" Height="850"
         MinWidth="1100" MinHeight="650"
@@ -142,10 +144,22 @@
                                      CommandParameter="Procurement" />
 
                         <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Pricing"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Pricing}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Pricing" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
                                      Content="Finance"
                                      IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}"
                                      Command="{Binding NavigateCommand}"
                                      CommandParameter="Finance" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="RS.GE / Compliance"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Compliance}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Compliance" />
 
                         <RadioButton Style="{StaticResource NavButton}"
                                      Content="Reports"
@@ -181,7 +195,9 @@
                 <warehouse:WarehouseView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Warehouse}" />
                 <customers:CustomersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
                 <procurement:ProcurementView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
+                <pricing:PricingView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Pricing}" />
                 <finance:FinanceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
+                <compliance:ComplianceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Compliance}" />
                 <reports:ReportsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
                 <admin:UsersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Users}" />
                 <settings:SettingsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
