@@ -37,7 +37,7 @@ public class GetPosSessionsQueryHandler
     public async Task<PagedResult<PosSessionSummary>> Handle(
         GetPosSessionsQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.PosSessions.Include(s => s.Terminal).AsQueryable();
+        var query = _dbContext.PosSessions.AsQueryable();
 
         if (request.TerminalId.HasValue)
             query = query.Where(s => s.TerminalId == request.TerminalId.Value);
@@ -48,23 +48,43 @@ public class GetPosSessionsQueryHandler
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        // Fetch sessions with related terminal codes and transaction counts.
+        // Uses separate queries and client-side ordering for cross-provider
+        // compatibility (SQLite does not support DateTimeOffset in ORDER BY).
+        var allMatching = await query.ToListAsync(cancellationToken);
+
+        var paged = allMatching
             .OrderByDescending(s => s.OpenedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(s => new PosSessionSummary(
+            .ToList();
+
+        var sessionIds = paged.Select(s => s.Id).ToList();
+
+        var terminalIds = paged.Select(s => s.TerminalId).Distinct().ToList();
+        var terminals = await _dbContext.PosTerminals
+            .Where(t => terminalIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Code, cancellationToken);
+
+        var transactionCounts = await _dbContext.PosTransactions
+            .Where(t => sessionIds.Contains(t.SessionId))
+            .GroupBy(t => t.SessionId)
+            .Select(g => new { SessionId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.SessionId, x => x.Count, cancellationToken);
+
+        var items = paged.Select(s => new PosSessionSummary(
                 s.Id,
                 s.TerminalId,
-                s.Terminal.Code,
+                terminals.GetValueOrDefault(s.TerminalId, ""),
                 s.CashierId,
                 s.Status.ToString(),
                 s.OpeningBalance,
                 s.ClosingBalance,
                 s.CashDifference,
-                s.Transactions.Count,
+                transactionCounts.GetValueOrDefault(s.Id, 0),
                 s.OpenedAt,
                 s.ClosedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new PagedResult<PosSessionSummary>
         {

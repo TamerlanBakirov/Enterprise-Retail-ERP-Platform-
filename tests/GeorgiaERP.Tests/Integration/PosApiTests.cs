@@ -211,9 +211,14 @@ public class PosApiTests
     public async Task GetSessions_ReturnsPagedResult()
     {
         var client = await AuthenticatedClient();
-        var seed = await SeedPosInfrastructure();
 
-        // Open a session to ensure at least one exists
+        // First, test without any data -- empty result should be OK
+        var emptyResponse = await client.GetAsync("/api/v1/pos/sessions?page=1&pageSize=10");
+        emptyResponse.StatusCode.Should().Be(HttpStatusCode.OK,
+            await emptyResponse.Content.ReadAsStringAsync());
+
+        // Now seed and open a session
+        var seed = await SeedPosInfrastructure();
         await client.PostAsJsonAsync("/api/v1/pos/sessions", new
         {
             terminalId = seed.TerminalId,
@@ -222,7 +227,8 @@ public class PosApiTests
         });
 
         var response = await client.GetAsync("/api/v1/pos/sessions?page=1&pageSize=10");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            await response.Content.ReadAsStringAsync());
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("totalCount").GetInt32().Should().BeGreaterThanOrEqualTo(1);
     }

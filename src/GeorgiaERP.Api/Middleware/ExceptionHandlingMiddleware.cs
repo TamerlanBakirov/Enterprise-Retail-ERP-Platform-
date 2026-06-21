@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
+using Microsoft.Extensions.Hosting;
 
 namespace GeorgiaERP.Api.Middleware;
 
@@ -73,12 +74,17 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = "application/json";
 
-            // SECURITY: Never return stack traces, exception types, or internal details.
-            // Return only the correlation ID so support can look up the error in logs.
+            // In development, include exception details for debugging.
+            // In production, return only the correlation ID.
+            var env = context.RequestServices.GetService<IHostEnvironment>();
+            var errorMessage = env?.IsDevelopment() == true
+                ? $"{ex.GetType().Name}: {ex.Message}"
+                : "An unexpected error occurred. If this persists, contact support.";
+
             await context.Response.WriteAsync(JsonSerializer.Serialize(new
             {
                 type = "InternalError",
-                error = "An unexpected error occurred. If this persists, contact support.",
+                error = errorMessage,
                 correlationId
             }, JsonOptions));
         }
