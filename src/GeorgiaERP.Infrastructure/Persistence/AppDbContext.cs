@@ -7,6 +7,8 @@ using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Inventory;
 using GeorgiaERP.Domain.Licensing;
 using GeorgiaERP.Domain.Organization;
+using GeorgiaERP.Domain.Warehouse;
+using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 using GeorgiaERP.Domain.POS;
 using GeorgiaERP.Domain.Pricing;
 using GeorgiaERP.Domain.Procurement;
@@ -31,7 +33,7 @@ public class AppDbContext : DbContext, IAppDbContext
     // Organization
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Store> Stores => Set<Store>();
-    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<WarehouseEntity> Warehouses => Set<WarehouseEntity>();
 
     // Identity
     public DbSet<User> Users => Set<User>();
@@ -95,9 +97,17 @@ public class AppDbContext : DbContext, IAppDbContext
     // Licensing
     public DbSet<License> Licenses => Set<License>();
 
+    // Warehouse
+    public DbSet<WarehouseLocation> WarehouseLocations => Set<WarehouseLocation>();
+    public DbSet<ReceivingOrder> ReceivingOrders => Set<ReceivingOrder>();
+    public DbSet<ReceivingOrderLine> ReceivingOrderLines => Set<ReceivingOrderLine>();
+    public DbSet<ShippingOrder> ShippingOrders => Set<ShippingOrder>();
+    public DbSet<ShippingOrderLine> ShippingOrderLines => Set<ShippingOrderLine>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(_schema);
+        modelBuilder.Ignore<DomainEvent>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // Apply global query filter for soft-deleted entities

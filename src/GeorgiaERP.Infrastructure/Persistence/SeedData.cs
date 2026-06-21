@@ -37,7 +37,7 @@ public static class SeedData
             return;
         }
 
-        var modules = new[] { "identity", "products", "inventory", "pos", "procurement", "compliance", "finance", "crm", "organization", "reports" };
+        var modules = new[] { "identity", "products", "inventory", "pos", "procurement", "compliance", "finance", "crm", "organization", "reports", "warehouse" };
         var actions = new[] { "read", "create", "update", "delete", "manage" };
 
         var permissions = new List<Permission>();
@@ -122,14 +122,14 @@ public static class SeedData
     private static bool IsPermissionAllowed(string role, string module, string action) => role switch
     {
         "super_admin" or "company_admin" => true,
-        "store_manager" => module is "products" or "inventory" or "pos" or "crm" or "organization" or "reports",
+        "store_manager" => module is "products" or "inventory" or "pos" or "crm" or "organization" or "reports" or "warehouse",
         "cashier" => (module == "pos" && action is "read" or "create" or "manage") ||
                      (module is "products" or "inventory" && action == "read") ||
                      (module == "crm" && action is "read" or "create"),
-        "warehouse_manager" => module is "products" or "inventory" && action is "read" or "create" or "update" or "manage",
+        "warehouse_manager" => module is "products" or "inventory" or "warehouse" && action is "read" or "create" or "update" or "manage",
         "accountant" => module is "finance" or "compliance" or "reports" && action is not "delete",
-        "procurement_officer" => module is "procurement" or "products" or "inventory" && action is not "delete",
-        "inventory_clerk" => module is "inventory" or "products" && action is "read" or "create" or "update",
+        "procurement_officer" => module is "procurement" or "products" or "inventory" or "warehouse" && action is not "delete",
+        "inventory_clerk" => module is "inventory" or "products" or "warehouse" && action is "read" or "create" or "update",
         "auditor" or "viewer" => action == "read",
         _ => false
     };

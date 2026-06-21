@@ -9,9 +9,9 @@ namespace GeorgiaERP.Api.Controllers;
 public abstract class ApiControllerBase : ControllerBase
 {
     protected Guid CurrentUserId =>
-        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) && id != Guid.Empty
             ? id
-            : Guid.Empty;
+            : throw new UnauthorizedAccessException("User identity claim is missing or invalid.");
 
     protected Guid? CurrentCompanyId =>
         Guid.TryParse(User.FindFirstValue("company_id"), out var id)

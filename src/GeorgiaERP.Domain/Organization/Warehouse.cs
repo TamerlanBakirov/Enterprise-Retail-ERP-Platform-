@@ -49,6 +49,22 @@ public class Warehouse : BaseEntity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    public void Update(string name, string? nameKa, string? address, string? city, string? region)
+    {
+        Name = name;
+        NameKa = nameKa;
+        Address = address;
+        City = city;
+        Region = region;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void Deactivate()
     {
         IsActive = false;
