@@ -1,20 +1,17 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using GeorgiaERP.Desktop.Services;
 using GeorgiaERP.Desktop.Views.Shell;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class LoginViewModel : ObservableObject
+public partial class LoginViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
     private readonly ISettingsService _settings;
 
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _serverUrl = string.Empty;
-    [ObservableProperty] private string? _errorMessage;
-    [ObservableProperty] private bool _isLoading;
 
     public LoginViewModel(IAuthService authService, ISettingsService settings)
     {
@@ -31,10 +28,7 @@ public partial class LoginViewModel : ObservableObject
             return;
         }
 
-        ErrorMessage = null;
-        IsLoading = true;
-
-        try
+        await ExecuteAsync(async () =>
         {
             if (!string.IsNullOrWhiteSpace(ServerUrl))
             {
@@ -63,14 +57,6 @@ public partial class LoginViewModel : ObservableObject
             {
                 ErrorMessage = error ?? "Login failed";
             }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Connection error: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        });
     }
 }

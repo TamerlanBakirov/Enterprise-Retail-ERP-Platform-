@@ -93,6 +93,7 @@ public class RsGeWaybill : BaseEntity
     /// <summary>RS.GE save_waybill succeeded: a draft waybill now exists server-side.</summary>
     public void MarkSaved(string? waybillNumber)
     {
+        EnsureValidTransition(WaybillStatus.Saved);
         WaybillNumber = waybillNumber;
         Status = WaybillStatus.Saved;
         Touch();
@@ -101,6 +102,7 @@ public class RsGeWaybill : BaseEntity
     /// <summary>RS.GE send_waybill succeeded: the waybill is active and goods may move.</summary>
     public void MarkActive(DateTimeOffset activateDate)
     {
+        EnsureValidTransition(WaybillStatus.Active);
         Status = WaybillStatus.Active;
         ActivateDate = activateDate;
         Touch();
@@ -108,6 +110,7 @@ public class RsGeWaybill : BaseEntity
 
     public void MarkConfirmed()
     {
+        EnsureValidTransition(WaybillStatus.Confirmed);
         Status = WaybillStatus.Confirmed;
         Touch();
 
@@ -121,6 +124,7 @@ public class RsGeWaybill : BaseEntity
 
     public void MarkClosed(DateTimeOffset deliveryDate)
     {
+        EnsureValidTransition(WaybillStatus.Closed);
         Status = WaybillStatus.Closed;
         DeliveryDate = deliveryDate;
         Touch();
@@ -128,8 +132,38 @@ public class RsGeWaybill : BaseEntity
 
     public void MarkRejected()
     {
+        EnsureValidTransition(WaybillStatus.Rejected);
         Status = WaybillStatus.Rejected;
         Touch();
+    }
+
+    /// <summary>
+    /// Validates that a state transition is legal according to the RS.GE waybill lifecycle:
+    ///   Draft -> Saved -> Active -> Confirmed -> Closed
+    ///                  \-> Rejected (from Draft, Saved, or Active)
+    /// Any transition from a terminal state (Closed, Expired, Rejected) is invalid.
+    /// </summary>
+    private void EnsureValidTransition(WaybillStatus target)
+    {
+        var valid = (Status, target) switch
+        {
+            (WaybillStatus.Draft,     WaybillStatus.Saved)     => true,
+            (WaybillStatus.Draft,     WaybillStatus.Rejected)  => true,
+            (WaybillStatus.Saved,     WaybillStatus.Active)    => true,
+            (WaybillStatus.Saved,     WaybillStatus.Rejected)  => true,
+            (WaybillStatus.Active,    WaybillStatus.Confirmed) => true,
+            (WaybillStatus.Active,    WaybillStatus.Rejected)  => true,
+            (WaybillStatus.Active,    WaybillStatus.Closed)    => true,
+            (WaybillStatus.Confirmed, WaybillStatus.Closed)    => true,
+            _ => false
+        };
+
+        if (!valid)
+        {
+            throw new InvalidOperationException(
+                $"Invalid waybill state transition from {Status} to {target}. " +
+                $"Waybill {Id} (document {FiscalDocumentId}) cannot transition to {target} from its current state.");
+        }
     }
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;

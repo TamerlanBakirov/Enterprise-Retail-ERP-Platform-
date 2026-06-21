@@ -1,0 +1,144 @@
+# Production overrides - use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  postgres:
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-georgia_erp}
+    ports: []  # Do not expose DB port in production
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  rabbitmq:
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672"  # Internal only, no host binding
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  redis:
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
+    ports: []  # Do not expose Redis port in production
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+
+  api:
+    restart: always
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-georgia_erp};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Include Error Detail=false;Maximum Pool Size=100;Minimum Pool Size=10;Connection Idle Lifetime=300"
+      ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false,connectTimeout=5000,syncTimeout=3000"
+      RsGe__Queue__HostName: rabbitmq
+      RsGe__Queue__UserName: ${RABBITMQ_USER}
+      RsGe__Queue__Password: ${RABBITMQ_PASSWORD}
+      RsGe__ServiceUser: ${RSGE_USER}
+      RsGe__ServicePassword: ${RSGE_PASSWORD}
+      Jwt__SecretKey: ${JWT_SECRET_KEY}
+      Jwt__Issuer: GeorgiaERP
+      Jwt__Audience: GeorgiaERP.Client
+      Licensing__SigningKey: ${LICENSE_SIGNING_KEY}
+      Authentication__TotpEncryptionKey: ${TOTP_ENCRYPTION_KEY}
+      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    ports:
+      - "5000"  # Internal only, Nginx handles external traffic
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "4.0"
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  workers:
+    restart: always
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=${POSTGRES_DB:-georgia_erp};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Include Error Detail=false;Maximum Pool Size=50;Minimum Pool Size=5"
+      ConnectionStrings__Redis: "redis:6379,password=${REDIS_PASSWORD},abortConnect=false"
+      RsGe__Queue__HostName: rabbitmq
+      RsGe__Queue__UserName: ${RABBITMQ_USER}
+      RsGe__Queue__Password: ${RABBITMQ_PASSWORD}
+      DOTNET_ENVIRONMENT: Production
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: georgia-erp-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:

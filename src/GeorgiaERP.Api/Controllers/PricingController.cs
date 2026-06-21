@@ -27,9 +27,9 @@ public class PricingController : ApiControllerBase
     public async Task<IActionResult> CreatePriceList([FromBody] CreatePriceListCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess
-            ? Created($"/api/v1/pricing/price-lists/{result.Value!.Id}", result.Value)
-            : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/pricing/price-lists/{result.Value!.Id}", result.Value);
     }
 
     [HttpGet("price-lists/{priceListId:guid}/items")]
@@ -46,7 +46,9 @@ public class PricingController : ApiControllerBase
     public async Task<IActionResult> SetPrice([FromBody] SetPriceCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Ok(result.Value);
     }
 
     [HttpGet("promotions")]
@@ -62,8 +64,8 @@ public class PricingController : ApiControllerBase
     public async Task<IActionResult> CreatePromotion([FromBody] CreatePromotionCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess
-            ? Created($"/api/v1/pricing/promotions/{result.Value!.Id}", result.Value)
-            : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/pricing/promotions/{result.Value!.Id}", result.Value);
     }
 }

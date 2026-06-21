@@ -25,6 +25,9 @@ public class Result
     public static Result<T> Failure<T>(string error, string errorCode) => new(default, false, error, errorCode);
     public static Result<T> ValidationFailure<T>(IReadOnlyList<string> errors) => new(default, false, errors.FirstOrDefault(), "VALIDATION_ERROR", errors);
     public static Result<T> NotFound<T>(string entity, object id) => new(default, false, $"{entity} with ID '{id}' was not found.", "NOT_FOUND");
+    public static Result NotFound(string entity, object id) => new(false, $"{entity} with ID '{id}' was not found.", "NOT_FOUND");
+    public static Result Conflict(string error) => new(false, error, "CONFLICT");
+    public static Result<T> Conflict<T>(string error) => new(default, false, error, "CONFLICT");
 }
 
 public class Result<T> : Result

@@ -33,7 +33,9 @@ public class ProcurementController : ApiControllerBase
     public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/procurement/suppliers/{result.Value}", new { id = result.Value }) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/procurement/suppliers/{result.Value}", new { id = result.Value });
     }
 
     // Purchase Orders
@@ -53,28 +55,30 @@ public class ProcurementController : ApiControllerBase
     public async Task<IActionResult> CreatePurchaseOrder([FromBody] CreatePurchaseOrderCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/procurement/purchase-orders/{result.Value!.Id}", result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/procurement/purchase-orders/{result.Value!.Id}", result.Value);
     }
 
     [HttpPost("purchase-orders/{id:guid}/approve")]
     public async Task<IActionResult> ApprovePurchaseOrder(Guid id)
     {
         var result = await _mediator.Send(new ApprovePurchaseOrderCommand(id, CurrentUserId));
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [HttpPost("purchase-orders/{id:guid}/send")]
     public async Task<IActionResult> SendPurchaseOrder(Guid id)
     {
         var result = await _mediator.Send(new SendPurchaseOrderCommand(id));
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [HttpPost("purchase-orders/{id:guid}/cancel")]
     public async Task<IActionResult> CancelPurchaseOrder(Guid id)
     {
         var result = await _mediator.Send(new CancelPurchaseOrderCommand(id));
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     // Goods Receipt
@@ -84,9 +88,10 @@ public class ProcurementController : ApiControllerBase
     {
         var command = new ReceiveGoodsCommand(id, CurrentUserId, request.Notes, request.Lines);
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Created($"/api/v1/procurement/grn/{result.Value!.GrnId}", result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/procurement/grn/{result.Value!.GrnId}", result.Value);
     }
 }
 
 public record ReceiveGoodsRequest(string? Notes, List<GoodsReceiptLineInput> Lines);
-

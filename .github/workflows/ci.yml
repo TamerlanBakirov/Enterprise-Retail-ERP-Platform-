@@ -10,6 +10,9 @@ env:
   DOTNET_VERSION: "9.0.x"
   DOTNET_NOLOGO: "true"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_IMAGE_API: ghcr.io/${{ github.repository }}/api
+  DOCKER_IMAGE_WORKERS: ghcr.io/${{ github.repository }}/workers
 
 jobs:
   build-test:
@@ -39,6 +42,14 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore (server projects)
         run: |
           dotnet restore src/GeorgiaERP.Domain/GeorgiaERP.Domain.csproj
@@ -54,15 +65,87 @@ jobs:
       - name: Build Workers
         run: dotnet build src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test tests/GeorgiaERP.Tests/GeorgiaERP.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+      - name: Test with coverage
+        run: >
+          dotnet test tests/GeorgiaERP.Tests/GeorgiaERP.Tests.csproj
+          --configuration Release
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+          --logger "trx;LogFileName=test-results.trx"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: "**/test-results.trx"
+          path: |
+            **/test-results.trx
+            **/TestResults/**/coverage.cobertura.xml
+
+      - name: Generate coverage report summary
+        if: always()
+        run: |
+          COVERAGE_FILE=$(find ./TestResults -name "coverage.cobertura.xml" | head -1)
+          if [ -n "$COVERAGE_FILE" ]; then
+            echo "## Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+            LINE_RATE=$(grep -oP 'line-rate="\K[^"]+' "$COVERAGE_FILE" | head -1)
+            BRANCH_RATE=$(grep -oP 'branch-rate="\K[^"]+' "$COVERAGE_FILE" | head -1)
+            LINE_PCT=$(echo "$LINE_RATE * 100" | bc -l 2>/dev/null | head -c 5 || echo "$LINE_RATE")
+            BRANCH_PCT=$(echo "$BRANCH_RATE * 100" | bc -l 2>/dev/null | head -c 5 || echo "$BRANCH_RATE")
+            echo "| Metric | Coverage |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Line   | ${LINE_PCT}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Branch | ${BRANCH_PCT}% |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore packages
+        run: |
+          dotnet restore src/GeorgiaERP.Api/GeorgiaERP.Api.csproj
+          dotnet restore src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj
+
+      - name: Check for vulnerable packages
+        run: |
+          echo "## Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "### API Project" >> $GITHUB_STEP_SUMMARY
+          dotnet list src/GeorgiaERP.Api/GeorgiaERP.Api.csproj package --vulnerable --include-transitive 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Workers Project" >> $GITHUB_STEP_SUMMARY
+          dotnet list src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj package --vulnerable --include-transitive 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
+
+      - name: Fail on critical vulnerabilities
+        run: |
+          API_VULNS=$(dotnet list src/GeorgiaERP.Api/GeorgiaERP.Api.csproj package --vulnerable --include-transitive 2>&1)
+          WORKER_VULNS=$(dotnet list src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj package --vulnerable --include-transitive 2>&1)
+          if echo "$API_VULNS" | grep -qi "critical"; then
+            echo "::error::Critical vulnerabilities found in API project"
+            exit 1
+          fi
+          if echo "$WORKER_VULNS" | grep -qi "critical"; then
+            echo "::error::Critical vulnerabilities found in Workers project"
+            exit 1
+          fi
 
   build-desktop:
     name: Build Desktop (Windows)
@@ -76,8 +159,115 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore Desktop
         run: dotnet restore src/GeorgiaERP.Desktop/GeorgiaERP.Desktop.csproj
 
       - name: Build Desktop
         run: dotnet build src/GeorgiaERP.Desktop/GeorgiaERP.Desktop.csproj --configuration Release --no-restore
+
+  docker-build:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [build-test, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for API image
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_API }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+            type=ref,event=branch
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Extract metadata for Workers image
+        id: meta-workers
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_WORKERS }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+            type=ref,event=branch
+
+      - name: Build and push Workers image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./Dockerfile.workers
+          push: true
+          tags: ${{ steps.meta-workers.outputs.tags }}
+          labels: ${{ steps.meta-workers.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Staging deployment placeholder"
+          echo "To implement: SSH into staging server or use a deployment tool"
+          echo "Example: docker compose -f docker-compose.yml -f docker-compose.prod.yml pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: |
+          echo "Production deployment placeholder"
+          echo "Requires manual approval via GitHub environment protection rules"
+          echo "To implement: SSH into production server or use a deployment tool"
+          echo "Example: docker compose -f docker-compose.yml -f docker-compose.prod.yml pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d"

@@ -30,12 +30,7 @@ public abstract class ApiControllerBase : ControllerBase
         if (result.IsSuccess)
             return Ok();
 
-        return result.ErrorCode switch
-        {
-            "NOT_FOUND" => NotFound(new { error = result.Error, errorCode = result.ErrorCode }),
-            "VALIDATION_ERROR" => BadRequest(new { error = result.Error, errorCode = result.ErrorCode, errors = result.Errors }),
-            _ => BadRequest(new { error = result.Error, errorCode = result.ErrorCode })
-        };
+        return MapErrorToResponse(result);
     }
 
     /// <summary>
@@ -47,10 +42,22 @@ public abstract class ApiControllerBase : ControllerBase
         if (result.IsSuccess)
             return Ok(result.Value);
 
+        return MapErrorToResponse(result);
+    }
+
+    /// <summary>
+    /// Maps Result error codes to HTTP status codes.
+    /// Centralizes error-to-response mapping to avoid duplication between overloads.
+    /// </summary>
+    private IActionResult MapErrorToResponse(Result result)
+    {
         return result.ErrorCode switch
         {
             "NOT_FOUND" => NotFound(new { error = result.Error, errorCode = result.ErrorCode }),
             "VALIDATION_ERROR" => BadRequest(new { error = result.Error, errorCode = result.ErrorCode, errors = result.Errors }),
+            "UNAUTHORIZED" => Unauthorized(new { error = result.Error, errorCode = result.ErrorCode }),
+            "FORBIDDEN" => StatusCode(403, new { error = result.Error, errorCode = result.ErrorCode }),
+            "CONFLICT" => Conflict(new { error = result.Error, errorCode = result.ErrorCode }),
             _ => BadRequest(new { error = result.Error, errorCode = result.ErrorCode })
         };
     }

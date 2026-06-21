@@ -1,4 +1,3 @@
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GeorgiaERP.Desktop.Models;
@@ -6,7 +5,7 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class UserCreateViewModel : ObservableObject
+public partial class UserCreateViewModel : DialogViewModel
 {
     private readonly IUserService _userService;
 
@@ -19,9 +18,6 @@ public partial class UserCreateViewModel : ObservableObject
     [ObservableProperty] private string? _lastNameKa;
     [ObservableProperty] private string? _phone;
     [ObservableProperty] private string _defaultLanguage = "ka";
-    [ObservableProperty] private string? _errorMessage;
-
-    public bool Saved { get; private set; }
 
     public UserCreateViewModel(IUserService userService)
     {
@@ -48,18 +44,9 @@ public partial class UserCreateViewModel : ObservableObject
 
             var result = await _userService.CreateUserAsync(request);
             if (result is not null)
-            {
-                Saved = true;
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (Window w in Application.Current.Windows)
-                        if (w.DataContext == this) { w.Close(); break; }
-                });
-            }
+                SaveAndClose();
             else
-            {
                 ErrorMessage = "Failed to create user.";
-            }
         }
         catch (Exception ex)
         {

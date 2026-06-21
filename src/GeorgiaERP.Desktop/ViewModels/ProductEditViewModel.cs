@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GeorgiaERP.Desktop.Models;
@@ -7,7 +6,7 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class ProductEditViewModel : ObservableObject
+public partial class ProductEditViewModel : DialogViewModel
 {
     private readonly IProductService _productService;
 
@@ -21,10 +20,8 @@ public partial class ProductEditViewModel : ObservableObject
     [ObservableProperty] private decimal _vatRate = 0.18m;
     [ObservableProperty] private string _unitOfMeasure = "pcs";
     [ObservableProperty] private string? _barcode;
-    [ObservableProperty] private string? _errorMessage;
 
     public ObservableCollection<CategoryDto> Categories { get; } = [];
-    public bool Saved { get; private set; }
 
     public ProductEditViewModel(IProductService productService)
     {
@@ -36,7 +33,7 @@ public partial class ProductEditViewModel : ObservableObject
         try
         {
             var cats = await _productService.GetCategoriesAsync();
-            foreach (var c in cats) Categories.Add(c);
+            ReplaceItems(Categories, cats);
         }
         catch { }
     }
@@ -65,18 +62,9 @@ public partial class ProductEditViewModel : ObservableObject
 
             var result = await _productService.CreateProductAsync(request);
             if (result is not null)
-            {
-                Saved = true;
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (Window w in Application.Current.Windows)
-                        if (w.DataContext == this) { w.Close(); break; }
-                });
-            }
+                SaveAndClose();
             else
-            {
                 ErrorMessage = "Failed to save product.";
-            }
         }
         catch (Exception ex)
         {

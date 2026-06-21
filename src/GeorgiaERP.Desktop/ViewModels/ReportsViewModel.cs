@@ -5,12 +5,10 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class ReportsViewModel : ObservableObject
+public partial class ReportsViewModel : BaseViewModel
 {
     private readonly IReportService _reportService;
 
-    [ObservableProperty] private bool _isLoading;
-    [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private string _activeReport = "Sales";
     [ObservableProperty] private DateTime _dateFrom = DateTime.Today.AddDays(-30);
     [ObservableProperty] private DateTime _dateTo = DateTime.Today;
@@ -25,34 +23,21 @@ public partial class ReportsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task LoadReportAsync()
+    private Task LoadReportAsync() => ExecuteAsync(async () =>
     {
-        IsLoading = true;
-        ErrorMessage = null;
-        try
+        switch (ActiveReport)
         {
-            switch (ActiveReport)
-            {
-                case "Sales":
-                    SalesReport = await _reportService.GetSalesReportAsync(null, DateFrom, DateTo);
-                    break;
-                case "Stock":
-                    StockReport = await _reportService.GetStockReportAsync();
-                    break;
-                case "VAT":
-                    VatReport = await _reportService.GetVatReportAsync(DateTo.Year, DateTo.Month);
-                    break;
-            }
+            case "Sales":
+                SalesReport = await _reportService.GetSalesReportAsync(null, DateFrom, DateTo);
+                break;
+            case "Stock":
+                StockReport = await _reportService.GetStockReportAsync();
+                break;
+            case "VAT":
+                VatReport = await _reportService.GetVatReportAsync(DateTo.Year, DateTo.Month);
+                break;
         }
-        catch (Exception ex)
-        {
-            ErrorMessage = ex.Message;
-        }
-        finally
-        {
-            IsLoading = false;
-        }
-    }
+    });
 
     [RelayCommand]
     private void Export()
