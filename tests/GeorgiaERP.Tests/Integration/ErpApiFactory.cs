@@ -25,7 +25,9 @@ public class ErpApiFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=fake_for_test",
+                ["ConnectionStrings:Redis"] = "",
                 ["RsGe:Queue:HostName"] = "localhost",
+                ["Jwt:SecretKey"] = "TEST-ONLY-JWT-SECRET-KEY-THAT-IS-AT-LEAST-SIXTY-FOUR-CHARACTERS-LONG-FOR-TESTS",
                 ["Licensing:SigningKey"] = "TEST-LICENSE-SIGNING-KEY-WITH-AT-LEAST-THIRTY-TWO-CHARS"
             });
         });

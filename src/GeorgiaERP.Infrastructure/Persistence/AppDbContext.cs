@@ -98,6 +98,7 @@ public class AppDbContext : DbContext, IAppDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(_schema);
+        modelBuilder.Ignore<DomainEvent>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // Apply global query filter for soft-deleted entities
