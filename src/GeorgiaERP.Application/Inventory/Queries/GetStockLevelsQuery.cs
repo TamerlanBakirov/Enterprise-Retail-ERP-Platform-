@@ -11,7 +11,11 @@ public record GetStockLevelsQuery(
     bool LowStockOnly = false,
     string? Search = null,
     int Page = 1,
-    int PageSize = 50) : IRequest<PagedResult<StockLevelDto>>;
+    int PageSize = 50) : IRequest<PagedResult<StockLevelDto>>, ICacheable
+{
+    public string CacheKey => $"inventory:stock:{WarehouseId}:{ProductId}:{LowStockOnly}:{Search}:{Page}:{PageSize}";
+    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(2);
+}
 
 public class GetStockLevelsQueryHandler : IRequestHandler<GetStockLevelsQuery, PagedResult<StockLevelDto>>
 {

@@ -4,7 +4,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Application.Reporting.Queries;
 
-public record StockReportQuery(Guid? WarehouseId = null) : IRequest<StockReport>;
+public record StockReportQuery(Guid? WarehouseId = null) : IRequest<StockReport>, ICacheable
+{
+    public string CacheKey => $"reports:stock:{WarehouseId}";
+    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(2);
+}
 
 public record StockReport(
     decimal TotalStockValue,

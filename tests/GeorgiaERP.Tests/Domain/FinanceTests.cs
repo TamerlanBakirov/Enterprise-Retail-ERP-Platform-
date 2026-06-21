@@ -143,6 +143,7 @@ public class FinanceTests
     public void JournalEntry_Post_SetsPostedStatus()
     {
         var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+        entry.SetTotals(1000m, 1000m); // Must be balanced to post
         var postedBy = Guid.NewGuid();
 
         entry.Post(postedBy);
@@ -153,9 +154,47 @@ public class FinanceTests
     }
 
     [Fact]
+    public void JournalEntry_Post_ThrowsWhenUnbalanced()
+    {
+        var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+        entry.SetTotals(1000m, 500m); // Unbalanced
+
+        var act = () => entry.Post(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*unbalanced*");
+    }
+
+    [Fact]
+    public void JournalEntry_Post_ThrowsWhenZeroAmounts()
+    {
+        var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+        // TotalDebit and TotalCredit default to 0
+
+        var act = () => entry.Post(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*zero amounts*");
+    }
+
+    [Fact]
+    public void JournalEntry_Post_ThrowsWhenAlreadyPosted()
+    {
+        var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+        entry.SetTotals(500m, 500m);
+        entry.Post(Guid.NewGuid());
+
+        var act = () => entry.Post(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Cannot post*");
+    }
+
+    [Fact]
     public void JournalEntry_Reverse_SetsReversedStatus()
     {
         var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+        entry.SetTotals(1000m, 1000m);
         entry.Post(Guid.NewGuid());
         var reversalId = Guid.NewGuid();
 
@@ -163,6 +202,28 @@ public class FinanceTests
 
         entry.Status.Should().Be(JournalEntryStatus.Reversed);
         entry.ReversedById.Should().Be(reversalId);
+    }
+
+    [Fact]
+    public void JournalEntry_Reverse_ThrowsWhenNotPosted()
+    {
+        var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        var act = () => entry.Reverse(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Cannot reverse*");
+    }
+
+    [Fact]
+    public void JournalEntry_SetTotals_ThrowsOnNegativeValues()
+    {
+        var entry = JournalEntry.Create("JE-001", DateTimeOffset.UtcNow, Guid.NewGuid());
+
+        var act = () => entry.SetTotals(-100m, 100m);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*negative*");
     }
 
     // === JournalEntryLine ===

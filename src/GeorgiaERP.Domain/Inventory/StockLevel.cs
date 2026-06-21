@@ -40,6 +40,10 @@ public class StockLevel : BaseEntity
     public void Deduct(decimal quantity, MovementType movementType = MovementType.Dispatch, Guid? referenceId = null)
     {
         if (quantity <= 0) throw new InvalidOperationException("Deduction quantity must be positive.");
+        if (QuantityOnHand - quantity < 0)
+            throw new InvalidOperationException(
+                $"Insufficient stock. Available: {QuantityOnHand}, requested: {quantity}. " +
+                $"Product: {ProductId}, Warehouse: {WarehouseId}.");
         QuantityOnHand -= quantity;
         Touch();
 

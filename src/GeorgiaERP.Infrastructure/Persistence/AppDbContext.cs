@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Domain.Common;
 using GeorgiaERP.Domain.Compliance;
@@ -104,11 +105,17 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<ShippingOrder> ShippingOrders => Set<ShippingOrder>();
     public DbSet<ShippingOrderLine> ShippingOrderLines => Set<ShippingOrderLine>();
 
+    // Audit
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(_schema);
         modelBuilder.Ignore<DomainEvent>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Explicitly ensure AuditLog is part of the model
+        modelBuilder.Entity<AuditLog>();
 
         // Apply global query filter for soft-deleted entities
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -133,6 +140,22 @@ public class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.DeletedAt == null);
     }
 
+    // Guards against re-entrancy: prevents audit collection during audit save.
+    private bool _isWritingAuditLogs;
+
+    // Entity types that are tracked for audit trail. Only critical business entities
+    // are audited to avoid noise from high-volume tables (POS transactions, stock movements).
+    private static readonly HashSet<string> AuditedEntityTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(Domain.Finance.JournalEntry), nameof(Domain.Finance.BankAccount), nameof(Domain.Finance.ChartOfAccount),
+        nameof(Domain.Compliance.FiscalDocument), nameof(Domain.Compliance.RsGeWaybill),
+        nameof(Domain.Identity.User), nameof(Domain.Identity.Role), nameof(Domain.Identity.UserRole),
+        nameof(Domain.Products.Product), nameof(Domain.Products.Category),
+        nameof(Domain.Pricing.PriceList), nameof(Domain.Pricing.Promotion),
+        nameof(Domain.Procurement.PurchaseOrder), nameof(Domain.Procurement.GoodsReceiptNote),
+        nameof(Domain.Inventory.TransferOrder), nameof(Domain.Inventory.StockCount)
+    };
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
@@ -153,6 +176,10 @@ public class AppDbContext : DbContext, IAppDbContext
             }
         }
 
+        // Capture audit entries before save (original values are still available).
+        // Skip audit collection during audit save (re-entrancy guard).
+        var auditEntries = _isWritingAuditLogs ? [] : CollectAuditEntries();
+
         // Collect domain events before saving so they survive the Clear below.
         var entitiesWithEvents = ChangeTracker.Entries<BaseEntity>()
             .Where(e => e.Entity.DomainEvents.Count > 0)
@@ -170,6 +197,33 @@ public class AppDbContext : DbContext, IAppDbContext
 
         var result = await base.SaveChangesAsync(cancellationToken);
 
+        // Persist audit log entries (uses a separate SaveChanges to avoid recursion).
+        // Gracefully handles cases where the audit_logs table doesn't exist yet
+        // (e.g., during EnsureCreated() schema bootstrap).
+        if (auditEntries.Count > 0)
+        {
+            try
+            {
+                _isWritingAuditLogs = true;
+                AuditLogs.AddRange(auditEntries);
+                await base.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // Detach audit entries so they don't block future saves.
+                foreach (var entry in ChangeTracker.Entries<AuditLog>()
+                             .Where(e => e.State == EntityState.Added)
+                             .ToList())
+                {
+                    entry.State = EntityState.Detached;
+                }
+            }
+            finally
+            {
+                _isWritingAuditLogs = false;
+            }
+        }
+
         // Dispatch domain events after successful persistence.
         // Events are dispatched via MediatR as INotification (the DomainEvent
         // base record implements INotification), enabling decoupled handlers.
@@ -180,5 +234,60 @@ public class AppDbContext : DbContext, IAppDbContext
         }
 
         return result;
+    }
+
+    private List<AuditLog> CollectAuditEntries()
+    {
+        var auditEntries = new List<AuditLog>();
+
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        {
+            if (entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var entityType = entry.Entity.GetType().Name;
+            if (!AuditedEntityTypes.Contains(entityType))
+                continue;
+
+            var entityId = entry.Entity.Id.ToString();
+            var action = entry.State switch
+            {
+                EntityState.Added => "Created",
+                EntityState.Modified => "Updated",
+                EntityState.Deleted => "Deleted",
+                _ => (string?)null
+            };
+
+            if (action is null)
+                continue;
+
+            // Get the user ID from IAuditableEntity if available
+            Guid? userId = null;
+            if (entry.Entity is IAuditableEntity auditable)
+            {
+                userId = entry.State == EntityState.Added ? auditable.CreatedBy : auditable.UpdatedBy;
+                if (userId == Guid.Empty) userId = null;
+            }
+
+            string? changedProperties = null;
+            if (entry.State == EntityState.Modified)
+            {
+                var changes = new Dictionary<string, object?>();
+                foreach (var prop in entry.Properties.Where(p => p.IsModified))
+                {
+                    changes[prop.Metadata.Name] = new
+                    {
+                        Old = prop.OriginalValue?.ToString(),
+                        New = prop.CurrentValue?.ToString()
+                    };
+                }
+                if (changes.Count > 0)
+                    changedProperties = JsonSerializer.Serialize(changes);
+            }
+
+            auditEntries.Add(AuditLog.Create(entityType, entityId, action, changedProperties, userId));
+        }
+
+        return auditEntries;
     }
 }

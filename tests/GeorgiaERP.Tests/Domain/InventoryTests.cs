@@ -115,15 +115,27 @@ public class InventoryTests
     }
 
     [Fact]
-    public void Deduct_AllowsNegativeStockOnHand()
+    public void Deduct_ThrowsWhenInsufficientStock()
     {
-        // The domain allows deducting more than on-hand (no negative stock prevention at entity level)
+        // Negative stock is prevented at the domain level to enforce inventory integrity.
         var stock = StockLevel.Create(ProductId, WarehouseId);
         stock.AddStock(10m);
 
-        stock.Deduct(20m);
+        var act = () => stock.Deduct(20m);
 
-        stock.QuantityOnHand.Should().Be(-10m);
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Insufficient stock*");
+    }
+
+    [Fact]
+    public void Deduct_AllowsExactDepletion()
+    {
+        var stock = StockLevel.Create(ProductId, WarehouseId);
+        stock.AddStock(10m);
+
+        stock.Deduct(10m);
+
+        stock.QuantityOnHand.Should().Be(0m);
     }
 
     [Fact]

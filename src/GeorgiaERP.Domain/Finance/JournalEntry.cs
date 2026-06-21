@@ -45,6 +45,8 @@ public class JournalEntry : BaseEntity
 
     public void SetTotals(decimal totalDebit, decimal totalCredit)
     {
+        if (totalDebit < 0) throw new InvalidOperationException("Total debit cannot be negative.");
+        if (totalCredit < 0) throw new InvalidOperationException("Total credit cannot be negative.");
         TotalDebit = totalDebit;
         TotalCredit = totalCredit;
     }
@@ -57,6 +59,14 @@ public class JournalEntry : BaseEntity
 
     public void Post(Guid postedBy)
     {
+        if (Status != JournalEntryStatus.Draft)
+            throw new InvalidOperationException($"Cannot post journal entry in '{Status}' status. Only Draft entries can be posted.");
+        if (TotalDebit != TotalCredit)
+            throw new InvalidOperationException(
+                $"Journal entry is unbalanced. Total debit ({TotalDebit:N2}) must equal total credit ({TotalCredit:N2}).");
+        if (TotalDebit == 0)
+            throw new InvalidOperationException("Cannot post a journal entry with zero amounts.");
+
         Status = JournalEntryStatus.Posted;
         PostedBy = postedBy;
         PostedAt = DateTimeOffset.UtcNow;
@@ -64,6 +74,9 @@ public class JournalEntry : BaseEntity
 
     public void Reverse(Guid reversalEntryId)
     {
+        if (Status != JournalEntryStatus.Posted)
+            throw new InvalidOperationException($"Cannot reverse journal entry in '{Status}' status. Only Posted entries can be reversed.");
+
         Status = JournalEntryStatus.Reversed;
         ReversedById = reversalEntryId;
     }

@@ -5,9 +5,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Application.Finance.Queries;
 
-public record GetChartOfAccountsQuery(bool? IsActive = null) : IRequest<IReadOnlyList<ChartOfAccountDto>>;
+public record GetChartOfAccountsQuery(bool? IsActive = null) : IRequest<IReadOnlyList<ChartOfAccountDto>>, ICacheable
+{
+    public string CacheKey => $"finance:coa:{IsActive}";
+    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
+}
 
-public record GetChartOfAccountByIdQuery(Guid Id) : IRequest<ChartOfAccountDto?>;
+public record GetChartOfAccountByIdQuery(Guid Id) : IRequest<ChartOfAccountDto?>, ICacheable
+{
+    public string CacheKey => $"finance:coa:id:{Id}";
+    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
+}
 
 public record GetJournalEntriesQuery(
     string? Status = null,
@@ -16,7 +24,11 @@ public record GetJournalEntriesQuery(
 
 public record GetJournalEntryByIdQuery(Guid Id) : IRequest<JournalEntryDetailDto?>;
 
-public record GetBankAccountsQuery() : IRequest<IReadOnlyList<BankAccountDto>>;
+public record GetBankAccountsQuery() : IRequest<IReadOnlyList<BankAccountDto>>, ICacheable
+{
+    public string CacheKey => "finance:bank-accounts";
+    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
+}
 
 public record GetBankAccountByIdQuery(Guid Id) : IRequest<BankAccountDto?>;
 

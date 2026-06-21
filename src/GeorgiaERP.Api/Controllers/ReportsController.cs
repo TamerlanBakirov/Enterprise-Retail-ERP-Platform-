@@ -38,4 +38,14 @@ public class ReportsController : ApiControllerBase
         var result = await _mediator.Send(new VatReportQuery(year ?? now.Year, month ?? now.Month));
         return Ok(result);
     }
+
+    /// <summary>
+    /// Returns aggregated KPI metrics for the dashboard. Cached for 2 minutes.
+    /// </summary>
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboardKpis()
+    {
+        var result = await _mediator.Send(new DashboardKpiQuery());
+        return Ok(result);
+    }
 }
