@@ -12,7 +12,8 @@ using Xunit;
 
 namespace GeorgiaERP.Tests.Integration;
 
-public class ApiIntegrationTests : IClassFixture<ErpApiFactory>
+[Collection("Integration")]
+public class ApiIntegrationTests
 {
     private readonly ErpApiFactory _factory;
 
