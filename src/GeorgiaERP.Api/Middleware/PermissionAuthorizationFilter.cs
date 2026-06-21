@@ -12,7 +12,7 @@ public sealed class PermissionAuthorizationFilter : IAsyncAuthorizationFilter
         ["Users"] = "identity", ["Products"] = "products", ["Pricing"] = "products",
         ["Inventory"] = "inventory", ["Pos"] = "pos", ["Procurement"] = "procurement",
         ["Compliance"] = "compliance", ["Finance"] = "finance", ["Customers"] = "crm",
-        ["Organization"] = "organization", ["Reports"] = "reports"
+        ["Organization"] = "organization", ["Reports"] = "reports", ["Warehouse"] = "warehouse"
     };
 
     public Task OnAuthorizationAsync(AuthorizationFilterContext context)

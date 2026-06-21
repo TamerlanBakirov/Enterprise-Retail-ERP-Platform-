@@ -1,24 +1,30 @@
+using System.Text;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
 using GeorgiaERP.Infrastructure.Persistence;
 using GeorgiaERP.Infrastructure.RsGe;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 
 namespace GeorgiaERP.Tests.Integration;
 
 public class ErpApiFactory : WebApplicationFactory<Program>
 {
-    private readonly string _dbName = $"erp_test_{Guid.NewGuid()}";
+    private const string TestJwtKey = "TEST-ONLY-JWT-SECRET-KEY-THAT-IS-AT-LEAST-SIXTY-FOUR-CHARACTERS-LONG-FOR-TESTS";
+    private readonly SqliteConnection _connection = new("DataSource=:memory:");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment("Development");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
@@ -28,13 +34,15 @@ public class ErpApiFactory : WebApplicationFactory<Program>
                 ["ConnectionStrings:Redis"] = "",
                 ["RsGe:Queue:HostName"] = "localhost",
                 ["Jwt:SecretKey"] = "TEST-ONLY-JWT-SECRET-KEY-THAT-IS-AT-LEAST-SIXTY-FOUR-CHARACTERS-LONG-FOR-TESTS",
-                ["Licensing:SigningKey"] = "TEST-LICENSE-SIGNING-KEY-WITH-AT-LEAST-THIRTY-TWO-CHARS"
+                ["Licensing:SigningKey"] = "TEST-LICENSE-SIGNING-KEY-WITH-AT-LEAST-THIRTY-TWO-CHARS",
+                ["Seed:Demo"] = "false",
+                ["HealthChecksUI:Enabled"] = "false"
             });
         });
 
         builder.ConfigureServices(services =>
         {
-            // Replace EF Core with InMemory — remove ALL EF-related descriptors
+            // Replace EF Core with SQLite in-memory (supports relational features)
             var efDescriptors = services
                 .Where(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>)
                          || d.ServiceType == typeof(DbContextOptions)
@@ -43,8 +51,17 @@ public class ErpApiFactory : WebApplicationFactory<Program>
                 .ToList();
             foreach (var d in efDescriptors) services.Remove(d);
 
+            _connection.Open();
+
             services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase(_dbName));
+            {
+                options.UseSqlite(_connection);
+                options.ConfigureWarnings(w =>
+                    w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+            });
+
+            // Ensure schema created
+            services.AddSingleton<SqliteConnection>(_connection);
 
             // Stub out external infrastructure
             services.RemoveAll<IMachineIdProvider>();
@@ -65,13 +82,65 @@ public class ErpApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IRsGeSubmissionProcessor>();
             services.AddScoped<IRsGeSubmissionProcessor, NullRsGeSubmissionProcessor>();
 
-            // Replace health checks with basic (no DB probe on InMemory)
+            // Re-configure JWT with test key (config overrides apply too late for AddJwtAuthentication)
+            services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(TestJwtKey));
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = "GeorgiaERP",
+                    ValidateAudience = true,
+                    ValidAudience = "GeorgiaERP.Client",
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = key,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                };
+            });
+
+            // Replace JwtTokenService so it signs with the test key
+            services.RemoveAll<GeorgiaERP.Application.Common.IJwtTokenService>();
+            services.AddSingleton<GeorgiaERP.Application.Common.IJwtTokenService>(provider =>
+            {
+                var config = new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["Jwt:SecretKey"] = TestJwtKey,
+                        ["Jwt:Issuer"] = "GeorgiaERP",
+                        ["Jwt:Audience"] = "GeorgiaERP.Client"
+                    })
+                    .Build();
+                return new GeorgiaERP.Infrastructure.Identity.JwtTokenService(config);
+            });
+
+            // Replace health checks with basic (no external probes in tests)
             var healthDescriptors = services
-                .Where(d => d.ServiceType.FullName?.Contains("HealthCheck") == true)
+                .Where(d => d.ServiceType.FullName?.Contains("HealthCheck") == true
+                          || d.ImplementationType?.FullName?.Contains("HealthCheck") == true)
                 .ToList();
             foreach (var d in healthDescriptors) services.Remove(d);
             services.AddHealthChecks();
         });
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.EnsureDeleted();
+        db.Database.EnsureCreated();
+
+        return host;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing)
+            _connection.Dispose();
     }
 
     private sealed class TestMachineIdProvider : IMachineIdProvider

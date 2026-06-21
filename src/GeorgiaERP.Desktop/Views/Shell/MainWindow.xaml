@@ -10,6 +10,7 @@
         xmlns:finance="clr-namespace:GeorgiaERP.Desktop.Views.Finance"
         xmlns:reports="clr-namespace:GeorgiaERP.Desktop.Views.Reports"
         xmlns:settings="clr-namespace:GeorgiaERP.Desktop.Views.Settings"
+        xmlns:warehouse="clr-namespace:GeorgiaERP.Desktop.Views.Warehouse"
         xmlns:admin="clr-namespace:GeorgiaERP.Desktop.Views.Admin"
         Title="Georgia ERP"
         Width="1400" Height="850"
@@ -123,6 +124,12 @@
                                      CommandParameter="Inventory" />
 
                         <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Warehouse"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Warehouse}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Warehouse" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
                                      Content="Customers"
                                      IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}"
                                      Command="{Binding NavigateCommand}"
@@ -171,6 +178,7 @@
                 <pos:PosView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}" />
                 <products:ProductsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}" />
                 <inventory:InventoryView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}" />
+                <warehouse:WarehouseView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Warehouse}" />
                 <customers:CustomersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
                 <procurement:ProcurementView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
                 <finance:FinanceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />

@@ -1,12 +1,12 @@
-using GeorgiaERP.Domain.Organization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 
 namespace GeorgiaERP.Infrastructure.Persistence.Configurations.Organization;
 
-public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
+public class WarehouseConfiguration : IEntityTypeConfiguration<WarehouseEntity>
 {
-    public void Configure(EntityTypeBuilder<Warehouse> builder)
+    public void Configure(EntityTypeBuilder<WarehouseEntity> builder)
     {
         builder.ToTable("warehouses");
 
