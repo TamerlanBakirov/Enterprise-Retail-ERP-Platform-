@@ -85,16 +85,6 @@ public class JwtTokenService : Application.Common.IJwtTokenService
         return refreshToken;
     }
 
-    /// <summary>
-    /// Gets the raw (unhashed) token string for the most recently generated refresh token.
-    /// Call this immediately after GenerateRefreshToken to get the value to send to the client.
-    /// </summary>
-    public static string GetRawRefreshToken(int size = 64)
-    {
-        var randomBytes = RandomNumberGenerator.GetBytes(size);
-        return Convert.ToBase64String(randomBytes);
-    }
-
     public static string HashToken(string token)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
