@@ -271,4 +271,84 @@ public class ProductTests
         category.ParentId.Should().Be(parentId);
         category.SortOrder.Should().Be(5);
     }
+
+    // --- Update ---
+
+    [Fact]
+    public void Update_ChangesName()
+    {
+        var product = NewProduct();
+
+        product.Update(name: "Updated Name");
+
+        product.Name.Should().Be("Updated Name");
+    }
+
+    [Fact]
+    public void Update_ChangesMultipleFields()
+    {
+        var product = NewProduct();
+        var newCategoryId = Guid.NewGuid();
+
+        product.Update(
+            name: "New Name",
+            nameKa: "ახალი სახელი",
+            description: "New description",
+            categoryId: newCategoryId,
+            unitOfMeasure: "KG",
+            vatApplicable: false,
+            weightKg: 2.5m,
+            minStockLevel: 5m,
+            maxStockLevel: 200m,
+            reorderPoint: 10m,
+            reorderQty: 30m);
+
+        product.Name.Should().Be("New Name");
+        product.NameKa.Should().Be("ახალი სახელი");
+        product.Description.Should().Be("New description");
+        product.CategoryId.Should().Be(newCategoryId);
+        product.UnitOfMeasure.Should().Be("KG");
+        product.VatApplicable.Should().BeFalse();
+        product.WeightKg.Should().Be(2.5m);
+        product.MinStockLevel.Should().Be(5m);
+        product.MaxStockLevel.Should().Be(200m);
+        product.ReorderPoint.Should().Be(10m);
+        product.ReorderQty.Should().Be(30m);
+    }
+
+    [Fact]
+    public void Update_WithNullValues_PreservesExisting()
+    {
+        var product = Product.Create("SKU-001", "Original", CategoryId, "PCS",
+            nameKa: "ორიგინალი", description: "Original desc");
+
+        product.Update(); // No changes
+
+        product.Name.Should().Be("Original");
+        product.NameKa.Should().Be("ორიგინალი");
+        product.Description.Should().Be("Original desc");
+    }
+
+    // --- Deactivate / Activate ---
+
+    [Fact]
+    public void Deactivate_SetsIsActiveFalse()
+    {
+        var product = NewProduct();
+
+        product.Deactivate();
+
+        product.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Activate_AfterDeactivate_SetsIsActiveTrue()
+    {
+        var product = NewProduct();
+        product.Deactivate();
+
+        product.Activate();
+
+        product.IsActive.Should().BeTrue();
+    }
 }

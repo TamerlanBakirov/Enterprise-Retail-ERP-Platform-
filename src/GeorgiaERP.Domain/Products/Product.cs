@@ -91,4 +91,34 @@ public class Product : AuditableEntity
 
         return product;
     }
+
+    public void Update(
+        string? name = null,
+        string? nameKa = null,
+        string? description = null,
+        Guid? categoryId = null,
+        string? unitOfMeasure = null,
+        bool? vatApplicable = null,
+        decimal? weightKg = null,
+        decimal? minStockLevel = null,
+        decimal? maxStockLevel = null,
+        decimal? reorderPoint = null,
+        decimal? reorderQty = null)
+    {
+        if (name is not null) Name = name;
+        if (nameKa is not null) NameKa = nameKa;
+        if (description is not null) Description = description;
+        if (categoryId.HasValue) CategoryId = categoryId.Value;
+        if (unitOfMeasure is not null) UnitOfMeasure = unitOfMeasure;
+        if (vatApplicable.HasValue) VatApplicable = vatApplicable.Value;
+        if (weightKg.HasValue) WeightKg = weightKg.Value;
+        if (minStockLevel.HasValue) MinStockLevel = minStockLevel.Value;
+        if (maxStockLevel.HasValue) MaxStockLevel = maxStockLevel.Value;
+        if (reorderPoint.HasValue) ReorderPoint = reorderPoint.Value;
+        if (reorderQty.HasValue) ReorderQty = reorderQty.Value;
+    }
+
+    public void Deactivate() => IsActive = false;
+
+    public void Activate() => IsActive = true;
 }

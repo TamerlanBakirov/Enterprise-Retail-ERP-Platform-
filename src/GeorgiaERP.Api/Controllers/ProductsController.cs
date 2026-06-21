@@ -73,6 +73,37 @@ public class ProductsController : ApiControllerBase
         return CreatedAtAction(nameof(GetProduct), new { id = result.Value!.Id }, result.Value);
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
+    {
+        var command = new UpdateProductCommand(
+            id,
+            request.Name,
+            request.NameKa,
+            request.Description,
+            request.CategoryId,
+            request.UnitOfMeasure,
+            request.VatApplicable,
+            request.WeightKg,
+            request.MinStockLevel,
+            request.MaxStockLevel,
+            request.ReorderPoint,
+            request.ReorderQty,
+            request.IsActive);
+
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteProduct(Guid id)
+    {
+        var result = await _mediator.Send(new DeleteProductCommand(id));
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return NoContent();
+    }
+
     [HttpGet("categories")]
     public async Task<IActionResult> GetCategories(
         [FromQuery] Guid? parentId = null,
