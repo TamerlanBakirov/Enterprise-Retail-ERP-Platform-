@@ -140,9 +140,7 @@ public class ReportApiTests : IntegrationTestBase
 
         var response = await client.GetAsync("/api/v1/reports/dashboard");
 
-        // Read body before assertion for diagnostics
-        var responseBody = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.OK, $"Response body: {responseBody}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         // Verify all KPI fields are present

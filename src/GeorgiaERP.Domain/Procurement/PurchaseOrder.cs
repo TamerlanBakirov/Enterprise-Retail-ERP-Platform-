@@ -54,6 +54,9 @@ public class PurchaseOrder : BaseEntity
 
     public void SetTotals(decimal subtotal, decimal vatTotal, decimal total)
     {
+        if (subtotal < 0) throw new InvalidOperationException("Subtotal cannot be negative.");
+        if (vatTotal < 0) throw new InvalidOperationException("VAT total cannot be negative.");
+        if (total < 0) throw new InvalidOperationException("Total cannot be negative.");
         Subtotal = subtotal; VatTotal = vatTotal; Total = total; Touch();
     }
 
@@ -62,16 +65,49 @@ public class PurchaseOrder : BaseEntity
 
     public void Approve(Guid approvedBy)
     {
+        if (Status != PurchaseOrderStatus.Draft && Status != PurchaseOrderStatus.PendingApproval)
+            throw new InvalidOperationException(
+                $"Cannot approve PO in '{Status}' status. Must be Draft or PendingApproval.");
         Status = PurchaseOrderStatus.Approved;
         ApprovedBy = approvedBy;
         ApprovedAt = DateTimeOffset.UtcNow;
         Touch();
     }
 
-    public void Send() { Status = PurchaseOrderStatus.Sent; Touch(); }
-    public void MarkPartiallyReceived() { Status = PurchaseOrderStatus.PartiallyReceived; Touch(); }
-    public void MarkReceived() { Status = PurchaseOrderStatus.Received; Touch(); }
-    public void Cancel() { Status = PurchaseOrderStatus.Cancelled; Touch(); }
+    public void Send()
+    {
+        if (Status != PurchaseOrderStatus.Approved)
+            throw new InvalidOperationException(
+                $"Cannot send PO in '{Status}' status. Must be Approved.");
+        Status = PurchaseOrderStatus.Sent;
+        Touch();
+    }
+
+    public void MarkPartiallyReceived()
+    {
+        if (Status != PurchaseOrderStatus.Sent && Status != PurchaseOrderStatus.PartiallyReceived)
+            throw new InvalidOperationException(
+                $"Cannot mark PO as partially received in '{Status}' status.");
+        Status = PurchaseOrderStatus.PartiallyReceived;
+        Touch();
+    }
+
+    public void MarkReceived()
+    {
+        if (Status != PurchaseOrderStatus.Sent && Status != PurchaseOrderStatus.PartiallyReceived)
+            throw new InvalidOperationException(
+                $"Cannot mark PO as received in '{Status}' status.");
+        Status = PurchaseOrderStatus.Received;
+        Touch();
+    }
+
+    public void Cancel()
+    {
+        if (Status == PurchaseOrderStatus.Received)
+            throw new InvalidOperationException("Cannot cancel a fully received purchase order.");
+        Status = PurchaseOrderStatus.Cancelled;
+        Touch();
+    }
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 }

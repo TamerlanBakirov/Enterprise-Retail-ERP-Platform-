@@ -169,6 +169,64 @@ public class ProcurementTests
     }
 
     [Fact]
+    public void PurchaseOrder_Approve_ThrowsWhenAlreadyApproved()
+    {
+        var po = PurchaseOrder.Create("PO-001", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        po.Approve(Guid.NewGuid());
+
+        var act = () => po.Approve(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Cannot approve*");
+    }
+
+    [Fact]
+    public void PurchaseOrder_Send_ThrowsWhenNotApproved()
+    {
+        var po = PurchaseOrder.Create("PO-001", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var act = () => po.Send();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Cannot send*");
+    }
+
+    [Fact]
+    public void PurchaseOrder_MarkReceived_ThrowsWhenNotSent()
+    {
+        var po = PurchaseOrder.Create("PO-001", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var act = () => po.MarkReceived();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void PurchaseOrder_Cancel_ThrowsWhenReceived()
+    {
+        var po = PurchaseOrder.Create("PO-001", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        po.Approve(Guid.NewGuid());
+        po.Send();
+        po.MarkReceived();
+
+        var act = () => po.Cancel();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Cannot cancel*");
+    }
+
+    [Fact]
+    public void PurchaseOrder_SetTotals_ThrowsOnNegativeValues()
+    {
+        var po = PurchaseOrder.Create("PO-001", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+
+        var act = () => po.SetTotals(-100m, 0m, 0m);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*negative*");
+    }
+
+    [Fact]
     public void PurchaseOrder_SetNotes_UpdatesNotes()
     {
         var po = PurchaseOrder.Create("PO-001", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
