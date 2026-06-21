@@ -114,7 +114,8 @@ public class JwtTokenService : Application.Common.IJwtTokenService
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = _signingKey,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromSeconds(30)
+            ClockSkew = TimeSpan.FromSeconds(30),
+            RoleClaimType = "roles"
         };
 
         try

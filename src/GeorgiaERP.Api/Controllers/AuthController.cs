@@ -54,7 +54,7 @@ public class AuthController : ApiControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
     {
-        var result = await _mediator.Send(new RevokeRefreshTokenCommand(request.RefreshToken));
+        var result = await _mediator.Send(new RevokeRefreshTokenCommand(request.RefreshToken, CurrentUserId));
         if (result.IsFailure)
             return ToActionResult(result);
         return Ok(new { message = "Logged out successfully" });

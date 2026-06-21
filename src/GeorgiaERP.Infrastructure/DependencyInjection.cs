@@ -147,7 +147,10 @@ public static class DependencyInjection
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromSeconds(30)
+                ClockSkew = TimeSpan.FromSeconds(30),
+                // Map the custom "roles" claim used in JWT generation so that
+                // User.IsInRole() and [Authorize(Roles=...)] work correctly.
+                RoleClaimType = "roles"
             };
         });
 

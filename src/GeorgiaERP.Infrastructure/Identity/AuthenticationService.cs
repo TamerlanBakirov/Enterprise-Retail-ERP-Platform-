@@ -216,7 +216,7 @@ public class AuthenticationService : IAuthenticationService
             Error: null);
     }
 
-    public async Task RevokeRefreshTokenAsync(string refreshToken)
+    public async Task<bool> RevokeRefreshTokenAsync(string refreshToken, Guid? requestingUserId = null)
     {
         var tokenHash = JwtTokenService.HashToken(refreshToken);
 
@@ -226,18 +226,28 @@ public class AuthenticationService : IAuthenticationService
         if (storedToken is null)
         {
             _logger.LogWarning("Attempt to revoke non-existent refresh token");
-            return;
+            return false;
+        }
+
+        // Verify ownership: prevent users from revoking tokens that belong to other users
+        if (requestingUserId.HasValue && storedToken.UserId != requestingUserId.Value)
+        {
+            _logger.LogWarning(
+                "User {RequestingUserId} attempted to revoke a refresh token belonging to user {TokenOwner}",
+                requestingUserId.Value, storedToken.UserId);
+            return false;
         }
 
         if (storedToken.RevokedAt.HasValue)
         {
-            return;
+            return true;
         }
 
         _dbContext.Entry(storedToken).Property("RevokedAt").CurrentValue = DateTimeOffset.UtcNow;
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Refresh token revoked for user: {UserId}", storedToken.UserId);
+        return true;
     }
 
     private static string GenerateRawRefreshToken()
