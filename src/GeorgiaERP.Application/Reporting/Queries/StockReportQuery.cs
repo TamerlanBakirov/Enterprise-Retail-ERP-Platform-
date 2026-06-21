@@ -31,7 +31,7 @@ public class StockReportQueryHandler : IRequestHandler<StockReportQuery, StockRe
 
     public async Task<StockReport> Handle(StockReportQuery request, CancellationToken ct)
     {
-        var query = _dbContext.StockLevels.AsQueryable();
+        var query = _dbContext.StockLevels.AsNoTracking().AsQueryable();
         if (request.WarehouseId.HasValue)
             query = query.Where(s => s.WarehouseId == request.WarehouseId.Value);
 

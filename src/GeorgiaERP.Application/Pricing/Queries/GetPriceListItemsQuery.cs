@@ -20,6 +20,7 @@ public class GetPriceListItemsQueryHandler : IRequestHandler<GetPriceListItemsQu
     public async Task<PagedResult<PriceListItemDto>> Handle(GetPriceListItemsQuery request, CancellationToken ct)
     {
         var query = _db.PriceListItems
+            .AsNoTracking()
             .Where(i => i.PriceListId == request.PriceListId);
 
         if (!string.IsNullOrEmpty(request.Search))

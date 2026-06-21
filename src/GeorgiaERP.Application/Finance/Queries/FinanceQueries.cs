@@ -27,7 +27,7 @@ public class GetChartOfAccountsQueryHandler : IRequestHandler<GetChartOfAccounts
 
     public async Task<IReadOnlyList<ChartOfAccountDto>> Handle(GetChartOfAccountsQuery request, CancellationToken ct)
     {
-        var query = _dbContext.ChartOfAccounts.AsQueryable();
+        var query = _dbContext.ChartOfAccounts.AsNoTracking();
 
         if (request.IsActive.HasValue)
             query = query.Where(a => a.IsActive == request.IsActive.Value);
@@ -50,6 +50,7 @@ public class GetChartOfAccountByIdQueryHandler : IRequestHandler<GetChartOfAccou
     public async Task<ChartOfAccountDto?> Handle(GetChartOfAccountByIdQuery request, CancellationToken ct)
     {
         return await _dbContext.ChartOfAccounts
+            .AsNoTracking()
             .Where(a => a.Id == request.Id)
             .Select(a => new ChartOfAccountDto(
                 a.Id, a.AccountCode, a.Name, a.NameKa,
@@ -66,7 +67,7 @@ public class GetJournalEntriesQueryHandler : IRequestHandler<GetJournalEntriesQu
 
     public async Task<PagedResult<JournalEntryDto>> Handle(GetJournalEntriesQuery request, CancellationToken ct)
     {
-        var query = _dbContext.JournalEntries.AsQueryable();
+        var query = _dbContext.JournalEntries.AsNoTracking();
 
         if (!string.IsNullOrEmpty(request.Status) &&
             Enum.TryParse<Domain.Finance.JournalEntryStatus>(request.Status, true, out var entryStatus))
@@ -102,6 +103,7 @@ public class GetJournalEntryByIdQueryHandler : IRequestHandler<GetJournalEntryBy
     public async Task<JournalEntryDetailDto?> Handle(GetJournalEntryByIdQuery request, CancellationToken ct)
     {
         var entry = await _dbContext.JournalEntries
+            .AsNoTracking()
             .Where(j => j.Id == request.Id)
             .Select(j => new
             {
@@ -115,6 +117,7 @@ public class GetJournalEntryByIdQueryHandler : IRequestHandler<GetJournalEntryBy
             return null;
 
         var lines = await _dbContext.JournalEntryLines
+            .AsNoTracking()
             .Where(l => l.JournalEntryId == request.Id)
             .Join(_dbContext.ChartOfAccounts,
                 l => l.AccountId, a => a.Id,
@@ -140,6 +143,7 @@ public class GetBankAccountsQueryHandler : IRequestHandler<GetBankAccountsQuery,
     public async Task<IReadOnlyList<BankAccountDto>> Handle(GetBankAccountsQuery request, CancellationToken ct)
     {
         return await _dbContext.BankAccounts
+            .AsNoTracking()
             .OrderBy(a => a.AccountName)
             .Select(a => new BankAccountDto(
                 a.Id, a.AccountName, a.BankName, a.AccountNumber,
@@ -156,6 +160,7 @@ public class GetBankAccountByIdQueryHandler : IRequestHandler<GetBankAccountById
     public async Task<BankAccountDto?> Handle(GetBankAccountByIdQuery request, CancellationToken ct)
     {
         return await _dbContext.BankAccounts
+            .AsNoTracking()
             .Where(a => a.Id == request.Id)
             .Select(a => new BankAccountDto(
                 a.Id, a.AccountName, a.BankName, a.AccountNumber,

@@ -30,7 +30,7 @@ public class VatReportQueryHandler : IRequestHandler<VatReportQuery, VatReport>
         var periodStart = new DateTimeOffset(request.Year, request.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var periodEnd = periodStart.AddMonths(1);
 
-        var docs = _dbContext.FiscalDocuments
+        var docs = _dbContext.FiscalDocuments.AsNoTracking()
             .Where(d => d.CreatedAt >= periodStart && d.CreatedAt < periodEnd);
 
         var total = await docs.CountAsync(ct);
@@ -50,7 +50,7 @@ public class VatReportQueryHandler : IRequestHandler<VatReportQuery, VatReport>
                 g.OrderByDescending(d => d.CreatedAt).FirstOrDefault()?.Status.ToString()))
             .ToList();
 
-        var declaration = await _dbContext.VatDeclarations
+        var declaration = await _dbContext.VatDeclarations.AsNoTracking()
             .Where(v => v.PeriodStart >= periodStart && v.PeriodEnd < periodEnd)
             .FirstOrDefaultAsync(ct);
 

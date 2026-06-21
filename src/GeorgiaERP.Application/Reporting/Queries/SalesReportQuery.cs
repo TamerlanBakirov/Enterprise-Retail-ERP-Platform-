@@ -32,7 +32,7 @@ public class SalesReportQueryHandler : IRequestHandler<SalesReportQuery, SalesRe
 
     public async Task<SalesReport> Handle(SalesReportQuery request, CancellationToken ct)
     {
-        var txQuery = _dbContext.PosTransactions
+        var txQuery = _dbContext.PosTransactions.AsNoTracking()
             .Where(t => t.CreatedAt >= request.From && t.CreatedAt <= request.To);
 
         if (request.StoreId.HasValue)
@@ -49,11 +49,11 @@ public class SalesReportQueryHandler : IRequestHandler<SalesReportQuery, SalesRe
 
         var completedIds = await completed.Select(t => t.Id).ToListAsync(ct);
 
-        var itemsSold = await _dbContext.PosTransactionLines
+        var itemsSold = await _dbContext.PosTransactionLines.AsNoTracking()
             .Where(l => completedIds.Contains(l.TransactionId))
             .SumAsync(l => (int?)l.Quantity, ct) ?? 0;
 
-        var paymentData = await _dbContext.PosPayments
+        var paymentData = await _dbContext.PosPayments.AsNoTracking()
             .Where(p => completedIds.Contains(p.TransactionId))
             .ToListAsync(ct);
 

@@ -31,7 +31,7 @@ public class GetStockCountsQueryHandler
     public async Task<PagedResult<StockCountDto>> Handle(
         GetStockCountsQuery request, CancellationToken ct)
     {
-        var query = _dbContext.StockCounts.AsQueryable();
+        var query = _dbContext.StockCounts.AsNoTracking();
 
         if (request.WarehouseId.HasValue)
             query = query.Where(c => c.WarehouseId == request.WarehouseId);

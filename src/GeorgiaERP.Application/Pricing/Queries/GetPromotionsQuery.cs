@@ -18,7 +18,7 @@ public class GetPromotionsQueryHandler : IRequestHandler<GetPromotionsQuery, Pag
 
     public async Task<PagedResult<PromotionDto>> Handle(GetPromotionsQuery request, CancellationToken ct)
     {
-        var query = _db.Promotions.AsQueryable();
+        var query = _db.Promotions.AsNoTracking();
 
         if (request.IsActive.HasValue)
             query = query.Where(p => p.IsActive == request.IsActive.Value);

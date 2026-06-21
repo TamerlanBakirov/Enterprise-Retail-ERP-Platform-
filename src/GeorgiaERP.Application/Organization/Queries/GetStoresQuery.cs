@@ -17,7 +17,7 @@ public class GetStoresQueryHandler : IRequestHandler<GetStoresQuery, IReadOnlyLi
 
     public async Task<IReadOnlyList<StoreDto>> Handle(GetStoresQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Stores.AsQueryable();
+        var query = _dbContext.Stores.AsNoTracking();
 
         if (request.IsActive.HasValue)
             query = query.Where(s => s.IsActive == request.IsActive.Value);
@@ -40,7 +40,7 @@ public class GetWarehousesQueryHandler : IRequestHandler<GetWarehousesQuery, IRe
 
     public async Task<IReadOnlyList<WarehouseDto>> Handle(GetWarehousesQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Warehouses.AsQueryable();
+        var query = _dbContext.Warehouses.AsNoTracking();
 
         if (request.IsActive.HasValue)
             query = query.Where(w => w.IsActive == request.IsActive.Value);

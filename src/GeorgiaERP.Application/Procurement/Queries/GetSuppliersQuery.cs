@@ -19,7 +19,7 @@ public class GetSuppliersQueryHandler : IRequestHandler<GetSuppliersQuery, Paged
 
     public async Task<PagedResult<SupplierDto>> Handle(GetSuppliersQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Suppliers.AsQueryable();
+        var query = _dbContext.Suppliers.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -70,7 +70,7 @@ public class GetPurchaseOrdersQueryHandler : IRequestHandler<GetPurchaseOrdersQu
 
     public async Task<PagedResult<PurchaseOrderDto>> Handle(GetPurchaseOrdersQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.PurchaseOrders.AsQueryable();
+        var query = _dbContext.PurchaseOrders.AsNoTracking().AsQueryable();
 
         if (request.SupplierId.HasValue)
             query = query.Where(p => p.SupplierId == request.SupplierId.Value);

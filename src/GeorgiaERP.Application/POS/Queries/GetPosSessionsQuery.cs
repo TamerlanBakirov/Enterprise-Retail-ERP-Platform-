@@ -37,7 +37,7 @@ public class GetPosSessionsQueryHandler
     public async Task<PagedResult<PosSessionSummary>> Handle(
         GetPosSessionsQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.PosSessions.AsQueryable();
+        var query = _dbContext.PosSessions.AsNoTracking();
 
         if (request.TerminalId.HasValue)
             query = query.Where(s => s.TerminalId == request.TerminalId.Value);

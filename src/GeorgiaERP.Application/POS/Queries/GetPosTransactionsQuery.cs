@@ -40,7 +40,7 @@ public class GetPosTransactionsQueryHandler
     public async Task<PagedResult<PosTransactionSummary>> Handle(
         GetPosTransactionsQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.PosTransactions.AsQueryable();
+        var query = _dbContext.PosTransactions.AsNoTracking();
 
         if (request.SessionId.HasValue)
             query = query.Where(t => t.SessionId == request.SessionId.Value);

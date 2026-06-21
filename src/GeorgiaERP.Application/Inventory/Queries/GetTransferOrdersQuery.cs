@@ -21,7 +21,7 @@ public class GetTransferOrdersQueryHandler
     public async Task<PagedResult<TransferOrderDto>> Handle(
         GetTransferOrdersQuery request, CancellationToken ct)
     {
-        var query = _dbContext.TransferOrders.AsQueryable();
+        var query = _dbContext.TransferOrders.AsNoTracking().AsQueryable();
 
         if (request.WarehouseId.HasValue)
             query = query.Where(t => t.SourceWarehouseId == request.WarehouseId || t.DestWarehouseId == request.WarehouseId);

@@ -16,7 +16,7 @@ public class GetWarehouseByIdQueryHandler : IRequestHandler<GetWarehouseByIdQuer
 
     public async Task<Result<WarehouseDetailDto>> Handle(GetWarehouseByIdQuery request, CancellationToken ct)
     {
-        var warehouse = await _dbContext.Warehouses
+        var warehouse = await _dbContext.Warehouses.AsNoTracking()
             .Where(w => w.Id == request.Id)
             .Select(w => new WarehouseDetailDto(
                 w.Id, w.Code, w.Name, w.NameKa,
@@ -45,7 +45,7 @@ public class GetWarehouseLocationsQueryHandler
     public async Task<IReadOnlyList<WarehouseLocationDto>> Handle(
         GetWarehouseLocationsQuery request, CancellationToken ct)
     {
-        var query = _dbContext.WarehouseLocations
+        var query = _dbContext.WarehouseLocations.AsNoTracking()
             .Where(l => l.WarehouseId == request.WarehouseId);
 
         if (!string.IsNullOrEmpty(request.LocationType) &&
@@ -81,7 +81,7 @@ public class GetReceivingOrdersQueryHandler
     public async Task<PagedResult<ReceivingOrderDto>> Handle(
         GetReceivingOrdersQuery request, CancellationToken ct)
     {
-        var query = _dbContext.ReceivingOrders.AsQueryable();
+        var query = _dbContext.ReceivingOrders.AsNoTracking().AsQueryable();
 
         if (request.WarehouseId.HasValue)
             query = query.Where(r => r.WarehouseId == request.WarehouseId.Value);
@@ -133,7 +133,7 @@ public class GetReceivingOrderByIdQueryHandler
 
     public async Task<Result<ReceivingOrderDto>> Handle(GetReceivingOrderByIdQuery request, CancellationToken ct)
     {
-        var order = await _dbContext.ReceivingOrders
+        var order = await _dbContext.ReceivingOrders.AsNoTracking()
             .Where(r => r.Id == request.Id)
             .Select(r => new ReceivingOrderDto(
                 r.Id, r.ReceivingNumber, r.WarehouseId,
@@ -167,7 +167,7 @@ public class GetShippingOrdersQueryHandler
     public async Task<PagedResult<ShippingOrderDto>> Handle(
         GetShippingOrdersQuery request, CancellationToken ct)
     {
-        var query = _dbContext.ShippingOrders.AsQueryable();
+        var query = _dbContext.ShippingOrders.AsNoTracking().AsQueryable();
 
         if (request.WarehouseId.HasValue)
             query = query.Where(s => s.WarehouseId == request.WarehouseId.Value);
@@ -221,7 +221,7 @@ public class GetShippingOrderByIdQueryHandler
 
     public async Task<Result<ShippingOrderDto>> Handle(GetShippingOrderByIdQuery request, CancellationToken ct)
     {
-        var order = await _dbContext.ShippingOrders
+        var order = await _dbContext.ShippingOrders.AsNoTracking()
             .Where(s => s.Id == request.Id)
             .Select(s => new ShippingOrderDto(
                 s.Id, s.ShippingNumber, s.WarehouseId,

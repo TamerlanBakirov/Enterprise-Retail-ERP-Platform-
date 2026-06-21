@@ -56,6 +56,7 @@ public class GetPosTransactionDetailQueryHandler
         GetPosTransactionDetailQuery request, CancellationToken cancellationToken)
     {
         var tx = await _dbContext.PosTransactions
+            .AsNoTracking()
             .Include(t => t.Lines)
             .Include(t => t.Payments)
             .FirstOrDefaultAsync(t => t.Id == request.TransactionId, cancellationToken);
