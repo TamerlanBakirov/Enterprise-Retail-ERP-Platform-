@@ -116,7 +116,10 @@ public class GetStockMovementsQueryHandler : IRequestHandler<GetStockMovementsQu
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var rawItems = await query
+            .ToListAsync(cancellationToken);
+
+        var items = rawItems
             .OrderByDescending(x => x.Movement.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
@@ -137,8 +140,7 @@ public class GetStockMovementsQueryHandler : IRequestHandler<GetStockMovementsQu
                 x.Movement.ExpiryDate,
                 x.Movement.Notes,
                 x.Movement.CreatedAt,
-                x.Movement.CreatedBy))
-            .ToListAsync(cancellationToken);
+                x.Movement.CreatedBy)).ToList();
 
         return new PagedResult<StockMovementDto>
         {

@@ -81,12 +81,15 @@ public class GetPurchaseOrdersQueryHandler : IRequestHandler<GetPurchaseOrdersQu
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var rawItems = await query
+            .Include(p => p.Supplier)
+            .Include(p => p.Lines)
+            .ToListAsync(cancellationToken);
+
+        var items = rawItems
             .OrderByDescending(p => p.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Include(p => p.Supplier)
-            .Include(p => p.Lines)
             .Select(p => new PurchaseOrderDto(
                 p.Id, p.PoNumber, p.SupplierId, p.Supplier.Name,
                 p.WarehouseId, p.Status.ToString(), p.OrderDate,
@@ -96,7 +99,7 @@ public class GetPurchaseOrdersQueryHandler : IRequestHandler<GetPurchaseOrdersQu
                     l.Id, l.LineNumber, l.ProductId, null,
                     l.OrderedQty, l.ReceivedQty, l.UnitPrice,
                     l.VatAmount, l.LineTotal)).ToList()))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new PagedResult<PurchaseOrderDto>
         {

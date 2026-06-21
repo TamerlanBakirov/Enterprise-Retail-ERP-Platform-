@@ -60,7 +60,11 @@ public class GetPosTransactionsQueryHandler
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var rawItems = await query
+            .Include(t => t.Lines)
+            .ToListAsync(cancellationToken);
+
+        var items = rawItems
             .OrderByDescending(t => t.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
@@ -76,7 +80,7 @@ public class GetPosTransactionsQueryHandler
                 t.FiscalReceiptId,
                 t.Lines.Count,
                 t.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new PagedResult<PosTransactionSummary>
         {

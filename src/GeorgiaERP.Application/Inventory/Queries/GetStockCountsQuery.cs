@@ -41,15 +41,18 @@ public class GetStockCountsQueryHandler
 
         var totalCount = await query.CountAsync(ct);
 
-        var items = await query
+        var rawItems = await query
+            .Include(c => c.Lines)
+            .ToListAsync(ct);
+
+        var items = rawItems
             .OrderByDescending(c => c.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(c => new StockCountDto(
                 c.Id, c.WarehouseId, c.CountType.ToString(), c.Status.ToString(),
                 c.Lines.Count, c.Lines.Count(l => l.CountedQty != null),
-                c.StartedAt, c.CompletedAt, c.CreatedAt))
-            .ToListAsync(ct);
+                c.StartedAt, c.CompletedAt, c.CreatedAt)).ToList();
 
         return new PagedResult<StockCountDto>
         {

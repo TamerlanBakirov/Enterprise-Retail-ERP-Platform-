@@ -74,14 +74,15 @@ public class GetJournalEntriesQueryHandler : IRequestHandler<GetJournalEntriesQu
 
         var totalCount = await query.CountAsync(ct);
 
-        var items = await query
+        var rawItems = await query.ToListAsync(ct);
+
+        var items = rawItems
             .OrderByDescending(j => j.EntryDate)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(j => new JournalEntryDto(
                 j.Id, j.EntryNumber, j.EntryDate, j.Description,
-                j.Status.ToString(), j.TotalDebit, j.TotalCredit, j.PostedAt, j.CreatedAt))
-            .ToListAsync(ct);
+                j.Status.ToString(), j.TotalDebit, j.TotalCredit, j.PostedAt, j.CreatedAt)).ToList();
 
         return new PagedResult<JournalEntryDto>
         {

@@ -24,7 +24,9 @@ public class GetPromotionsQueryHandler : IRequestHandler<GetPromotionsQuery, Pag
             query = query.Where(p => p.IsActive == request.IsActive.Value);
 
         var totalCount = await query.CountAsync(ct);
-        var items = await query
+        var rawItems = await query.ToListAsync(ct);
+
+        var items = rawItems
             .OrderByDescending(p => p.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
@@ -33,7 +35,7 @@ public class GetPromotionsQueryHandler : IRequestHandler<GetPromotionsQuery, Pag
                 p.PromotionType.ToString(), p.DiscountValue, p.Conditions,
                 p.ValidFrom, p.ValidTo, p.IsActive,
                 p.MaxUses, p.CurrentUses, p.CreatedAt))
-            .ToListAsync(ct);
+            .ToList();
 
         return new PagedResult<PromotionDto>
         {

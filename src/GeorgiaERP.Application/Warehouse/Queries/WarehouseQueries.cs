@@ -93,7 +93,11 @@ public class GetReceivingOrdersQueryHandler
         var totalCount = await query.CountAsync(ct);
 
         var pageSize = Math.Min(request.PageSize, 100);
-        var items = await query
+        var rawItems = await query
+            .Include(r => r.Lines)
+            .ToListAsync(ct);
+
+        var items = rawItems
             .OrderByDescending(r => r.CreatedAt)
             .Skip((request.Page - 1) * pageSize)
             .Take(pageSize)
@@ -106,7 +110,7 @@ public class GetReceivingOrdersQueryHandler
                     l.Id, l.ProductId, l.VariantId,
                     l.ExpectedQty, l.ReceivedQty, l.DamagedQty,
                     l.BatchNumber, l.SerialNumber, l.LocationId, l.Notes)).ToList()))
-            .ToListAsync(ct);
+            .ToList();
 
         return new PagedResult<ReceivingOrderDto>
         {
@@ -175,7 +179,11 @@ public class GetShippingOrdersQueryHandler
         var totalCount = await query.CountAsync(ct);
 
         var pageSize = Math.Min(request.PageSize, 100);
-        var items = await query
+        var rawItems = await query
+            .Include(s => s.Lines)
+            .ToListAsync(ct);
+
+        var items = rawItems
             .OrderByDescending(s => s.CreatedAt)
             .Skip((request.Page - 1) * pageSize)
             .Take(pageSize)
@@ -190,7 +198,7 @@ public class GetShippingOrdersQueryHandler
                     l.Id, l.ProductId, l.VariantId,
                     l.OrderedQty, l.PickedQty, l.PackedQty, l.ShippedQty,
                     l.PickLocationId, l.BatchNumber, l.SerialNumber, l.Notes)).ToList()))
-            .ToListAsync(ct);
+            .ToList();
 
         return new PagedResult<ShippingOrderDto>
         {

@@ -31,7 +31,9 @@ public class GetTransferOrdersQueryHandler
 
         var totalCount = await query.CountAsync(ct);
 
-        var items = await query
+        var rawItems = await query.ToListAsync(ct);
+
+        var items = rawItems
             .OrderByDescending(t => t.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
@@ -39,7 +41,7 @@ public class GetTransferOrdersQueryHandler
                 t.Id, t.TransferNumber, t.SourceWarehouseId, null,
                 t.DestWarehouseId, null, t.Status.ToString(),
                 t.RsGeWaybillId, t.RequestedBy, t.CreatedAt))
-            .ToListAsync(ct);
+            .ToList();
 
         return new PagedResult<TransferOrderDto>
         {

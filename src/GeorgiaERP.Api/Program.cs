@@ -85,22 +85,30 @@ try
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
         options.AddPolicy("fixed", httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
+        {
+            var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:FixedPermitLimit", 100);
+            return RateLimitPartition.GetFixedWindowLimiter(
                 httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 100,
+                    PermitLimit = limit,
                     Window = TimeSpan.FromMinutes(1)
-                }));
+                });
+        });
 
         options.AddPolicy("auth", httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
+        {
+            var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:AuthPermitLimit", 10);
+            return RateLimitPartition.GetFixedWindowLimiter(
                 httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 10,
+                    PermitLimit = limit,
                     Window = TimeSpan.FromMinutes(1)
-                }));
+                });
+        });
     });
 
     // Response compression: Brotli (preferred) + Gzip for JSON/text payloads.
