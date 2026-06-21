@@ -1,0 +1,165 @@
+groups:
+  - name: api_alerts
+    rules:
+      # High error rate: more than 5% of requests return 5xx in a 5-minute window.
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(erp_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(erp_http_requests_total[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High HTTP 5xx error rate"
+          description: >
+            More than 5% of API requests are returning 5xx errors over the last 5 minutes.
+            Current rate: {{ $value | humanizePercentage }}.
+
+      # High API latency: p95 request duration exceeds 2 seconds.
+      - alert: HighApiLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(erp_http_request_duration_seconds_bucket[5m])) by (le))
+          > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency (p95 > 2s)"
+          description: >
+            The 95th percentile of API request duration has exceeded 2 seconds
+            for the last 5 minutes. Current p95: {{ $value | humanizeDuration }}.
+
+      # API completely down: no successful requests for 2 minutes.
+      - alert: ApiDown
+        expr: |
+          sum(rate(erp_http_requests_total{status_code=~"2.."}[2m])) == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "API is not responding to requests"
+          description: "No successful HTTP responses observed in the last 2 minutes."
+
+  - name: rsge_compliance_alerts
+    rules:
+      # RS.GE queue backup: more than 100 pending messages.
+      - alert: RsGeQueueBackup
+        expr: erp_rsge_queue_depth > 100
+        for: 5m
+        labels:
+          severity: critical
+          component: rsge
+        annotations:
+          summary: "RS.GE submission queue backup"
+          description: >
+            The RS.GE submission queue has more than 100 pending messages.
+            Current depth: {{ $value }}. This may indicate RS.GE service
+            unavailability or processing failures.
+
+      # RS.GE dead-letter queue growing: messages that exhausted retries.
+      - alert: RsGeDeadLetterGrowing
+        expr: erp_rsge_deadletter_queue_depth > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: rsge
+        annotations:
+          summary: "RS.GE dead-letter queue growing"
+          description: >
+            {{ $value }} messages in the RS.GE dead-letter queue.
+            These are submissions that failed permanently and need manual review.
+
+      # Failed RS.GE submissions spike: more than 5 permanent failures in 10 minutes.
+      - alert: RsGeSubmissionFailureSpike
+        expr: |
+          sum(rate(erp_rsge_submissions_total{result="permanent"}[10m])) * 600 > 5
+        for: 5m
+        labels:
+          severity: critical
+          component: rsge
+        annotations:
+          summary: "Spike in failed RS.GE submissions"
+          description: >
+            More than 5 permanent RS.GE submission failures in the last 10 minutes.
+            Check RS.GE service status and review failed submissions.
+
+      # RS.GE SOAP call latency: p95 exceeds 10 seconds.
+      - alert: RsGeSoapLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(erp_rsge_soap_duration_seconds_bucket[5m])) by (le, operation)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: rsge
+        annotations:
+          summary: "High RS.GE SOAP call latency"
+          description: >
+            The 95th percentile of RS.GE SOAP call duration exceeds 10 seconds.
+            The RS.GE service may be experiencing performance issues.
+
+      # High RS.GE retry rate: indicates connectivity or data quality issues.
+      - alert: RsGeHighRetryRate
+        expr: |
+          sum(rate(erp_rsge_retries_total[10m])) * 600 > 20
+        for: 5m
+        labels:
+          severity: warning
+          component: rsge
+        annotations:
+          summary: "High RS.GE submission retry rate"
+          description: >
+            More than 20 RS.GE submission retries in the last 10 minutes.
+            This may indicate intermittent RS.GE connectivity issues.
+
+  - name: database_alerts
+    rules:
+      # Database connection pool exhaustion approaching.
+      - alert: DatabaseConnectionPoolExhaustion
+        expr: erp_database_active_connections > 40
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database connection pool nearing exhaustion"
+          description: >
+            Active database connections ({{ $value }}) are approaching the
+            maximum pool size of 50. This may cause connection timeouts.
+
+      # Slow database queries: p95 exceeds 500ms.
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(erp_database_query_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries (p95 > 500ms)"
+          description: >
+            The 95th percentile of database query duration exceeds 500ms.
+            Current p95: {{ $value | humanizeDuration }}.
+
+  - name: infrastructure_alerts
+    rules:
+      # Health check failure: any component reporting unhealthy.
+      - alert: HealthCheckFailed
+        expr: |
+          up{job="georgia-erp-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Georgia ERP API health check failed"
+          description: "The API instance is not responding to Prometheus scrapes."

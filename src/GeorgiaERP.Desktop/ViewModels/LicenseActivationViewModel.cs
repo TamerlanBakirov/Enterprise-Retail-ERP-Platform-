@@ -6,7 +6,7 @@ using GeorgiaERP.Desktop.Views.Login;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class LicenseActivationViewModel : ObservableObject
+public partial class LicenseActivationViewModel : BaseViewModel
 {
     private readonly ILicenseService _licenseService;
     private readonly ISettingsService _settings;
@@ -15,9 +15,7 @@ public partial class LicenseActivationViewModel : ObservableObject
     [ObservableProperty] private string _companyName = string.Empty;
     [ObservableProperty] private string _contactEmail = string.Empty;
     [ObservableProperty] private string _serverUrl = string.Empty;
-    [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private string? _successMessage;
-    [ObservableProperty] private bool _isLoading;
 
     public LicenseActivationViewModel(ILicenseService licenseService, ISettingsService settings)
     {
@@ -40,11 +38,9 @@ public partial class LicenseActivationViewModel : ObservableObject
             return;
         }
 
-        ErrorMessage = null;
         SuccessMessage = null;
-        IsLoading = true;
 
-        try
+        await ExecuteAsync(async () =>
         {
             if (!string.IsNullOrWhiteSpace(ServerUrl))
             {
@@ -73,14 +69,6 @@ public partial class LicenseActivationViewModel : ObservableObject
             {
                 ErrorMessage = "Activation failed. Check your license key.";
             }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Connection error: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        });
     }
 }

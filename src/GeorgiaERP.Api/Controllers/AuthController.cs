@@ -55,7 +55,8 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
     {
         var result = await _mediator.Send(new RevokeRefreshTokenCommand(request.RefreshToken));
-        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
         return Ok(new { message = "Logged out successfully" });
     }
 
@@ -86,7 +87,7 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> BeginTwoFactorSetup()
     {
         var result = await _mediator.Send(new BeginTwoFactorSetupCommand(CurrentUserId));
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [Authorize]
@@ -94,7 +95,7 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> ConfirmTwoFactorSetup([FromBody] TwoFactorCodeRequest request)
     {
         var result = await _mediator.Send(new ConfirmTwoFactorSetupCommand(CurrentUserId, request.Code));
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [Authorize]
@@ -102,7 +103,7 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> DisableTwoFactor([FromBody] TwoFactorCodeRequest request)
     {
         var result = await _mediator.Send(new DisableTwoFactorCommand(CurrentUserId, request.Code));
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     public record TwoFactorCodeRequest(string Code);

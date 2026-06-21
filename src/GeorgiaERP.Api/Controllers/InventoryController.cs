@@ -24,7 +24,7 @@ public class InventoryController : ApiControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
-        var result = await _mediator.Send(new GetStockLevelsQuery(warehouseId, productId, lowStockOnly, page, pageSize));
+        var result = await _mediator.Send(new GetStockLevelsQuery(warehouseId, productId, lowStockOnly, Page: page, PageSize: pageSize));
         return Ok(result);
     }
 
@@ -35,7 +35,7 @@ public class InventoryController : ApiControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
-        var result = await _mediator.Send(new GetStockMovementsQuery(warehouseId, productId, page, pageSize));
+        var result = await _mediator.Send(new GetStockMovementsQuery(warehouseId, productId, Page: page, PageSize: pageSize));
         return Ok(result);
     }
 

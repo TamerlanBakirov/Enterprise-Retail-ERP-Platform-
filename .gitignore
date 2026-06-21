@@ -45,3 +45,8 @@ logs/
 *.key
 *.pem
 appsettings.Local.json
+
+## Nginx SSL certificates (production)
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt

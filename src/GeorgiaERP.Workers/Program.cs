@@ -14,6 +14,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHostedService<RsGeSubmissionConsumer>();
 builder.Services.AddHostedService<RsGeRecoveryWorker>();
+builder.Services.AddHostedService<InvoiceDeadlineMonitor>();
 
 var host = builder.Build();
 host.Run();

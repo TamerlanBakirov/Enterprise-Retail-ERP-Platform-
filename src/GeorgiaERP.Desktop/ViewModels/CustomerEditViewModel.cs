@@ -1,4 +1,3 @@
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GeorgiaERP.Desktop.Models;
@@ -6,7 +5,7 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class CustomerEditViewModel : ObservableObject
+public partial class CustomerEditViewModel : DialogViewModel
 {
     private readonly ICustomerService _customerService;
 
@@ -18,9 +17,6 @@ public partial class CustomerEditViewModel : ObservableObject
     [ObservableProperty] private string? _email;
     [ObservableProperty] private string? _companyName;
     [ObservableProperty] private string? _taxId;
-    [ObservableProperty] private string? _errorMessage;
-
-    public bool Saved { get; private set; }
 
     public CustomerEditViewModel(ICustomerService customerService)
     {
@@ -50,18 +46,9 @@ public partial class CustomerEditViewModel : ObservableObject
 
             var result = await _customerService.CreateCustomerAsync(request);
             if (result is not null)
-            {
-                Saved = true;
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (Window w in Application.Current.Windows)
-                        if (w.DataContext == this) { w.Close(); break; }
-                });
-            }
+                SaveAndClose();
             else
-            {
                 ErrorMessage = "Failed to save customer.";
-            }
         }
         catch (Exception ex)
         {

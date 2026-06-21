@@ -1,7 +1,6 @@
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Compliance.Commands;
-using GeorgiaERP.Infrastructure.RsGe;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

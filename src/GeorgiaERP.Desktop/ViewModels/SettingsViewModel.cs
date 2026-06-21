@@ -5,7 +5,7 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class SettingsViewModel : ObservableObject
+public partial class SettingsViewModel : BaseViewModel
 {
     private readonly ISettingsService _settings;
     private readonly ILicenseService _licenseService;

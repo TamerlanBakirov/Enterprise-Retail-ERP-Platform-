@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Caching;
+using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
@@ -13,7 +14,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Polly;
 using IAuthenticationService = GeorgiaERP.Application.Common.IAuthenticationService;
 using IJwtTokenService = GeorgiaERP.Application.Common.IJwtTokenService;
 using IPasswordService = GeorgiaERP.Application.Common.IPasswordService;
@@ -74,16 +77,35 @@ public static class DependencyInjection
                 int.TryParse(configuration["RsGe:TimeoutSeconds"], out var timeout) ? timeout : 30);
             client.DefaultRequestHeaders.Add("Accept", "text/xml");
         });
-        // Decorator: caches read-only RS.GE responses (TIN lookups, reference data) in Redis.
+
+        // Polly resilience pipeline: retry + circuit breaker + timeout for RS.GE SOAP calls.
+        services.Configure<RsGeSoapClientResilienceOptions>(
+            configuration.GetSection(RsGeSoapClientResilienceOptions.SectionName));
+        services.AddSingleton<ResiliencePipeline>(provider =>
+        {
+            var resilienceOptions = new RsGeSoapClientResilienceOptions();
+            configuration.GetSection(RsGeSoapClientResilienceOptions.SectionName).Bind(resilienceOptions);
+            var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
+            return RsGeResiliencePipelineFactory.Create(resilienceOptions, loggerFactory);
+        });
+
+        // Decorator chain: RsGeSoapClient -> ResilientRsGeSoapClient -> CachedRsGeSoapClient
+        // Inner: raw SOAP client. Middle: adds Polly resilience. Outer: adds Redis caching.
         services.AddScoped<IRsGeSoapClient>(provider =>
-            new CachedRsGeSoapClient(
-                provider.GetRequiredService<RsGeSoapClient>(),
-                provider.GetRequiredService<ICacheService>()));
+        {
+            var innerClient = provider.GetRequiredService<RsGeSoapClient>();
+            var pipeline = provider.GetRequiredService<ResiliencePipeline>();
+            var resilientLogger = provider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger<ResilientRsGeSoapClient>();
+            var resilientClient = new ResilientRsGeSoapClient(innerClient, pipeline, resilientLogger);
+            return new CachedRsGeSoapClient(resilientClient, provider.GetRequiredService<ICacheService>());
+        });
         services.AddScoped<IRsGeCommunicationLogger, RsGeCommunicationLogger>();
 
         // RS.GE compliance queue + submission pipeline
         services.Configure<RsGeQueueOptions>(configuration.GetSection(RsGeQueueOptions.SectionName));
         services.AddSingleton<IRabbitMqConnection, RabbitMqConnection>();
+        services.AddSingleton<IMessageDeduplicator, RedisMessageDeduplicator>();
         services.AddScoped<IRsGeQueuePublisher, RabbitMqQueuePublisher>();
         services.AddScoped<IRsGeSubmissionProcessor, RsGeSubmissionProcessor>();
 

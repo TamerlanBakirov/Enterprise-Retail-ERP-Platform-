@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using GeorgiaERP.Application.Compliance;
@@ -32,12 +33,19 @@ public class RabbitMqQueuePublisher : IRsGeQueuePublisher
 
         var body = JsonSerializer.SerializeToUtf8Bytes(message, JsonOptions);
 
+        // Use FiscalDocumentId + Operation + Attempt as a deterministic MessageId
+        // for idempotent deduplication on the consumer side.
+        var messageId = $"{message.FiscalDocumentId}:{message.Operation}:{message.Attempt}";
+        var correlationId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
+
         var properties = new BasicProperties
         {
             Persistent = true,
             ContentType = "application/json",
-            MessageId = Guid.NewGuid().ToString(),
-            Type = message.Operation.ToString()
+            MessageId = messageId,
+            CorrelationId = correlationId,
+            Type = message.Operation.ToString(),
+            Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
         };
 
         await channel.BasicPublishAsync(

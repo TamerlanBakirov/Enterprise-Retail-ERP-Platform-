@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Xml.Linq;
 using GeorgiaERP.Application.Compliance;
@@ -335,6 +336,10 @@ public class RsGeSoapClient : Application.Compliance.IRsGeSoapClient
         };
 
         request.Headers.Add("SOAPAction", $"http://tempuri.org/{soapAction}");
+
+        // Propagate correlation ID for end-to-end tracing through RS.GE pipeline.
+        var correlationId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
+        request.Headers.Add("X-Correlation-Id", correlationId);
 
         HttpResponseMessage response;
         try

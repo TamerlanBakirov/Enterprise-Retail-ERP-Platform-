@@ -4,7 +4,7 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class DashboardViewModel : ObservableObject
+public partial class DashboardViewModel : BaseViewModel
 {
     private readonly IReportService _reportService;
     private readonly IAuthService _authService;
@@ -15,8 +15,6 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private int _lowStockCount;
     [ObservableProperty] private int _totalProducts;
     [ObservableProperty] private decimal _totalStockValue;
-    [ObservableProperty] private bool _isLoading;
-    [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private string _welcomeMessage = string.Empty;
 
     public DashboardViewModel(IReportService reportService, IAuthService authService, INavigationService navigationService)
@@ -28,42 +26,29 @@ public partial class DashboardViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task LoadDataAsync()
+    private Task LoadDataAsync() => ExecuteAsync(async () =>
     {
-        IsLoading = true;
-        ErrorMessage = null;
-        try
-        {
-            var today = DateTimeOffset.UtcNow.Date;
-            var salesTask = _reportService.GetSalesReportAsync(null, today, today.AddDays(1));
-            var stockTask = _reportService.GetStockReportAsync();
+        var today = DateTimeOffset.UtcNow.Date;
+        var salesTask = _reportService.GetSalesReportAsync(null, today, today.AddDays(1));
+        var stockTask = _reportService.GetStockReportAsync();
 
-            await Task.WhenAll(salesTask, stockTask);
+        await Task.WhenAll(salesTask, stockTask);
 
-            var sales = await salesTask;
-            if (sales is not null)
-            {
-                TodayRevenue = sales.TotalRevenue;
-                TodayTransactions = sales.TransactionCount;
-            }
+        var sales = await salesTask;
+        if (sales is not null)
+        {
+            TodayRevenue = sales.TotalRevenue;
+            TodayTransactions = sales.TransactionCount;
+        }
 
-            var stock = await stockTask;
-            if (stock is not null)
-            {
-                LowStockCount = stock.LowStockCount;
-                TotalProducts = stock.TotalProducts;
-                TotalStockValue = stock.TotalStockValue;
-            }
-        }
-        catch (Exception ex)
+        var stock = await stockTask;
+        if (stock is not null)
         {
-            ErrorMessage = ex.Message;
+            LowStockCount = stock.LowStockCount;
+            TotalProducts = stock.TotalProducts;
+            TotalStockValue = stock.TotalStockValue;
         }
-        finally
-        {
-            IsLoading = false;
-        }
-    }
+    });
 
     [RelayCommand]
     private void GoToPos() => _navigationService.NavigateTo("POS");
