@@ -253,6 +253,33 @@ public class FinanceTests
         line.CreditAmount.Should().Be(500m);
     }
 
+    [Fact]
+    public void JournalEntryLine_ThrowsWhenBothDebitAndCredit()
+    {
+        var act = () => JournalEntryLine.Create(Guid.NewGuid(), 1, Guid.NewGuid(), 100m, 50m);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*both debit and credit*");
+    }
+
+    [Fact]
+    public void JournalEntryLine_ThrowsWhenBothZero()
+    {
+        var act = () => JournalEntryLine.Create(Guid.NewGuid(), 1, Guid.NewGuid(), 0m, 0m);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*must have either*");
+    }
+
+    [Fact]
+    public void JournalEntryLine_ThrowsOnNegativeDebit()
+    {
+        var act = () => JournalEntryLine.Create(Guid.NewGuid(), 1, Guid.NewGuid(), -100m, 0m);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*negative*");
+    }
+
     // === BankAccount ===
 
     [Fact]

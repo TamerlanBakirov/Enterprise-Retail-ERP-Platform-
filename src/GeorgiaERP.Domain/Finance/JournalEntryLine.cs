@@ -25,6 +25,13 @@ public class JournalEntryLine : BaseEntity
         decimal creditAmount,
         string? description = null)
     {
+        if (debitAmount < 0) throw new InvalidOperationException("Debit amount cannot be negative.");
+        if (creditAmount < 0) throw new InvalidOperationException("Credit amount cannot be negative.");
+        if (debitAmount > 0 && creditAmount > 0)
+            throw new InvalidOperationException("A journal entry line cannot have both debit and credit amounts.");
+        if (debitAmount == 0 && creditAmount == 0)
+            throw new InvalidOperationException("A journal entry line must have either a debit or credit amount.");
+
         return new JournalEntryLine
         {
             JournalEntryId = journalEntryId,
