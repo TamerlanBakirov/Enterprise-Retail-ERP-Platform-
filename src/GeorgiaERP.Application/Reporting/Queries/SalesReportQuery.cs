@@ -47,21 +47,30 @@ public class SalesReportQueryHandler : IRequestHandler<SalesReportQuery, SalesRe
         var totalDiscount = await completed.SumAsync(t => (decimal?)t.DiscountTotal, ct) ?? 0;
         var txCount = await completed.CountAsync(ct);
 
+        var completedIds = await completed.Select(t => t.Id).ToListAsync(ct);
+
         var itemsSold = await _dbContext.PosTransactionLines
-            .Where(l => completed.Select(t => t.Id).Contains(l.TransactionId))
+            .Where(l => completedIds.Contains(l.TransactionId))
             .SumAsync(l => (int?)l.Quantity, ct) ?? 0;
 
-        var byPayment = await _dbContext.PosPayments
-            .Where(p => completed.Select(t => t.Id).Contains(p.TransactionId))
-            .GroupBy(p => p.PaymentMethod)
-            .Select(g => new SalesByPaymentMethod(g.Key.ToString(), g.Sum(p => p.Amount), g.Count()))
+        var paymentData = await _dbContext.PosPayments
+            .Where(p => completedIds.Contains(p.TransactionId))
             .ToListAsync(ct);
 
-        var daily = await completed
-            .GroupBy(t => t.CreatedAt.Date)
-            .Select(g => new DailySalesSummary(DateOnly.FromDateTime(g.Key), g.Sum(t => t.Total), g.Count()))
+        var byPayment = paymentData
+            .GroupBy(p => p.PaymentMethod)
+            .Select(g => new SalesByPaymentMethod(g.Key.ToString(), g.Sum(p => p.Amount), g.Count()))
+            .ToList();
+
+        // Materialize first, then group client-side to avoid provider-specific
+        // DateTimeOffset translation issues (SQLite does not support .Date in SQL).
+        var completedTxs = await completed.ToListAsync(ct);
+
+        var daily = completedTxs
+            .GroupBy(t => DateOnly.FromDateTime(t.CreatedAt.Date))
+            .Select(g => new DailySalesSummary(g.Key, g.Sum(t => t.Total), g.Count()))
             .OrderBy(d => d.Date)
-            .ToListAsync(ct);
+            .ToList();
 
         return new SalesReport(
             totalSales, totalReturns, totalSales - totalReturns, totalVat, totalDiscount,

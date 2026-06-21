@@ -35,23 +35,34 @@ public class StockReportQueryHandler : IRequestHandler<StockReportQuery, StockRe
         if (request.WarehouseId.HasValue)
             query = query.Where(s => s.WarehouseId == request.WarehouseId.Value);
 
-        var stockData = await query.Join(
+        var rawData = await query.Join(
             _dbContext.Products,
             s => s.ProductId,
             p => p.Id,
-            (s, p) => new { Stock = s, Product = p })
-            .Select(x => new StockSummaryItem(
-                x.Stock.ProductId,
-                x.Product.Name,
-                x.Stock.WarehouseId,
-                x.Stock.QuantityOnHand,
-                x.Stock.QuantityReserved,
-                x.Stock.QuantityOnHand - x.Stock.QuantityReserved,
-                x.Stock.CostPrice,
-                x.Stock.QuantityOnHand * x.Stock.CostPrice,
-                x.Product.MinStockLevel.HasValue && x.Stock.QuantityOnHand <= x.Product.MinStockLevel.Value))
+            (s, p) => new
+            {
+                s.ProductId,
+                ProductName = p.Name,
+                s.WarehouseId,
+                s.QuantityOnHand,
+                s.QuantityReserved,
+                s.CostPrice,
+                p.MinStockLevel
+            })
             .OrderBy(x => x.ProductName)
             .ToListAsync(ct);
+
+        var stockData = rawData.Select(x => new StockSummaryItem(
+                x.ProductId,
+                x.ProductName,
+                x.WarehouseId,
+                x.QuantityOnHand,
+                x.QuantityReserved,
+                x.QuantityOnHand - x.QuantityReserved,
+                x.CostPrice,
+                x.QuantityOnHand * x.CostPrice,
+                x.MinStockLevel.HasValue && x.QuantityOnHand <= x.MinStockLevel.Value))
+            .ToList();
 
         return new StockReport(
             stockData.Sum(s => s.StockValue),

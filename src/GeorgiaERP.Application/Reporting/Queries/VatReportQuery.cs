@@ -38,10 +38,17 @@ public class VatReportQueryHandler : IRequestHandler<VatReportQuery, VatReport>
         var pending = await docs.CountAsync(d => d.Status == FiscalDocumentStatus.Queued || d.Status == FiscalDocumentStatus.Pending, ct);
         var failed = await docs.CountAsync(d => d.Status == FiscalDocumentStatus.Failed || d.Status == FiscalDocumentStatus.Rejected, ct);
 
-        var byType = await docs
+        // Materialize first, then group client-side to avoid provider-specific
+        // DateTimeOffset translation issues in OrderByDescending within GroupBy.
+        var allDocs = await docs.ToListAsync(ct);
+
+        var byType = allDocs
             .GroupBy(d => d.DocumentType)
-            .Select(g => new VatByDocumentType(g.Key.ToString(), g.Count(), g.OrderByDescending(d => d.CreatedAt).First().Status.ToString()))
-            .ToListAsync(ct);
+            .Select(g => new VatByDocumentType(
+                g.Key.ToString(),
+                g.Count(),
+                g.OrderByDescending(d => d.CreatedAt).FirstOrDefault()?.Status.ToString()))
+            .ToList();
 
         var declaration = await _dbContext.VatDeclarations
             .Where(v => v.PeriodStart >= periodStart && v.PeriodEnd < periodEnd)
