@@ -113,6 +113,9 @@ public static class DependencyInjection
         services.AddSingleton<ILicenseKeyValidator, HmacLicenseKeyValidator>();
         services.AddSingleton<IMachineIdProvider, MachineIdProviderService>();
 
+        // Background cleanup of expired/revoked refresh tokens
+        services.AddHostedService<ExpiredRefreshTokenCleanupService>();
+
         return services;
     }
 
