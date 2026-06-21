@@ -116,6 +116,9 @@ public static class DependencyInjection
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();
 
+        // Background scan for low stock items (every 30 minutes by default)
+        services.AddHostedService<BackgroundJobs.LowStockAlertService>();
+
         return services;
     }
 

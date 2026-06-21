@@ -18,7 +18,11 @@ public record UpdateProductCommand(
     decimal? MaxStockLevel,
     decimal? ReorderPoint,
     decimal? ReorderQty,
-    bool? IsActive) : IRequest<Result>;
+    bool? IsActive) : IRequest<Result>, ICacheInvalidator
+{
+    public IReadOnlyList<string> CacheKeysToInvalidate =>
+        [$"products:id:{Id}", "dashboard:kpi"];
+}
 
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result>
 {

@@ -51,16 +51,22 @@ public class DashboardKpiQueryHandler : IRequestHandler<DashboardKpiQuery, Dashb
 
     public async Task<DashboardKpiResult> Handle(DashboardKpiQuery request, CancellationToken ct)
     {
-        var todayStart = DateTimeOffset.UtcNow.Date;
+        var now = DateTimeOffset.UtcNow;
+        var todayStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
         var todayEnd = todayStart.AddDays(1);
 
-        // Sales KPIs - today's completed transactions
-        var todayTxQuery = _dbContext.PosTransactions.AsNoTracking()
-            .Where(t => t.CreatedAt >= todayStart && t.CreatedAt < todayEnd
-                        && t.Status == PosTransactionStatus.Completed);
+        // Sales KPIs - today's completed transactions.
+        // Materialize first to avoid SQLite translation issues with DateTimeOffset + enum filters.
+        var todayTxs = await _dbContext.PosTransactions.AsNoTracking()
+            .Where(t => t.Status == PosTransactionStatus.Completed)
+            .ToListAsync(ct);
 
-        var totalSalesToday = await todayTxQuery.SumAsync(t => (decimal?)t.Total, ct) ?? 0;
-        var transactionsToday = await todayTxQuery.CountAsync(ct);
+        var todayCompleted = todayTxs
+            .Where(t => t.CreatedAt >= todayStart && t.CreatedAt < todayEnd)
+            .ToList();
+
+        var totalSalesToday = todayCompleted.Sum(t => t.Total);
+        var transactionsToday = todayCompleted.Count;
 
         // Inventory KPIs
         var stockQuery = _dbContext.StockLevels.AsNoTracking();
@@ -74,20 +80,19 @@ public class DashboardKpiQueryHandler : IRequestHandler<DashboardKpiQuery, Dashb
         var outOfStockCount = stockData.Count(s => s.QuantityOnHand <= 0);
         var totalStockValue = stockData.Sum(s => s.QuantityOnHand * s.CostPrice);
 
-        // Compliance KPIs - waybill statuses
-        var pendingWaybills = await _dbContext.FiscalDocuments.AsNoTracking()
-            .CountAsync(d => d.Status == FiscalDocumentStatus.Queued || d.Status == FiscalDocumentStatus.Pending, ct);
-        var failedWaybills = await _dbContext.FiscalDocuments.AsNoTracking()
-            .CountAsync(d => d.Status == FiscalDocumentStatus.Failed, ct);
-        var submittedToday = await _dbContext.FiscalDocuments.AsNoTracking()
-            .CountAsync(d => d.Status == FiscalDocumentStatus.Submitted
+        // Compliance KPIs - waybill statuses.
+        // Materialize to avoid SQLite enum translation issues.
+        var fiscalDocs = await _dbContext.FiscalDocuments.AsNoTracking().ToListAsync(ct);
+        var pendingWaybills = fiscalDocs.Count(d => d.Status == FiscalDocumentStatus.Queued || d.Status == FiscalDocumentStatus.Pending);
+        var failedWaybills = fiscalDocs.Count(d => d.Status == FiscalDocumentStatus.Failed);
+        var submittedToday = fiscalDocs.Count(d => d.Status == FiscalDocumentStatus.Submitted
                           && d.SubmittedAt.HasValue
                           && d.SubmittedAt.Value >= todayStart
-                          && d.SubmittedAt.Value < todayEnd, ct);
+                          && d.SubmittedAt.Value < todayEnd);
 
         // Finance KPIs
-        var draftJournalEntries = await _dbContext.JournalEntries.AsNoTracking()
-            .CountAsync(j => j.Status == Domain.Finance.JournalEntryStatus.Draft, ct);
+        var journalEntries = await _dbContext.JournalEntries.AsNoTracking().ToListAsync(ct);
+        var draftJournalEntries = journalEntries.Count(j => j.Status == Domain.Finance.JournalEntryStatus.Draft);
 
         // Receivables/Payables from bank account balances (simplified)
         var bankAccounts = await _dbContext.BankAccounts.AsNoTracking().ToListAsync(ct);
@@ -98,10 +103,11 @@ public class DashboardKpiQueryHandler : IRequestHandler<DashboardKpiQuery, Dashb
         var activePosTerminals = await _dbContext.PosTerminals.AsNoTracking()
             .CountAsync(t => t.IsActive, ct);
 
-        var pendingPurchaseOrders = await _dbContext.PurchaseOrders.AsNoTracking()
-            .CountAsync(po => po.Status == Domain.Procurement.PurchaseOrderStatus.PendingApproval
-                           || po.Status == Domain.Procurement.PurchaseOrderStatus.Approved
-                           || po.Status == Domain.Procurement.PurchaseOrderStatus.Sent, ct);
+        var purchaseOrders = await _dbContext.PurchaseOrders.AsNoTracking().ToListAsync(ct);
+        var pendingPurchaseOrders = purchaseOrders.Count(po =>
+            po.Status == Domain.Procurement.PurchaseOrderStatus.PendingApproval
+            || po.Status == Domain.Procurement.PurchaseOrderStatus.Approved
+            || po.Status == Domain.Procurement.PurchaseOrderStatus.Sent);
 
         return new DashboardKpiResult(
             TotalSalesToday: totalSalesToday,

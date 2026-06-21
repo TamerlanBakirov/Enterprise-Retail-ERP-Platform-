@@ -25,4 +25,16 @@ public record CreateProductCommand(
     bool IsBatchTracked,
     bool HasExpiry,
     List<CreateBarcodeRequest>? Barcodes,
-    Guid CreatedBy) : IRequest<Result<ProductDto>>;
+    Guid CreatedBy) : IRequest<Result<ProductDto>>, ICacheInvalidator
+{
+    // Invalidate category caches (product counts change) and dashboard KPIs.
+    // Product list caches use parameterized keys and expire via 2-minute TTL.
+    public IReadOnlyList<string> CacheKeysToInvalidate =>
+        [$"products:categories:{CategoryId}:True",
+         $"products:categories:{CategoryId}:False",
+         $"products:categories:{CategoryId}:",
+         $"products:categories::True",
+         $"products:categories::False",
+         $"products:categories::",
+         "dashboard:kpi"];
+}

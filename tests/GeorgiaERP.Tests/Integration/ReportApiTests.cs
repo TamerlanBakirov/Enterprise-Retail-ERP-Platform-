@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Domain.Inventory;
 using GeorgiaERP.Domain.Organization;
 using GeorgiaERP.Domain.Products;
@@ -120,6 +121,73 @@ public class ReportApiTests : IntegrationTestBase
         var response = await client.GetAsync($"/api/v1/reports/sales?from={from}&to={to}");
 
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+    }
+
+    // ===== Dashboard KPI tests =====
+
+    [Fact]
+    public async Task Dashboard_WithoutAuth_Returns401()
+    {
+        var response = await NewClient().GetAsync("/api/v1/reports/dashboard");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Dashboard_ReturnsOk_WithKpiFields()
+    {
+        var client = await AuthenticatedClient();
+
+        var response = await client.GetAsync("/api/v1/reports/dashboard");
+
+        // Read body before assertion for diagnostics
+        var responseBody = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, $"Response body: {responseBody}");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // Verify all KPI fields are present
+        body.GetProperty("totalSalesToday").GetDecimal().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("transactionsToday").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("totalProducts").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("lowStockItemsCount").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("outOfStockItemsCount").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("pendingWaybills").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("failedWaybills").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("draftJournalEntries").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("activePosTerminals").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("pendingPurchaseOrders").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+        body.GetProperty("generatedAt").GetString().Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task Dashboard_WithSeededData_ReflectsProductCount()
+    {
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // Invalidate dashboard cache so we get fresh data
+        var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
+        await cacheService.RemoveAsync("dashboard:kpi");
+
+        // Count existing products to use as baseline
+        var baselineCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .CountAsync(db.Products);
+
+        var category = Category.Create($"CAT-{Guid.NewGuid():N}"[..10], "Dashboard Test Category");
+        db.Categories.Add(category);
+        var product = Product.Create($"SKU-{Guid.NewGuid():N}"[..15], "Dashboard Test Product", category.Id, "PCS");
+        db.Products.Add(product);
+        await db.SaveChangesAsync();
+
+        // Invalidate cache again after seeding
+        await cacheService.RemoveAsync("dashboard:kpi");
+
+        var client = await AuthenticatedClient();
+        var response = await client.GetAsync("/api/v1/reports/dashboard");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("totalProducts").GetInt32().Should().BeGreaterThanOrEqualTo(baselineCount + 1);
     }
 
     // ===== VAT report tests (may fail on SQLite) =====

@@ -4,7 +4,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Application.Products.Commands;
 
-public record DeleteProductCommand(Guid Id) : IRequest<Result>;
+public record DeleteProductCommand(Guid Id) : IRequest<Result>, ICacheInvalidator
+{
+    public IReadOnlyList<string> CacheKeysToInvalidate =>
+        [$"products:id:{Id}", "dashboard:kpi"];
+}
 
 public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, Result>
 {

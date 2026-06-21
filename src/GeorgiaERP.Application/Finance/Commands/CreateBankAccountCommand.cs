@@ -11,7 +11,10 @@ public record CreateBankAccountCommand(
     string AccountNumber,
     string? Iban,
     string Currency,
-    Guid? GlAccountId) : IRequest<Result<Guid>>;
+    Guid? GlAccountId) : IRequest<Result<Guid>>, ICacheInvalidator
+{
+    public IReadOnlyList<string> CacheKeysToInvalidate => ["finance:bank-accounts", "dashboard:kpi"];
+}
 
 public class CreateBankAccountCommandHandler : IRequestHandler<CreateBankAccountCommand, Result<Guid>>
 {
