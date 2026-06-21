@@ -214,4 +214,134 @@ public class ApiIntegrationTests
             new { username, password = "Valid@123!" });
         correct.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    // --- Product CRUD Lifecycle ---
+
+    private async Task<Guid> SeedCategory()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var category = db.Categories.FirstOrDefault();
+        if (category is not null) return category.Id;
+
+        category = GeorgiaERP.Domain.Products.Category.Create($"CAT-{Guid.NewGuid():N}"[..10], "Test Category");
+        db.Categories.Add(category);
+        await db.SaveChangesAsync();
+        return category.Id;
+    }
+
+    [Fact]
+    public async Task Products_CreateAndGetById()
+    {
+        var client = await AuthenticatedClient();
+        var categoryId = await SeedCategory();
+        var sku = $"SKU-{Guid.NewGuid():N}"[..15];
+
+        var createResponse = await client.PostAsJsonAsync("/api/v1/products",
+            new
+            {
+                sku,
+                name = "Integration Test Product",
+                nameKa = "ტესტ პროდუქტი",
+                categoryId,
+                unitOfMeasure = "PCS",
+                vatApplicable = true,
+                isSerialized = false,
+                isBatchTracked = false,
+                hasExpiry = false
+            });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var productId = created.GetProperty("id").GetString()!;
+
+        var getResponse = await client.GetAsync($"/api/v1/products/{productId}");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var product = await getResponse.Content.ReadFromJsonAsync<JsonElement>();
+        product.GetProperty("sku").GetString().Should().Be(sku);
+        product.GetProperty("name").GetString().Should().Be("Integration Test Product");
+    }
+
+    [Fact]
+    public async Task Products_Update_ReturnsOk()
+    {
+        var client = await AuthenticatedClient();
+        var categoryId = await SeedCategory();
+        var sku = $"SKU-{Guid.NewGuid():N}"[..15];
+
+        var createResponse = await client.PostAsJsonAsync("/api/v1/products",
+            new
+            {
+                sku,
+                name = "Before Update",
+                categoryId,
+                unitOfMeasure = "PCS",
+                vatApplicable = true,
+                isSerialized = false,
+                isBatchTracked = false,
+                hasExpiry = false
+            });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var productId = created.GetProperty("id").GetString()!;
+
+        var updateResponse = await client.PutAsJsonAsync($"/api/v1/products/{productId}",
+            new { name = "After Update", weightKg = 2.5m });
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var getResponse = await client.GetAsync($"/api/v1/products/{productId}");
+        var product = await getResponse.Content.ReadFromJsonAsync<JsonElement>();
+        product.GetProperty("name").GetString().Should().Be("After Update");
+    }
+
+    [Fact]
+    public async Task Products_Delete_ReturnsNoContent()
+    {
+        var client = await AuthenticatedClient();
+        var categoryId = await SeedCategory();
+        var sku = $"SKU-{Guid.NewGuid():N}"[..15];
+
+        var createResponse = await client.PostAsJsonAsync("/api/v1/products",
+            new
+            {
+                sku,
+                name = "To Be Deleted",
+                categoryId,
+                unitOfMeasure = "PCS",
+                vatApplicable = true,
+                isSerialized = false,
+                isBatchTracked = false,
+                hasExpiry = false
+            });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var productId = created.GetProperty("id").GetString()!;
+
+        var deleteResponse = await client.DeleteAsync($"/api/v1/products/{productId}");
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Product should still be accessible (soft delete) but inactive
+        var getResponse = await client.GetAsync($"/api/v1/products/{productId}");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var product = await getResponse.Content.ReadFromJsonAsync<JsonElement>();
+        product.GetProperty("isActive").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Products_Delete_NotFound_Returns404()
+    {
+        var client = await AuthenticatedClient();
+
+        var response = await client.DeleteAsync($"/api/v1/products/{Guid.NewGuid()}");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Products_Update_NotFound_Returns404()
+    {
+        var client = await AuthenticatedClient();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/products/{Guid.NewGuid()}",
+            new { name = "Nonexistent" });
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }
