@@ -10,6 +10,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// Restricted to administrators.
 /// </summary>
 [Authorize(Roles = "super_admin,admin")]
+[Tags("Audit")]
 public class AuditController : ApiControllerBase
 {
     private readonly IMediator _mediator;

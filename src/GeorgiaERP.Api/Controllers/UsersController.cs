@@ -7,7 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// User management endpoints for creating and listing users with role assignments.
+/// </summary>
 [Authorize]
+[Tags("Users")]
 public class UsersController : ApiControllerBase
 {
     private readonly IMediator _mediator;

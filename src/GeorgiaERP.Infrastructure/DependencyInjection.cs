@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Caching;
+using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
@@ -112,6 +113,10 @@ public static class DependencyInjection
         services.AddScoped<ILicenseValidator, LocalLicenseValidator>();
         services.AddSingleton<ILicenseKeyValidator, HmacLicenseKeyValidator>();
         services.AddSingleton<IMachineIdProvider, MachineIdProviderService>();
+
+        // Email notification service (SMTP)
+        services.Configure<SmtpEmailOptions>(configuration.GetSection(SmtpEmailOptions.SectionName));
+        services.AddSingleton<IEmailService, SmtpEmailService>();
 
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();

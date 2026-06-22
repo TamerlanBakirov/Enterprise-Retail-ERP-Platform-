@@ -6,7 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Financial management including chart of accounts, journal entries,
+/// and bank account operations for Georgian accounting standards.
+/// </summary>
 [Authorize]
+[Tags("Finance")]
 public class FinanceController : ApiControllerBase
 {
     private readonly IMediator _mediator;

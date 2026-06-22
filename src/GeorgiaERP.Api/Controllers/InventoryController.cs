@@ -6,7 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Inventory management including stock levels, stock movements, transfer orders,
+/// and stock count (physical inventory) workflows.
+/// </summary>
 [Authorize]
+[Tags("Inventory")]
 public class InventoryController : ApiControllerBase
 {
     private readonly IMediator _mediator;

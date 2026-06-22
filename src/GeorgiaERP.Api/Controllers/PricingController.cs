@@ -6,7 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Pricing management including price lists, promotions, and discount rules.
+/// </summary>
 [Authorize]
+[Tags("Pricing")]
 public class PricingController : ApiControllerBase
 {
     private readonly IMediator _mediator;

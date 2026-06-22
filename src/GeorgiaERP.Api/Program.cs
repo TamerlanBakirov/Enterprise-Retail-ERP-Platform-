@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Reflection;
 using System.Threading.RateLimiting;
 using GeorgiaERP.Application;
 using GeorgiaERP.Infrastructure;
@@ -50,8 +51,50 @@ try
         {
             Title = "Georgia ERP Platform API",
             Version = "v1",
-            Description = "Enterprise Retail ERP for Georgia with RS.GE fiscal integration."
+            Description = """
+                Enterprise Retail ERP for Georgia with RS.GE fiscal integration.
+
+                ## Modules
+                - **Authentication** - JWT-based auth with 2FA support
+                - **Products** - Product catalog management with categories and barcodes
+                - **Inventory** - Stock levels, transfers, and stock counts
+                - **Warehouse** - Warehouse locations, receiving, and shipping
+                - **Finance** - Chart of accounts, journal entries, bank accounts
+                - **Procurement** - Purchase orders and goods receipt
+                - **POS** - Point of sale terminals and transactions
+                - **CRM** - Customer management and loyalty
+                - **Compliance** - RS.GE waybills and fiscal documents
+                - **Reports** - Dashboard KPIs and analytics
+                """,
+            Contact = new OpenApiContact
+            {
+                Name = "Georgia ERP Support",
+                Email = "support@georgiaerp.ge"
+            },
+            License = new OpenApiLicense
+            {
+                Name = "Proprietary"
+            }
         });
+
+        // Include XML comments for endpoint documentation
+        var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
+
+        // Group endpoints by controller name for cleaner navigation
+        options.TagActionsBy(api =>
+        {
+            if (api.GroupName is not null) return [api.GroupName];
+
+            var controllerName = api.ActionDescriptor.RouteValues["controller"];
+            return controllerName is not null ? [controllerName] : ["Other"];
+        });
+
+        options.DocInclusionPredicate((_, _) => true);
 
         var jwtScheme = new OpenApiSecurityScheme
         {
@@ -230,6 +273,18 @@ try
 
     app.UseHttpsRedirection();
 
+    // API version header on all responses
+    app.Use(async (context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["X-Api-Version"] = "1.0";
+            context.Response.Headers["X-Powered-By"] = "GeorgiaERP";
+            return Task.CompletedTask;
+        });
+        await next();
+    });
+
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
         app.UseSwagger();
@@ -237,6 +292,9 @@ try
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Georgia ERP API v1");
             options.DocumentTitle = "Georgia ERP API";
+            options.DefaultModelsExpandDepth(0);
+            options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+            options.EnableTryItOutByDefault();
         });
     }
 

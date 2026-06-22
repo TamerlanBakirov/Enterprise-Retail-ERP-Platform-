@@ -6,7 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Point of Sale (POS) operations including terminal management, sessions,
+/// transactions, and daily closing workflows.
+/// </summary>
 [Authorize]
+[Tags("POS")]
 public class PosController : ApiControllerBase
 {
     private readonly IMediator _mediator;

@@ -3,6 +3,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Application update checking for desktop client auto-update functionality.
+/// </summary>
+[Tags("Updates")]
 public class UpdatesController : ApiControllerBase
 {
     private readonly IConfiguration _configuration;

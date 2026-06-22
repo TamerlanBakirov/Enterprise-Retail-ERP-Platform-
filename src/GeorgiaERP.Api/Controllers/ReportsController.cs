@@ -5,7 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Reporting and analytics endpoints including sales reports, dashboard KPIs,
+/// and business intelligence data.
+/// </summary>
 [Authorize]
+[Tags("Reports")]
 public class ReportsController : ApiControllerBase
 {
     private readonly IMediator _mediator;

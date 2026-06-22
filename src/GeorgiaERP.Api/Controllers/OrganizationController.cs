@@ -5,7 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Organization structure management including companies, stores, and warehouses.
+/// </summary>
 [Authorize]
+[Tags("Organization")]
 public class OrganizationController : ApiControllerBase
 {
     private readonly IMediator _mediator;

@@ -8,7 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// RS.GE fiscal compliance endpoints for waybill management, VAT declarations,
+/// and fiscal document operations required by Georgian tax regulations.
+/// </summary>
 [Authorize]
+[Tags("Compliance")]
 public class ComplianceController : ApiControllerBase
 {
     private readonly IRsGeSoapClient _rsGeClient;

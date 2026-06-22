@@ -7,7 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Product catalog management including CRUD operations, categories, and barcode tracking.
+/// Supports Georgian locale with bilingual product names (EN/KA).
+/// </summary>
 [Authorize]
+[Tags("Products")]
 public class ProductsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -17,7 +22,11 @@ public class ProductsController : ApiControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of products with optional filtering.
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -30,7 +39,12 @@ public class ProductsController : ApiControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Gets a single product by its unique identifier.
+    /// </summary>
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(Guid id)
     {
         var result = await _mediator.Send(new GetProductByIdQuery(id));
@@ -39,7 +53,12 @@ public class ProductsController : ApiControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Creates a new product in the catalog.
+    /// </summary>
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
     {
         var command = new CreateProductCommand(
@@ -73,7 +92,13 @@ public class ProductsController : ApiControllerBase
         return CreatedAtAction(nameof(GetProduct), new { id = result.Value!.Id }, result.Value);
     }
 
+    /// <summary>
+    /// Updates an existing product's details.
+    /// </summary>
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
     {
         var command = new UpdateProductCommand(
@@ -95,7 +120,12 @@ public class ProductsController : ApiControllerBase
         return ToActionResult(result);
     }
 
+    /// <summary>
+    /// Soft-deletes a product by marking it inactive.
+    /// </summary>
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProduct(Guid id)
     {
         var result = await _mediator.Send(new DeleteProductCommand(id));

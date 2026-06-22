@@ -99,6 +99,23 @@ jobs:
             echo "| Branch | ${BRANCH_PCT}% |" >> $GITHUB_STEP_SUMMARY
           fi
 
+      - name: Generate test summary
+        if: always()
+        run: |
+          TRX_FILE=$(find ./TestResults -name "test-results.trx" | head -1)
+          if [ -n "$TRX_FILE" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+            TOTAL=$(grep -oP 'total="\K\d+' "$TRX_FILE" | head -1)
+            PASSED=$(grep -oP 'passed="\K\d+' "$TRX_FILE" | head -1)
+            FAILED=$(grep -oP 'failed="\K\d+' "$TRX_FILE" | head -1)
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total  | ${TOTAL:-N/A} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | ${PASSED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | ${FAILED:-N/A} |" >> $GITHUB_STEP_SUMMARY
+          fi
+
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
@@ -134,6 +151,16 @@ jobs:
           echo "### Workers Project" >> $GITHUB_STEP_SUMMARY
           dotnet list src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj package --vulnerable --include-transitive 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
 
+      - name: Check for deprecated packages
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deprecated Packages" >> $GITHUB_STEP_SUMMARY
+          echo "### API Project" >> $GITHUB_STEP_SUMMARY
+          dotnet list src/GeorgiaERP.Api/GeorgiaERP.Api.csproj package --deprecated 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Workers Project" >> $GITHUB_STEP_SUMMARY
+          dotnet list src/GeorgiaERP.Workers/GeorgiaERP.Workers.csproj package --deprecated 2>&1 | tee -a $GITHUB_STEP_SUMMARY || true
+
       - name: Fail on critical vulnerabilities
         run: |
           API_VULNS=$(dotnet list src/GeorgiaERP.Api/GeorgiaERP.Api.csproj package --vulnerable --include-transitive 2>&1)
@@ -146,6 +173,24 @@ jobs:
             echo "::error::Critical vulnerabilities found in Workers project"
             exit 1
           fi
+
+  lint:
+    name: Code Quality & Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore src/GeorgiaERP.Api/GeorgiaERP.Api.csproj
+
+      - name: Check formatting
+        run: dotnet format src/GeorgiaERP.Api/GeorgiaERP.Api.csproj --verify-no-changes --verbosity diagnostic 2>&1 || echo "::warning::Code formatting issues found. Run 'dotnet format' locally."
 
   build-desktop:
     name: Build Desktop (Windows)
@@ -204,6 +249,7 @@ jobs:
             type=sha,prefix=
             type=raw,value=latest
             type=ref,event=branch
+            type=semver,pattern={{version}}
 
       - name: Build and push API image
         uses: docker/build-push-action@v6
@@ -216,6 +262,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
 
       - name: Extract metadata for Workers image
         id: meta-workers
@@ -226,6 +275,7 @@ jobs:
             type=sha,prefix=
             type=raw,value=latest
             type=ref,event=branch
+            type=semver,pattern={{version}}
 
       - name: Build and push Workers image
         uses: docker/build-push-action@v6
@@ -238,6 +288,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
 
   deploy-staging:
     name: Deploy to Staging

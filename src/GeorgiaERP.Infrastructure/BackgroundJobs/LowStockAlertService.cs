@@ -1,3 +1,4 @@
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +19,8 @@ namespace GeorgiaERP.Infrastructure.BackgroundJobs;
 /// Configurable via appsettings:
 ///   "LowStockAlert": {
 ///     "IntervalMinutes": 30,
-///     "BatchSize": 500
+///     "BatchSize": 500,
+///     "NotificationEmail": "inventory@example.com"
 ///   }
 /// </summary>
 public sealed class LowStockAlertService : BackgroundService
@@ -27,6 +29,7 @@ public sealed class LowStockAlertService : BackgroundService
     private readonly ILogger<LowStockAlertService> _logger;
     private readonly TimeSpan _interval;
     private readonly int _batchSize;
+    private readonly string? _notificationEmail;
 
     public LowStockAlertService(
         IServiceScopeFactory scopeFactory,
@@ -39,6 +42,7 @@ public sealed class LowStockAlertService : BackgroundService
         var section = configuration.GetSection("LowStockAlert");
         _interval = TimeSpan.FromMinutes(section.GetValue("IntervalMinutes", 30));
         _batchSize = section.GetValue("BatchSize", 500);
+        _notificationEmail = section.GetValue<string?>("NotificationEmail");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -144,5 +148,29 @@ public sealed class LowStockAlertService : BackgroundService
             "Low stock scan completed: {OutOfStock} out of stock, {BelowMinimum} below minimum, " +
             "{Total} total items flagged",
             outOfStock, belowMinimum, lowStockItems.Count);
+
+        // Send email notification if configured
+        if (!string.IsNullOrWhiteSpace(_notificationEmail))
+        {
+            try
+            {
+                var emailService = scope.ServiceProvider.GetService<IEmailService>();
+                if (emailService is not null)
+                {
+                    var emailItems = lowStockItems.Select(i => new LowStockItem(
+                        i.Sku, i.ProductName, i.WarehouseName,
+                        i.QuantityOnHand, i.MinStockLevel ?? 0)).ToList();
+
+                    var email = EmailTemplates.LowStockAlert(_notificationEmail, emailItems);
+                    await emailService.SendAsync(email, cancellationToken);
+
+                    _logger.LogInformation("Low stock alert email sent to {Email}", _notificationEmail);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send low stock alert email to {Email}", _notificationEmail);
+            }
+        }
     }
 }

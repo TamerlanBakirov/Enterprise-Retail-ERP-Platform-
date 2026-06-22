@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// License management for desktop client validation and activation.
+/// </summary>
+[Tags("License")]
 public class LicenseController : ApiControllerBase
 {
     private readonly ILicenseValidator _licenseValidator;

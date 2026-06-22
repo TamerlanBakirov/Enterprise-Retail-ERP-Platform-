@@ -6,7 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Warehouse operations including location management, receiving orders,
+/// and shipping order workflows.
+/// </summary>
 [Authorize]
+[Tags("Warehouse")]
 public class WarehouseController : ApiControllerBase
 {
     private readonly IMediator _mediator;

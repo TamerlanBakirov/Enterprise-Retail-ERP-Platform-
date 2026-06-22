@@ -6,7 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GeorgiaERP.Api.Controllers;
 
+/// <summary>
+/// Procurement management including purchase orders and goods receipt workflows.
+/// </summary>
 [Authorize]
+[Tags("Procurement")]
 public class ProcurementController : ApiControllerBase
 {
     private readonly IMediator _mediator;
