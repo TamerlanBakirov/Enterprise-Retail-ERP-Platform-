@@ -140,6 +140,18 @@ public class ProductsController : ApiControllerBase
         return NoContent();
     }
 
+    [HttpGet("barcode/{barcode}")]
+    [EnableRateLimiting("read")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProductByBarcode(string barcode)
+    {
+        var result = await _mediator.Send(new GetProductByBarcodeQuery(barcode));
+        if (result is null)
+            return NotFound();
+        return Ok(result);
+    }
+
     [HttpGet("categories")]
     [EnableRateLimiting("read")]
     public async Task<IActionResult> GetCategories(
