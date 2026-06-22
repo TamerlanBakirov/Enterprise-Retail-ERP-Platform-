@@ -1,3 +1,4 @@
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,8 +27,11 @@ namespace GeorgiaERP.Infrastructure.Identity;
 /// </summary>
 public class ExpiredRefreshTokenCleanupService : BackgroundService
 {
+    private const string JobName = "ExpiredRefreshTokenCleanup";
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ExpiredRefreshTokenCleanupService> _logger;
+    private readonly IBackgroundJobRegistry _jobRegistry;
     private readonly TimeSpan _interval;
     private readonly int _revokedRetentionDays;
     private readonly int _batchSize;
@@ -35,15 +39,21 @@ public class ExpiredRefreshTokenCleanupService : BackgroundService
     public ExpiredRefreshTokenCleanupService(
         IServiceScopeFactory scopeFactory,
         ILogger<ExpiredRefreshTokenCleanupService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IBackgroundJobRegistry jobRegistry)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _jobRegistry = jobRegistry;
 
         var section = configuration.GetSection("RefreshTokenCleanup");
         _interval = TimeSpan.FromMinutes(section.GetValue("IntervalMinutes", 60));
         _revokedRetentionDays = section.GetValue("RevokedRetentionDays", 7);
         _batchSize = section.GetValue("BatchSize", 1000);
+
+        _jobRegistry.Register(JobName,
+            "Removes expired and revoked refresh tokens from the database",
+            _interval);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -67,7 +77,9 @@ public class ExpiredRefreshTokenCleanupService : BackgroundService
         {
             try
             {
+                _jobRegistry.MarkRunning(JobName);
                 var removed = await CleanupExpiredTokensAsync(stoppingToken);
+                _jobRegistry.RecordSuccess(JobName);
                 if (removed > 0)
                 {
                     _logger.LogInformation(
@@ -81,6 +93,7 @@ public class ExpiredRefreshTokenCleanupService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Refresh token cleanup failed");
+                _jobRegistry.RecordFailure(JobName, ex.Message);
             }
 
             try

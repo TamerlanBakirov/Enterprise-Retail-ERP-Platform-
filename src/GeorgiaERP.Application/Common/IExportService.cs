@@ -1,7 +1,7 @@
 namespace GeorgiaERP.Application.Common;
 
 /// <summary>
-/// Service for exporting data to various formats (CSV, etc.).
+/// Service for exporting data to various formats (CSV, Excel).
 /// </summary>
 public interface IExportService
 {
@@ -13,6 +13,17 @@ public interface IExportService
     /// <param name="columns">Column definitions specifying header, selector, and optional format.</param>
     /// <returns>UTF-8 encoded CSV bytes (includes BOM for Excel compatibility).</returns>
     byte[] ToCsv<T>(IEnumerable<T> items, IReadOnlyList<ExportColumn<T>> columns);
+
+    /// <summary>
+    /// Exports a collection of items to Excel (.xlsx) format.
+    /// Features styled headers, auto-column-width, and a frozen header row.
+    /// </summary>
+    /// <typeparam name="T">The type of items to export.</typeparam>
+    /// <param name="items">The items to export.</param>
+    /// <param name="columns">Column definitions specifying header, selector, and optional format.</param>
+    /// <param name="sheetName">Optional worksheet name (defaults to "Data").</param>
+    /// <returns>Excel file bytes.</returns>
+    byte[] ToExcel<T>(IEnumerable<T> items, IReadOnlyList<ExportColumn<T>> columns, string sheetName = "Data");
 }
 
 /// <summary>

@@ -25,9 +25,12 @@ namespace GeorgiaERP.Infrastructure.BackgroundJobs;
 /// </summary>
 public sealed class LowStockAlertService : BackgroundService
 {
+    private const string JobName = "LowStockAlert";
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<LowStockAlertService> _logger;
     private readonly INotificationService? _notificationService;
+    private readonly IBackgroundJobRegistry _jobRegistry;
     private readonly TimeSpan _interval;
     private readonly int _batchSize;
     private readonly string? _notificationEmail;
@@ -36,16 +39,22 @@ public sealed class LowStockAlertService : BackgroundService
         IServiceScopeFactory scopeFactory,
         ILogger<LowStockAlertService> logger,
         IConfiguration configuration,
+        IBackgroundJobRegistry jobRegistry,
         INotificationService? notificationService = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _jobRegistry = jobRegistry;
         _notificationService = notificationService;
 
         var section = configuration.GetSection("LowStockAlert");
         _interval = TimeSpan.FromMinutes(section.GetValue("IntervalMinutes", 30));
         _batchSize = section.GetValue("BatchSize", 500);
         _notificationEmail = section.GetValue<string?>("NotificationEmail");
+
+        _jobRegistry.Register(JobName,
+            "Scans stock levels and alerts when items fall below reorder points",
+            _interval);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,7 +77,9 @@ public sealed class LowStockAlertService : BackgroundService
         {
             try
             {
+                _jobRegistry.MarkRunning(JobName);
                 await ScanStockLevelsAsync(stoppingToken);
+                _jobRegistry.RecordSuccess(JobName);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -77,6 +88,7 @@ public sealed class LowStockAlertService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Low stock alert scan failed");
+                _jobRegistry.RecordFailure(JobName, ex.Message);
             }
 
             try

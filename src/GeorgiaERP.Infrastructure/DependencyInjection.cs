@@ -4,8 +4,10 @@ using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Caching;
 using GeorgiaERP.Infrastructure.Email;
+using GeorgiaERP.Infrastructure.BackgroundJobs;
 using GeorgiaERP.Infrastructure.Export;
 using GeorgiaERP.Infrastructure.FileStorage;
+using GeorgiaERP.Infrastructure.Import;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Webhooks;
 using GeorgiaERP.Infrastructure.Identity;
@@ -69,6 +71,9 @@ public static class DependencyInjection
 
         services.AddSingleton<ICacheService, RedisCacheService>();
 
+        // Background job registry (singleton — shared by all background services)
+        services.AddSingleton<IBackgroundJobRegistry, BackgroundJobRegistry>();
+
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
         services.AddSingleton<ITotpSecretProtector, AesTotpSecretProtector>();
@@ -125,8 +130,11 @@ public static class DependencyInjection
         // Localization service (en-US / ka-GE resource files)
         services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
 
-        // CSV export service
+        // Export service (CSV + Excel)
         services.AddSingleton<IExportService, CsvExportService>();
+
+        // Import service (CSV + Excel)
+        services.AddSingleton<IImportService, ImportService>();
 
         // File storage service (local disk)
         services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));

@@ -1,12 +1,14 @@
 using System.Globalization;
 using System.Text;
+using ClosedXML.Excel;
 using GeorgiaERP.Application.Common;
 
 namespace GeorgiaERP.Infrastructure.Export;
 
 /// <summary>
-/// CSV export implementation using UTF-8 with BOM for Excel compatibility.
-/// Fields containing commas, quotes, or newlines are properly escaped per RFC 4180.
+/// Export service supporting both CSV and Excel (.xlsx) formats.
+/// CSV: UTF-8 with BOM, RFC 4180 escaping.
+/// Excel: ClosedXML with styled headers, auto-column-width, and frozen header row.
 /// </summary>
 public sealed class CsvExportService : IExportService
 {
@@ -46,6 +48,133 @@ public sealed class CsvExportService : IExportService
         Buffer.BlockCopy(csvBytes, 0, result, Utf8Bom.Length, csvBytes.Length);
 
         return result;
+    }
+
+    public byte[] ToExcel<T>(IEnumerable<T> items, IReadOnlyList<ExportColumn<T>> columns, string sheetName = "Data")
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(columns);
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add(sheetName);
+
+        // Header row
+        for (var col = 0; col < columns.Count; col++)
+        {
+            var cell = worksheet.Cell(1, col + 1);
+            cell.Value = columns[col].Header;
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#4472C4");
+            cell.Style.Font.FontColor = XLColor.White;
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            cell.Style.Border.BottomBorder = XLBorderStyleValues.Medium;
+            cell.Style.Border.BottomBorderColor = XLColor.FromHtml("#2F5496");
+        }
+
+        // Data rows
+        var row = 2;
+        foreach (var item in items)
+        {
+            for (var col = 0; col < columns.Count; col++)
+            {
+                var column = columns[col];
+                var rawValue = column.Selector(item);
+                var cell = worksheet.Cell(row, col + 1);
+                SetCellValue(cell, rawValue, column.Format);
+
+                // Alternate row shading for readability
+                if (row % 2 == 0)
+                {
+                    cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#D6E4F0");
+                }
+            }
+            row++;
+        }
+
+        // Auto-fit columns
+        worksheet.Columns().AdjustToContents();
+
+        // Freeze header row so it stays visible when scrolling
+        worksheet.SheetView.FreezeRows(1);
+
+        // Apply auto-filter to header row
+        if (columns.Count > 0)
+        {
+            worksheet.Range(1, 1, Math.Max(row - 1, 1), columns.Count).SetAutoFilter();
+        }
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    /// <summary>
+    /// Sets a cell value with proper type handling for Excel.
+    /// Numeric values are set as numbers (not text) so Excel formulas work correctly.
+    /// </summary>
+    private static void SetCellValue(IXLCell cell, object? value, string? format)
+    {
+        if (value is null)
+        {
+            cell.SetValue(Blank.Value);
+            return;
+        }
+
+        switch (value)
+        {
+            case decimal d:
+                cell.SetValue(d);
+                if (format is not null) cell.Style.NumberFormat.Format = MapToExcelFormat(format);
+                break;
+            case double dbl:
+                cell.SetValue(dbl);
+                if (format is not null) cell.Style.NumberFormat.Format = MapToExcelFormat(format);
+                break;
+            case float f:
+                cell.SetValue((double)f);
+                if (format is not null) cell.Style.NumberFormat.Format = MapToExcelFormat(format);
+                break;
+            case int i:
+                cell.SetValue(i);
+                break;
+            case long l:
+                cell.SetValue(l);
+                break;
+            case DateTimeOffset dto:
+                cell.SetValue(dto.DateTime);
+                cell.Style.DateFormat.Format = "yyyy-MM-dd HH:mm:ss";
+                break;
+            case DateTime dt:
+                cell.SetValue(dt);
+                cell.Style.DateFormat.Format = "yyyy-MM-dd HH:mm:ss";
+                break;
+            case bool b:
+                cell.SetValue(b ? "Yes" : "No");
+                break;
+            default:
+                cell.SetValue(value.ToString() ?? string.Empty);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Maps .NET format strings to Excel number format strings.
+    /// </summary>
+    private static string MapToExcelFormat(string dotNetFormat)
+    {
+        return dotNetFormat.ToUpperInvariant() switch
+        {
+            "N0" => "#,##0",
+            "N1" => "#,##0.0",
+            "N2" => "#,##0.00",
+            "N3" => "#,##0.000",
+            "N4" => "#,##0.0000",
+            "C0" => "#,##0",
+            "C2" => "#,##0.00",
+            "P0" => "0%",
+            "P2" => "0.00%",
+            _ => dotNetFormat
+        };
     }
 
     private static string FormatValue(object? value, string? format)

@@ -16,12 +16,60 @@ public sealed record ExportResult
     public required string ContentType { get; init; }
 }
 
+// ── Export Format ──────────────────────────────────────────────────
+
+/// <summary>
+/// Supported export file formats.
+/// </summary>
+public enum ExportFormat
+{
+    Csv,
+    Excel
+}
+
+/// <summary>
+/// Helper to produce the final export result from columns and items.
+/// </summary>
+internal static class ExportHelper
+{
+    public static ExportResult Export<T>(
+        IExportService export,
+        IReadOnlyList<T> items,
+        IReadOnlyList<ExportColumn<T>> columns,
+        string baseFileName,
+        ExportFormat format,
+        string sheetName = "Data")
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+
+        if (format == ExportFormat.Excel)
+        {
+            var bytes = export.ToExcel(items, columns, sheetName);
+            return new ExportResult
+            {
+                FileBytes = bytes,
+                FileName = $"{baseFileName}-{timestamp}.xlsx",
+                ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            };
+        }
+
+        var csvBytes = export.ToCsv(items, columns);
+        return new ExportResult
+        {
+            FileBytes = csvBytes,
+            FileName = $"{baseFileName}-{timestamp}.csv",
+            ContentType = "text/csv"
+        };
+    }
+}
+
 // ── Products Export ─────────────────────────────────────────────────
 
 public sealed record ExportProductsQuery(
     string? Search = null,
     Guid? CategoryId = null,
-    bool? IsActive = null) : IRequest<ExportResult>;
+    bool? IsActive = null,
+    ExportFormat Format = ExportFormat.Csv) : IRequest<ExportResult>;
 
 public sealed class ExportProductsHandler : IRequestHandler<ExportProductsQuery, ExportResult>
 {
@@ -64,15 +112,7 @@ public sealed class ExportProductsHandler : IRequestHandler<ExportProductsQuery,
             new() { Header = "Active", Selector = p => p.IsActive },
         };
 
-        var bytes = _export.ToCsv(products, columns);
-        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-
-        return new ExportResult
-        {
-            FileBytes = bytes,
-            FileName = $"products-{timestamp}.csv",
-            ContentType = "text/csv"
-        };
+        return ExportHelper.Export(_export, products, columns, "products", request.Format, "Products");
     }
 }
 
@@ -80,7 +120,8 @@ public sealed class ExportProductsHandler : IRequestHandler<ExportProductsQuery,
 
 public sealed record ExportInventoryQuery(
     Guid? WarehouseId = null,
-    bool LowStockOnly = false) : IRequest<ExportResult>;
+    bool LowStockOnly = false,
+    ExportFormat Format = ExportFormat.Csv) : IRequest<ExportResult>;
 
 public sealed class ExportInventoryHandler : IRequestHandler<ExportInventoryQuery, ExportResult>
 {
@@ -131,15 +172,7 @@ public sealed class ExportInventoryHandler : IRequestHandler<ExportInventoryQuer
             new() { Header = "Low Stock", Selector = r => r.IsLowStock },
         };
 
-        var bytes = _export.ToCsv(rows, columns);
-        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-
-        return new ExportResult
-        {
-            FileBytes = bytes,
-            FileName = $"inventory-{timestamp}.csv",
-            ContentType = "text/csv"
-        };
+        return ExportHelper.Export(_export, rows, columns, "inventory", request.Format, "Inventory");
     }
 }
 
@@ -161,7 +194,8 @@ internal sealed class InventoryExportRow
 public sealed record ExportSalesQuery(
     DateTimeOffset? From = null,
     DateTimeOffset? To = null,
-    Guid? StoreId = null) : IRequest<ExportResult>;
+    Guid? StoreId = null,
+    ExportFormat Format = ExportFormat.Csv) : IRequest<ExportResult>;
 
 public sealed class ExportSalesHandler : IRequestHandler<ExportSalesQuery, ExportResult>
 {
@@ -207,15 +241,8 @@ public sealed class ExportSalesHandler : IRequestHandler<ExportSalesQuery, Expor
             new() { Header = "Status", Selector = t => t.Status },
         };
 
-        var bytes = _export.ToCsv(transactions, columns);
-        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-
-        return new ExportResult
-        {
-            FileBytes = bytes,
-            FileName = $"sales-{from:yyyyMMdd}-to-{to:yyyyMMdd}-{timestamp}.csv",
-            ContentType = "text/csv"
-        };
+        return ExportHelper.Export(_export, transactions, columns,
+            $"sales-{from:yyyyMMdd}-to-{to:yyyyMMdd}", request.Format, "Sales");
     }
 }
 
@@ -223,7 +250,8 @@ public sealed class ExportSalesHandler : IRequestHandler<ExportSalesQuery, Expor
 
 public sealed record ExportCustomersQuery(
     string? Search = null,
-    bool? IsActive = null) : IRequest<ExportResult>;
+    bool? IsActive = null,
+    ExportFormat Format = ExportFormat.Csv) : IRequest<ExportResult>;
 
 public sealed class ExportCustomersHandler : IRequestHandler<ExportCustomersQuery, ExportResult>
 {
@@ -268,15 +296,7 @@ public sealed class ExportCustomersHandler : IRequestHandler<ExportCustomersQuer
             new() { Header = "Active", Selector = c => c.IsActive },
         };
 
-        var bytes = _export.ToCsv(customers, columns);
-        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-
-        return new ExportResult
-        {
-            FileBytes = bytes,
-            FileName = $"customers-{timestamp}.csv",
-            ContentType = "text/csv"
-        };
+        return ExportHelper.Export(_export, customers, columns, "customers", request.Format, "Customers");
     }
 }
 
@@ -286,7 +306,8 @@ public sealed record ExportAuditLogQuery(
     string? EntityType = null,
     Guid? UserId = null,
     DateTimeOffset? From = null,
-    DateTimeOffset? To = null) : IRequest<ExportResult>;
+    DateTimeOffset? To = null,
+    ExportFormat Format = ExportFormat.Csv) : IRequest<ExportResult>;
 
 public sealed class ExportAuditLogHandler : IRequestHandler<ExportAuditLogQuery, ExportResult>
 {
@@ -334,14 +355,6 @@ public sealed class ExportAuditLogHandler : IRequestHandler<ExportAuditLogQuery,
             new() { Header = "Changed Properties", Selector = a => a.ChangedProperties },
         };
 
-        var bytes = _export.ToCsv(logs, columns);
-        var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-
-        return new ExportResult
-        {
-            FileBytes = bytes,
-            FileName = $"audit-log-{timestamp}.csv",
-            ContentType = "text/csv"
-        };
+        return ExportHelper.Export(_export, logs, columns, "audit-log", request.Format, "Audit Log");
     }
 }
