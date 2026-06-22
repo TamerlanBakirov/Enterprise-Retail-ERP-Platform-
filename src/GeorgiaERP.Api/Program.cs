@@ -45,6 +45,10 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddJwtAuthentication(builder.Configuration);
+    builder.Services.AddAuthorizationBuilder()
+        .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build());
 
     builder.Services.AddControllers(options =>
         options.Filters.Add<GeorgiaERP.Api.Middleware.PermissionAuthorizationFilter>());
@@ -394,23 +398,20 @@ try
     // Kubernetes uses this to decide whether to restart the pod.
     app.MapHealthChecks("/health/live", new HealthCheckOptions
     {
-        Predicate = _ => false, // No dependency checks; just confirms the process is alive.
+        Predicate = _ => false,
         ResponseWriter = WriteMinimalHealthResponse
-    });
+    }).AllowAnonymous();
 
-    // Readiness: checks all dependencies (DB, Redis, RabbitMQ, RS.GE).
-    // Kubernetes uses this to decide whether to route traffic to the pod.
     app.MapHealthChecks("/health/ready", new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
         ResponseWriter = WriteDetailedHealthResponse
-    });
+    }).AllowAnonymous();
 
-    // Legacy /health endpoint for backward compatibility.
     app.MapHealthChecks("/health", new HealthCheckOptions
     {
         ResponseWriter = WriteDetailedHealthResponse
-    });
+    }).AllowAnonymous();
 
     // Health Check UI (when enabled).
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("HealthChecksUI:Enabled"))

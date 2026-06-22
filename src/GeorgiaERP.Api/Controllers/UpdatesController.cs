@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 
 namespace GeorgiaERP.Api.Controllers;
@@ -6,7 +8,9 @@ namespace GeorgiaERP.Api.Controllers;
 /// <summary>
 /// Application update checking for desktop client auto-update functionality.
 /// </summary>
+[Authorize]
 [Tags("Updates")]
+[EnableRateLimiting("read")]
 public class UpdatesController : ApiControllerBase
 {
     private readonly IConfiguration _configuration;

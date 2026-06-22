@@ -82,7 +82,7 @@ public sealed class PostgresBackupService : IBackupService
             else
             {
                 record.Status = BackupStatus.Failed;
-                record.ErrorMessage = result.StandardError;
+                record.ErrorMessage = "Backup operation failed. Check server logs for details.";
                 record.CompletedAt = DateTimeOffset.UtcNow;
 
                 _logger.LogError("Backup failed: {FileName}, Error: {Error}", fileName, result.StandardError);
@@ -91,7 +91,7 @@ public sealed class PostgresBackupService : IBackupService
         catch (Exception ex)
         {
             record.Status = BackupStatus.Failed;
-            record.ErrorMessage = ex.Message;
+            record.ErrorMessage = "Backup operation failed unexpectedly. Check server logs for details.";
             record.CompletedAt = DateTimeOffset.UtcNow;
 
             _logger.LogError(ex, "Backup failed with exception: {FileName}", fileName);
