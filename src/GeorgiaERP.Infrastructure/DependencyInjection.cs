@@ -1,7 +1,9 @@
 using System.Text;
+using GeorgiaERP.Application.Backup;
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
+using GeorgiaERP.Infrastructure.Backup;
 using GeorgiaERP.Infrastructure.Caching;
 using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.BackgroundJobs;
@@ -143,6 +145,9 @@ public static class DependencyInjection
         // Webhook delivery service
         services.AddHttpClient("webhook");
         services.AddSingleton<IWebhookService, WebhookDeliveryService>();
+
+        // Database backup service
+        services.AddScoped<IBackupService, PostgresBackupService>();
 
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();

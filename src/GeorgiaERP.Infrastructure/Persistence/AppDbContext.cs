@@ -115,6 +115,9 @@ public class AppDbContext : DbContext, IAppDbContext
     // Audit
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // Backup
+    public DbSet<BackupRecord> BackupRecords => Set<BackupRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(_schema);

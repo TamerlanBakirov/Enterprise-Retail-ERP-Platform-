@@ -101,6 +101,8 @@ public partial class App : Application
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<IPricingService, PricingService>();
         services.AddSingleton<IComplianceService, ComplianceService>();
+        services.AddSingleton<ISignalRNotificationService, SignalRNotificationService>();
+        services.AddSingleton<IToastNotificationService, ToastNotificationService>();
 
         services.AddTransient<LoginViewModel>();
         services.AddTransient<LicenseActivationViewModel>();

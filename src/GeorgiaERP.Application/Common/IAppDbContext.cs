@@ -79,5 +79,8 @@ public interface IAppDbContext
     // Audit
     DbSet<Domain.Common.AuditLog> AuditLogs { get; }
 
+    // Backup
+    DbSet<Domain.Common.BackupRecord> BackupRecords { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

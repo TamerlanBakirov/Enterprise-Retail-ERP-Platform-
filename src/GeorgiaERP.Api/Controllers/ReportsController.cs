@@ -55,4 +55,48 @@ public class ReportsController : ApiControllerBase
         var result = await _mediator.Send(new DashboardKpiQuery());
         return Ok(result);
     }
+
+    /// <summary>
+    /// Generates a profit margin report analyzing revenue, cost, and profit per product.
+    /// Includes category-level and daily breakdowns. Cached for 5 minutes.
+    /// </summary>
+    [HttpGet("profit-margin")]
+    public async Task<IActionResult> GetProfitMarginReport(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
+        [FromQuery] Guid? storeId = null)
+    {
+        var result = await _mediator.Send(new ProfitMarginReportQuery(from, to, storeId));
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Returns the top-selling products ranked by revenue, quantity, or profit.
+    /// Cached for 5 minutes.
+    /// </summary>
+    [HttpGet("top-selling")]
+    public async Task<IActionResult> GetTopSellingProducts(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
+        [FromQuery] Guid? storeId = null,
+        [FromQuery] int top = 20,
+        [FromQuery] TopSellingSort sortBy = TopSellingSort.Revenue)
+    {
+        var result = await _mediator.Send(new TopSellingProductsQuery(from, to, storeId, top, sortBy));
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Analyzes supplier performance: order volume, delivery reliability, and spend.
+    /// Cached for 5 minutes.
+    /// </summary>
+    [HttpGet("supplier-performance")]
+    public async Task<IActionResult> GetSupplierPerformance(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
+        [FromQuery] Guid? supplierId = null)
+    {
+        var result = await _mediator.Send(new SupplierPerformanceQuery(from, to, supplierId));
+        return Ok(result);
+    }
 }
