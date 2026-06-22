@@ -79,6 +79,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             product.IsBatchTracked,
             product.HasExpiry,
             product.IsActive,
+            product.ImageUrl,
             product.CreatedAt,
             request.Barcodes?.Select(b => new ProductBarcodeDto(Guid.Empty, b.Barcode, b.BarcodeType, b.IsPrimary)).ToList()
                 ?? [],

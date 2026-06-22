@@ -69,6 +69,9 @@ public interface IAppDbContext
     DbSet<ShippingOrder> ShippingOrders { get; }
     DbSet<ShippingOrderLine> ShippingOrderLines { get; }
 
+    // Files
+    DbSet<Domain.Common.FileMetadata> FileMetadata { get; }
+
     // Audit
     DbSet<Domain.Common.AuditLog> AuditLogs { get; }
 

@@ -5,6 +5,7 @@ using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Caching;
 using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.Export;
+using GeorgiaERP.Infrastructure.FileStorage;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
@@ -125,6 +126,10 @@ public static class DependencyInjection
 
         // CSV export service
         services.AddSingleton<IExportService, CsvExportService>();
+
+        // File storage service (local disk)
+        services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();

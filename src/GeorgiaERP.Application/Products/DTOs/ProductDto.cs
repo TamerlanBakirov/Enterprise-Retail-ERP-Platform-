@@ -15,6 +15,7 @@ public record ProductDto(
     bool IsBatchTracked,
     bool HasExpiry,
     bool IsActive,
+    string? ImageUrl,
     DateTimeOffset CreatedAt,
     IReadOnlyList<ProductBarcodeDto> Barcodes,
     IReadOnlyList<ProductVariantDto> Variants);

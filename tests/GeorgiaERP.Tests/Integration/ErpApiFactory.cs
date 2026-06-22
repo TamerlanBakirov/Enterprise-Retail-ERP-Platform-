@@ -1,4 +1,5 @@
 using System.Text;
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
@@ -120,6 +121,10 @@ public class ErpApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<GeorgiaERP.Application.Common.INotificationService>();
             services.AddSingleton<GeorgiaERP.Application.Common.INotificationService, NullNotificationService>();
 
+            // Replace file storage with in-memory implementation for tests
+            services.RemoveAll<IFileStorageService>();
+            services.AddSingleton<IFileStorageService, InMemoryFileStorageService>();
+
             // Replace health checks with basic (no external probes in tests)
             var healthDescriptors = services
                 .Where(d => d.ServiceType.FullName?.Contains("HealthCheck") == true
@@ -209,5 +214,33 @@ public class ErpApiFactory : WebApplicationFactory<Program>
             => Task.CompletedTask;
         public Task SendToGroupAsync(string group, string eventType, object payload, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+    }
+
+    private sealed class InMemoryFileStorageService : IFileStorageService
+    {
+        private readonly Dictionary<string, (byte[] Content, string ContentType, string FileName)> _files = new();
+
+        public async Task<string> SaveAsync(Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default)
+        {
+            var key = $"{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
+            using var ms = new MemoryStream();
+            await fileStream.CopyToAsync(ms, cancellationToken);
+            _files[key] = (ms.ToArray(), contentType, fileName);
+            return key;
+        }
+
+        public Task<FileStorageResult?> GetAsync(string storedFileName, CancellationToken cancellationToken = default)
+        {
+            if (!_files.TryGetValue(storedFileName, out var file))
+                return Task.FromResult<FileStorageResult?>(null);
+
+            var stream = new MemoryStream(file.Content);
+            return Task.FromResult<FileStorageResult?>(new FileStorageResult(stream, file.ContentType, file.FileName));
+        }
+
+        public Task<bool> DeleteAsync(string storedFileName, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_files.Remove(storedFileName));
+        }
     }
 }

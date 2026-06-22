@@ -27,6 +27,7 @@ public class Product : AuditableEntity
     public bool IsBatchTracked { get; private set; }
     public bool HasExpiry { get; private set; }
     public bool IsActive { get; private set; }
+    public string? ImageUrl { get; private set; }
 
     // Navigation properties
     public Category Category { get; private set; } = default!;
@@ -117,6 +118,8 @@ public class Product : AuditableEntity
         if (reorderPoint.HasValue) ReorderPoint = reorderPoint.Value;
         if (reorderQty.HasValue) ReorderQty = reorderQty.Value;
     }
+
+    public void SetImageUrl(string? imageUrl) => ImageUrl = imageUrl;
 
     public void Deactivate() => IsActive = false;
 

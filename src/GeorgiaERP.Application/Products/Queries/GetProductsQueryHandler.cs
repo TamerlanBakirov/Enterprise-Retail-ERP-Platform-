@@ -56,6 +56,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
                 p.IsBatchTracked,
                 p.HasExpiry,
                 p.IsActive,
+                p.ImageUrl,
                 p.CreatedAt,
                 p.Barcodes.Select(b => new ProductBarcodeDto(b.Id, b.Barcode, b.BarcodeType.ToString(), b.IsPrimary)).ToList(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.Name, v.Attributes, v.IsActive)).ToList()))
@@ -101,6 +102,7 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
                 p.IsBatchTracked,
                 p.HasExpiry,
                 p.IsActive,
+                p.ImageUrl,
                 p.CreatedAt,
                 p.Barcodes.Select(b => new ProductBarcodeDto(b.Id, b.Barcode, b.BarcodeType.ToString(), b.IsPrimary)).ToList(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.Name, v.Attributes, v.IsActive)).ToList()))
@@ -138,6 +140,7 @@ public class GetProductByBarcodeQueryHandler : IRequestHandler<GetProductByBarco
                 p.IsBatchTracked,
                 p.HasExpiry,
                 p.IsActive,
+                p.ImageUrl,
                 p.CreatedAt,
                 p.Barcodes.Select(bc => new ProductBarcodeDto(bc.Id, bc.Barcode, bc.BarcodeType.ToString(), bc.IsPrimary)).ToList(),
                 p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.Name, v.Attributes, v.IsActive)).ToList()))

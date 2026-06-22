@@ -105,6 +105,9 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<ShippingOrder> ShippingOrders => Set<ShippingOrder>();
     public DbSet<ShippingOrderLine> ShippingOrderLines => Set<ShippingOrderLine>();
 
+    // Files
+    public DbSet<FileMetadata> FileMetadata => Set<FileMetadata>();
+
     // Audit
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
