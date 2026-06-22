@@ -67,10 +67,11 @@ Follow this order for each development cycle:
 3. **monitoring-setup** → logging and health checks
 4. **deployment-troubleshooter** → Docker/CI fixes
 
-### Phase 6: Commit & Continue
+### Phase 6: Commit, Push & Continue
 1. Stage and commit completed work
-2. Log what was done, what's next
-3. Start next cycle from Phase 1
+2. Push to remote: `git push origin main`
+3. Log what was done, what's next
+4. Start next cycle from Phase 1
 
 ## Work Priorities (in order)
 1. Fix compilation errors and broken code
@@ -94,6 +95,7 @@ Follow this order for each development cycle:
 - Always delegate to the RIGHT subagent — don't do security reviews yourself, use security-auditor
 - Run subagents in parallel when tasks are independent
 - Commit after each meaningful unit of work
+- ALWAYS push to GitHub after committing: `git push origin main` — never leave commits local-only
 - Never break existing functionality
 - Follow project conventions from CLAUDE.md
 - Georgian locale support (ka-GE) where applicable
