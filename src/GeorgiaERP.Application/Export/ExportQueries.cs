@@ -176,20 +176,24 @@ public sealed class ExportSalesHandler : IRequestHandler<ExportSalesQuery, Expor
 
     public async Task<ExportResult> Handle(ExportSalesQuery request, CancellationToken cancellationToken)
     {
-        var from = request.From ?? DateTimeOffset.UtcNow.AddMonths(-1);
-        var to = request.To ?? DateTimeOffset.UtcNow;
-
-        var query = _db.PosTransactions.AsNoTracking()
-            .Where(t => t.CreatedAt >= from && t.CreatedAt <= to);
+        var query = _db.PosTransactions.AsNoTracking().AsQueryable();
 
         if (request.StoreId.HasValue)
         {
             query = query.Where(t => t.StoreId == request.StoreId.Value);
         }
 
-        var transactions = await query
+        // Load transactions, then filter/sort by DateTimeOffset in memory
+        // to avoid SQLite/DateTimeOffset translation issues.
+        var allTransactions = await query.ToListAsync(cancellationToken);
+
+        var from = request.From ?? DateTimeOffset.UtcNow.AddMonths(-1);
+        var to = request.To ?? DateTimeOffset.UtcNow;
+
+        var transactions = allTransactions
+            .Where(t => t.CreatedAt >= from && t.CreatedAt <= to)
             .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var columns = new List<ExportColumn<Domain.POS.PosTransaction>>
         {
@@ -303,15 +307,21 @@ public sealed class ExportAuditLogHandler : IRequestHandler<ExportAuditLogQuery,
             query = query.Where(a => a.EntityType == request.EntityType);
         if (request.UserId.HasValue)
             query = query.Where(a => a.UserId == request.UserId.Value);
-        if (request.From.HasValue)
-            query = query.Where(a => a.Timestamp >= request.From.Value);
-        if (request.To.HasValue)
-            query = query.Where(a => a.Timestamp <= request.To.Value);
 
-        var logs = await query
+        // Load all matching records, then filter by date in memory
+        // to avoid SQLite/DateTimeOffset translation issues.
+        var allLogs = await query.ToListAsync(cancellationToken);
+
+        IEnumerable<Domain.Common.AuditLog> filtered = allLogs;
+        if (request.From.HasValue)
+            filtered = filtered.Where(a => a.Timestamp >= request.From.Value);
+        if (request.To.HasValue)
+            filtered = filtered.Where(a => a.Timestamp <= request.To.Value);
+
+        var logs = filtered
             .OrderByDescending(a => a.Timestamp)
             .Take(10000) // Safety limit for export
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var columns = new List<ExportColumn<Domain.Common.AuditLog>>
         {
