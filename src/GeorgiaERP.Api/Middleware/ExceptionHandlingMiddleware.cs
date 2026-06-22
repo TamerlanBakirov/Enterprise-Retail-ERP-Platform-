@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
+using GeorgiaERP.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 
@@ -9,6 +10,7 @@ namespace GeorgiaERP.Api.Middleware;
 /// <summary>
 /// Global exception handling middleware that converts all unhandled exceptions
 /// into RFC 7807 ProblemDetails responses for consistent API error contracts.
+/// Each error includes an "errorCode" extension for client-side programmatic handling.
 /// </summary>
 public class ExceptionHandlingMiddleware
 {
@@ -50,6 +52,7 @@ public class ExceptionHandlingMiddleware
                 Status = (int)HttpStatusCode.BadRequest,
                 Instance = context.Request.Path
             };
+            problem.Extensions["errorCode"] = ErrorCodes.ValidationError;
             problem.Extensions["errors"] = errors;
             problem.Extensions["traceId"] = context.TraceIdentifier;
 
@@ -70,6 +73,7 @@ public class ExceptionHandlingMiddleware
                 Detail = "You do not have permission to access this resource.",
                 Instance = context.Request.Path
             };
+            problem.Extensions["errorCode"] = ErrorCodes.Forbidden;
             problem.Extensions["traceId"] = context.TraceIdentifier;
 
             await WriteProblemDetailsAsync(context, problem);
@@ -87,6 +91,7 @@ public class ExceptionHandlingMiddleware
                 Detail = ex.Message,
                 Instance = context.Request.Path
             };
+            problem.Extensions["errorCode"] = ErrorCodes.NotFound;
             problem.Extensions["traceId"] = context.TraceIdentifier;
 
             await WriteProblemDetailsAsync(context, problem);
@@ -104,6 +109,25 @@ public class ExceptionHandlingMiddleware
                 Detail = ex.Message,
                 Instance = context.Request.Path
             };
+            problem.Extensions["errorCode"] = ErrorCodes.Conflict;
+            problem.Extensions["traceId"] = context.TraceIdentifier;
+
+            await WriteProblemDetailsAsync(context, problem);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("insufficient stock", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Insufficient stock on {Method} {Path}: {Message}",
+                context.Request.Method, context.Request.Path, ex.Message);
+
+            var problem = new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                Title = "Insufficient stock.",
+                Status = (int)HttpStatusCode.BadRequest,
+                Detail = ex.Message,
+                Instance = context.Request.Path
+            };
+            problem.Extensions["errorCode"] = ErrorCodes.InsufficientStock;
             problem.Extensions["traceId"] = context.TraceIdentifier;
 
             await WriteProblemDetailsAsync(context, problem);
@@ -133,6 +157,7 @@ public class ExceptionHandlingMiddleware
                 Detail = detail,
                 Instance = context.Request.Path
             };
+            problem.Extensions["errorCode"] = ErrorCodes.InternalError;
             problem.Extensions["correlationId"] = correlationId;
             problem.Extensions["traceId"] = context.TraceIdentifier;
 
