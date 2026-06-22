@@ -16,6 +16,9 @@ public partial class ReportsViewModel : BaseViewModel
     [ObservableProperty] private SalesReportDto? _salesReport;
     [ObservableProperty] private StockReportDto? _stockReport;
     [ObservableProperty] private VatReportDto? _vatReport;
+    [ObservableProperty] private ProfitMarginReportDto? _profitMarginReport;
+    [ObservableProperty] private TopSellingProductsReportDto? _topSellingReport;
+    [ObservableProperty] private SupplierPerformanceReportDto? _supplierPerformanceReport;
 
     public ReportsViewModel(IReportService reportService)
     {
@@ -35,6 +38,15 @@ public partial class ReportsViewModel : BaseViewModel
                 break;
             case "VAT":
                 VatReport = await _reportService.GetVatReportAsync(DateTo.Year, DateTo.Month);
+                break;
+            case "ProfitMargin":
+                ProfitMarginReport = await _reportService.GetProfitMarginAsync(DateFrom, DateTo);
+                break;
+            case "TopSelling":
+                TopSellingReport = await _reportService.GetTopSellingAsync(DateFrom, DateTo);
+                break;
+            case "SupplierPerformance":
+                SupplierPerformanceReport = await _reportService.GetSupplierPerformanceAsync(DateFrom, DateTo);
                 break;
         }
     });

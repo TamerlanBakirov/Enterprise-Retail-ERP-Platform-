@@ -44,3 +44,15 @@ public record LicenseInfo(
     int MaxUsers,
     int MaxStores,
     string? Error);
+
+public record BackupRecordDto(
+    Guid Id,
+    string FileName,
+    long FileSizeBytes,
+    string Type,
+    string Status,
+    string? ErrorMessage,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? CompletedAt,
+    string? InitiatedByUserName,
+    string? Notes);
