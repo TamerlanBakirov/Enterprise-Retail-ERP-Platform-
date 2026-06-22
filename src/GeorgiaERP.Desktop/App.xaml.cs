@@ -104,6 +104,7 @@ public partial class App : Application
         services.AddSingleton<ISignalRNotificationService, SignalRNotificationService>();
         services.AddSingleton<IToastNotificationService, ToastNotificationService>();
         services.AddSingleton<IBackupService, BackupService>();
+        services.AddSingleton<IAuditService, AuditService>();
 
         services.AddTransient<LoginViewModel>();
         services.AddTransient<LicenseActivationViewModel>();
@@ -141,6 +142,7 @@ public partial class App : Application
         services.AddTransient<ReceivingOrderEditViewModel>();
         services.AddTransient<ShippingOrderEditViewModel>();
         services.AddTransient<BackupViewModel>();
+        services.AddTransient<AuditViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)

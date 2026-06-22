@@ -45,6 +45,15 @@ public record LicenseInfo(
     int MaxStores,
     string? Error);
 
+public record AuditLogDto(
+    Guid Id,
+    string EntityType,
+    string EntityId,
+    string Action,
+    string? ChangedProperties,
+    Guid? UserId,
+    DateTimeOffset Timestamp);
+
 public record BackupRecordDto(
     Guid Id,
     string FileName,
