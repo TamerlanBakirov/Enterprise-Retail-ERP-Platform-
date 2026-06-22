@@ -1,7 +1,9 @@
 using System.IO.Compression;
 using System.Reflection;
 using System.Threading.RateLimiting;
+using GeorgiaERP.Api.Hubs;
 using GeorgiaERP.Application;
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Infrastructure;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Persistence;
@@ -116,7 +118,7 @@ try
         {
             policy
                 .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:3000"])
-                .WithHeaders("Authorization", "Content-Type", "Accept", "Accept-Language", "X-Requested-With", "X-Correlation-ID")
+                .WithHeaders("Authorization", "Content-Type", "Accept", "Accept-Language", "X-Requested-With", "X-Correlation-ID", "X-SignalR-User-Agent")
                 .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .AllowCredentials()
                 .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
@@ -175,6 +177,10 @@ try
 
     // Response caching: enables cache-control header processing.
     builder.Services.AddResponseCaching();
+
+    // ── SignalR Real-Time Notifications ───────────────────────────────
+    builder.Services.AddSignalR();
+    builder.Services.AddSingleton<INotificationService, SignalRNotificationService>();
 
     // ── Health Checks ─────────────────────────────────────────────────
     var healthChecks = builder.Services.AddHealthChecks()
@@ -308,6 +314,9 @@ try
     app.MapMetrics("/metrics"); // Exposes /metrics endpoint for Prometheus scraping
 
     app.MapControllers().RequireRateLimiting("fixed");
+
+    // ── SignalR Hub ──────────────────────────────────────────────────
+    app.MapHub<NotificationHub>("/hubs/notifications");
 
     // ── Health Check Endpoints ────────────────────────────────────────
 

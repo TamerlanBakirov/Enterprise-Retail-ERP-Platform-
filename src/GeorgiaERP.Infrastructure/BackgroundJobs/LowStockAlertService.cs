@@ -27,6 +27,7 @@ public sealed class LowStockAlertService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<LowStockAlertService> _logger;
+    private readonly INotificationService? _notificationService;
     private readonly TimeSpan _interval;
     private readonly int _batchSize;
     private readonly string? _notificationEmail;
@@ -34,10 +35,12 @@ public sealed class LowStockAlertService : BackgroundService
     public LowStockAlertService(
         IServiceScopeFactory scopeFactory,
         ILogger<LowStockAlertService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        INotificationService? notificationService = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _notificationService = notificationService;
 
         var section = configuration.GetSection("LowStockAlert");
         _interval = TimeSpan.FromMinutes(section.GetValue("IntervalMinutes", 30));
@@ -170,6 +173,46 @@ public sealed class LowStockAlertService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to send low stock alert email to {Email}", _notificationEmail);
+            }
+        }
+
+        // Push real-time notification via SignalR
+        if (_notificationService is not null)
+        {
+            try
+            {
+                var payload = new NotificationPayload
+                {
+                    EventType = NotificationEvents.LowStockAlert,
+                    Title = "Low Stock Alert",
+                    Message = $"{outOfStock} items out of stock, {belowMinimum} items below minimum level",
+                    Severity = outOfStock > 0 ? "critical" : "warning",
+                    Data = new
+                    {
+                        OutOfStockCount = outOfStock,
+                        BelowMinimumCount = belowMinimum,
+                        TotalFlagged = lowStockItems.Count,
+                        Items = lowStockItems.Take(20).Select(i => new
+                        {
+                            i.Sku,
+                            i.ProductName,
+                            i.WarehouseName,
+                            i.QuantityOnHand,
+                            MinStockLevel = i.MinStockLevel ?? 0
+                        })
+                    }
+                };
+
+                await _notificationService.SendToGroupAsync(
+                    "role-admin", NotificationEvents.LowStockAlert, payload, cancellationToken);
+                await _notificationService.SendToGroupAsync(
+                    "inventory-alerts", NotificationEvents.LowStockAlert, payload, cancellationToken);
+
+                _logger.LogDebug("Low stock SignalR notification dispatched");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to dispatch low stock SignalR notification");
             }
         }
     }

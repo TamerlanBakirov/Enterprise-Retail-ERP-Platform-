@@ -116,6 +116,10 @@ public class ErpApiFactory : WebApplicationFactory<Program>
                 return new GeorgiaERP.Infrastructure.Identity.JwtTokenService(config);
             });
 
+            // Replace SignalR notification service with null implementation for tests
+            services.RemoveAll<GeorgiaERP.Application.Common.INotificationService>();
+            services.AddSingleton<GeorgiaERP.Application.Common.INotificationService, NullNotificationService>();
+
             // Replace health checks with basic (no external probes in tests)
             var healthDescriptors = services
                 .Where(d => d.ServiceType.FullName?.Contains("HealthCheck") == true
@@ -195,5 +199,15 @@ public class ErpApiFactory : WebApplicationFactory<Program>
     {
         public Task<RsGeSubmissionResult> ProcessAsync(RsGeSubmissionMessage message, CancellationToken cancellationToken = default)
             => Task.FromResult(RsGeSubmissionResult.Success());
+    }
+
+    private sealed class NullNotificationService : GeorgiaERP.Application.Common.INotificationService
+    {
+        public Task SendToAllAsync(string eventType, object payload, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+        public Task SendToUserAsync(Guid userId, string eventType, object payload, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+        public Task SendToGroupAsync(string group, string eventType, object payload, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }
