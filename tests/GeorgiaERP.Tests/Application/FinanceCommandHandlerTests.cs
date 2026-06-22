@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GeorgiaERP.Application.Finance.Commands;
+using GeorgiaERP.Application.Finance.Queries;
 using GeorgiaERP.Domain.Finance;
 using GeorgiaERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -154,5 +155,94 @@ public class FinanceCommandHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         (await db.BankAccounts.CountAsync()).Should().Be(1);
+    }
+
+    // === TrialBalance ===
+
+    [Fact]
+    public async Task TrialBalance_EmptyLedger_ReturnsZeros()
+    {
+        await using var db = NewContext();
+        var handler = new TrialBalanceQueryHandler(db);
+
+        var result = await handler.Handle(new TrialBalanceQuery(), CancellationToken.None);
+
+        result.TotalDebit.Should().Be(0);
+        result.TotalCredit.Should().Be(0);
+        result.IsBalanced.Should().BeTrue();
+        result.Lines.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TrialBalance_WithPostedEntries_AggregatesCorrectly()
+    {
+        await using var db = NewContext();
+        var (debitId, creditId) = await SeedAccounts(db);
+
+        var entry = JournalEntry.Create("JE-TB-001", DateTimeOffset.UtcNow, Guid.NewGuid(), "Test");
+        entry.Lines.Add(JournalEntryLine.Create(entry.Id, 1, debitId, 5000m, 0m));
+        entry.Lines.Add(JournalEntryLine.Create(entry.Id, 2, creditId, 0m, 5000m));
+        entry.SetTotals(5000m, 5000m);
+        entry.Post(Guid.NewGuid());
+        db.JournalEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var handler = new TrialBalanceQueryHandler(db);
+        var result = await handler.Handle(new TrialBalanceQuery(), CancellationToken.None);
+
+        result.TotalDebit.Should().Be(5000m);
+        result.TotalCredit.Should().Be(5000m);
+        result.IsBalanced.Should().BeTrue();
+        result.Lines.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task TrialBalance_IgnoresDraftEntries()
+    {
+        await using var db = NewContext();
+        var (debitId, creditId) = await SeedAccounts(db);
+
+        var draft = JournalEntry.Create("JE-DRAFT", DateTimeOffset.UtcNow, Guid.NewGuid(), "Draft");
+        draft.Lines.Add(JournalEntryLine.Create(draft.Id, 1, debitId, 1000m, 0m));
+        draft.Lines.Add(JournalEntryLine.Create(draft.Id, 2, creditId, 0m, 1000m));
+        draft.SetTotals(1000m, 1000m);
+        db.JournalEntries.Add(draft);
+        await db.SaveChangesAsync();
+
+        var handler = new TrialBalanceQueryHandler(db);
+        var result = await handler.Handle(new TrialBalanceQuery(), CancellationToken.None);
+
+        result.Lines.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task TrialBalance_AsOfDate_FiltersCorrectly()
+    {
+        await using var db = NewContext();
+        var (debitId, creditId) = await SeedAccounts(db);
+
+        var oldEntry = JournalEntry.Create("JE-OLD", DateTimeOffset.UtcNow.AddDays(-30), Guid.NewGuid(), "Old");
+        oldEntry.Lines.Add(JournalEntryLine.Create(oldEntry.Id, 1, debitId, 2000m, 0m));
+        oldEntry.Lines.Add(JournalEntryLine.Create(oldEntry.Id, 2, creditId, 0m, 2000m));
+        oldEntry.SetTotals(2000m, 2000m);
+        oldEntry.Post(Guid.NewGuid());
+        db.JournalEntries.Add(oldEntry);
+
+        var futureEntry = JournalEntry.Create("JE-FUT", DateTimeOffset.UtcNow.AddDays(30), Guid.NewGuid(), "Future");
+        futureEntry.Lines.Add(JournalEntryLine.Create(futureEntry.Id, 1, debitId, 3000m, 0m));
+        futureEntry.Lines.Add(JournalEntryLine.Create(futureEntry.Id, 2, creditId, 0m, 3000m));
+        futureEntry.SetTotals(3000m, 3000m);
+        futureEntry.Post(Guid.NewGuid());
+        db.JournalEntries.Add(futureEntry);
+
+        await db.SaveChangesAsync();
+
+        var handler = new TrialBalanceQueryHandler(db);
+        var result = await handler.Handle(
+            new TrialBalanceQuery(DateTimeOffset.UtcNow),
+            CancellationToken.None);
+
+        result.TotalDebit.Should().Be(2000m);
+        result.TotalCredit.Should().Be(2000m);
     }
 }

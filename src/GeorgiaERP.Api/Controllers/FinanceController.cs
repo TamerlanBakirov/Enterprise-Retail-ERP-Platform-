@@ -84,4 +84,11 @@ public class FinanceController : ApiControllerBase
             return ToActionResult(result);
         return Created($"/api/v1/finance/bank-accounts/{result.Value}", new { id = result.Value });
     }
+
+    [HttpGet("trial-balance")]
+    public async Task<IActionResult> GetTrialBalance([FromQuery] DateTimeOffset? asOfDate = null)
+    {
+        var result = await _mediator.Send(new TrialBalanceQuery(asOfDate));
+        return Ok(result);
+    }
 }
