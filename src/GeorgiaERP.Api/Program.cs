@@ -284,6 +284,18 @@ try
     // RS.GE SOAP endpoint functional check and RabbitMQ queue depth monitoring.
     healthChecks.AddRsGeHealthChecks();
 
+    // SMTP health check: verifies email server connectivity when enabled.
+    healthChecks.AddCheck<GeorgiaERP.Infrastructure.HealthChecks.SmtpHealthCheck>(
+        "smtp",
+        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded,
+        tags: ["ready", "smtp"]);
+
+    // Disk space health check: warns when free space drops below threshold.
+    healthChecks.AddCheck<GeorgiaERP.Infrastructure.HealthChecks.DiskSpaceHealthCheck>(
+        "disk-space",
+        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded,
+        tags: ["ready", "disk"]);
+
     // Health Check UI (dev/staging only).
     if (builder.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("HealthChecksUI:Enabled"))
     {
