@@ -95,6 +95,35 @@ public class PosController : ApiControllerBase
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
+    // === Terminals ===
+
+    [HttpGet("terminals")]
+    public async Task<IActionResult> GetTerminals(
+        [FromQuery] Guid? storeId = null,
+        [FromQuery] bool? isActive = null)
+    {
+        var result = await _mediator.Send(new GetTerminalsQuery(storeId, isActive));
+        return Ok(result);
+    }
+
+    [HttpPost("terminals")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> CreateTerminal([FromBody] CreateTerminalCommand command)
+    {
+        var result = await _mediator.Send(command);
+        if (result.IsFailure) return ToActionResult(result);
+        return Created($"/api/v1/pos/terminals/{result.Value!.Id}", result.Value);
+    }
+
+    // === Daily Closing ===
+
+    [HttpPost("daily-closing")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> CreateDailyClosing([FromBody] CreateDailyClosingCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
 }
 
 public record ClosePosSessionRequest(decimal ClosingBalance, string? Notes = null);
