@@ -5,6 +5,7 @@ using GeorgiaERP.Application.Products.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -75,6 +76,7 @@ public class ProductsController : ApiControllerBase
     }
 
     [HttpGet("export")]
+    [EnableRateLimiting("export")]
     public async Task<IActionResult> ExportProducts(
         [FromQuery] string? search,
         [FromQuery] Guid? categoryId,
@@ -101,6 +103,18 @@ public class ProductsController : ApiControllerBase
         using var stream = file.OpenReadStream();
         var result = await _mediator.Send(new ImportProductsCommand(stream, CurrentUserId));
         return ToActionResult(result);
+    }
+
+    [HttpPost("barcode-labels")]
+    public async Task<IActionResult> GenerateBarcodeLabels([FromBody] GenerateBarcodeLabelsRequest request)
+    {
+        var result = await _mediator.Send(new GenerateBarcodeLabelsQuery(
+            request.ProductIds, request.Size, request.IncludePrice));
+
+        if (result.IsFailure)
+            return ToActionResult(result);
+
+        return File(result.Value!, "application/pdf", "barcode-labels.pdf");
     }
 
     [HttpGet("categories")]

@@ -37,7 +37,11 @@ public class ErpApiFactory : WebApplicationFactory<Program>
                 ["Jwt:SecretKey"] = "TEST-ONLY-JWT-SECRET-KEY-THAT-IS-AT-LEAST-SIXTY-FOUR-CHARACTERS-LONG-FOR-TESTS",
                 ["Licensing:SigningKey"] = "TEST-LICENSE-SIGNING-KEY-WITH-AT-LEAST-THIRTY-TWO-CHARS",
                 ["Seed:Demo"] = "false",
-                ["HealthChecksUI:Enabled"] = "false"
+                ["HealthChecksUI:Enabled"] = "false",
+                // Increase rate limits for integration tests (all tests share the same IP)
+                ["RateLimiting:GlobalPermitLimit"] = "10000",
+                ["RateLimiting:AuthPermitLimit"] = "10000",
+                ["RateLimiting:ExportPermitLimit"] = "10000"
             });
         });
 

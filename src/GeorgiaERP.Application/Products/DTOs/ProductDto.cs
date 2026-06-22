@@ -77,3 +77,8 @@ public record CreateCategoryRequest(
     string Name,
     string? NameKa,
     int SortOrder);
+
+public record GenerateBarcodeLabelsRequest(
+    List<Guid> ProductIds,
+    Common.BarcodeLabelSize Size = Common.BarcodeLabelSize.Medium,
+    bool IncludePrice = true);

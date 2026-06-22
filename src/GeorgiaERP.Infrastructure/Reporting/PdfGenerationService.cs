@@ -165,6 +165,163 @@ public class PdfGenerationService : IPdfGenerationService
         return document.GeneratePdf();
     }
 
+    private static List<(bool IsBar, float Width)> RunLengthEncode(bool[] bars)
+    {
+        if (bars.Length == 0)
+            return [];
+
+        var segments = new List<(bool IsBar, int Count)>();
+        var current = bars[0];
+        var count = 1;
+
+        for (var i = 1; i < bars.Length; i++)
+        {
+            if (bars[i] == current)
+            {
+                count++;
+            }
+            else
+            {
+                segments.Add((current, count));
+                current = bars[i];
+                count = 1;
+            }
+        }
+        segments.Add((current, count));
+
+        return segments.Select(s => (s.IsBar, (float)s.Count)).ToList();
+    }
+
+    public byte[] GenerateBarcodeLabels(IReadOnlyList<BarcodeLabelData> labels, BarcodeLabelSize size)
+    {
+        const float pageWidthPt = 595.28f;
+        const float horizontalMarginPt = 15f;
+        var availableWidthPt = pageWidthPt - 2 * horizontalMarginPt;
+
+        var (columns, rows, labelHeightMm) = size switch
+        {
+            BarcodeLabelSize.Small => (5, 10, 25f),
+            BarcodeLabelSize.Medium => (3, 6, 40f),
+            BarcodeLabelSize.Large => (2, 5, 50f),
+            _ => (3, 6, 40f)
+        };
+
+        var labelsPerPage = columns * rows;
+        var labelWidthPt = (float)Math.Floor(availableWidthPt / columns);
+        var labelHeightPt = labelHeightMm * 2.835f;
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.MarginTop(15, Unit.Point);
+                page.MarginBottom(15, Unit.Point);
+                page.MarginHorizontal(15, Unit.Point);
+                page.DefaultTextStyle(x => x.FontSize(7));
+
+                page.Content().Column(col =>
+                {
+                    var totalPages = (int)Math.Ceiling((double)labels.Count / labelsPerPage);
+                    if (totalPages == 0) totalPages = 1;
+
+                    for (var pageIdx = 0; pageIdx < totalPages; pageIdx++)
+                    {
+                        if (pageIdx > 0)
+                            col.Item().PageBreak();
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(colDef =>
+                            {
+                                for (var c = 0; c < columns; c++)
+                                    colDef.ConstantColumn(labelWidthPt);
+                            });
+
+                            var startIndex = pageIdx * labelsPerPage;
+                            var endIndex = Math.Min(startIndex + labelsPerPage, labels.Count);
+
+                            for (var i = startIndex; i < endIndex; i++)
+                            {
+                                var label = labels[i];
+                                table.Cell()
+                                    .Height(labelHeightPt)
+                                    .Border(0.25f)
+                                    .BorderColor(Colors.Grey.Lighten2)
+                                    .Padding(3)
+                                    .Column(labelCol =>
+                                    {
+                                        var maxNameLength = size switch
+                                        {
+                                            BarcodeLabelSize.Small => 20,
+                                            BarcodeLabelSize.Medium => 35,
+                                            BarcodeLabelSize.Large => 60,
+                                            _ => 35
+                                        };
+
+                                        var displayName = label.ProductName.Length > maxNameLength
+                                            ? label.ProductName[..maxNameLength] + "..."
+                                            : label.ProductName;
+
+                                        var nameFontSize = size == BarcodeLabelSize.Small ? 5f : 7f;
+                                        labelCol.Item().Text(displayName).FontSize(nameFontSize).Bold();
+
+                                        var barcodeHeight = size switch
+                                        {
+                                            BarcodeLabelSize.Small => 25f,
+                                            BarcodeLabelSize.Medium => 40f,
+                                            BarcodeLabelSize.Large => 60f,
+                                            _ => 40f
+                                        };
+
+                                        var bars = Code128Encoder.Encode(label.Barcode);
+                                        var segments = RunLengthEncode(bars);
+                                        var contentWidth = labelWidthPt - 6.5f;
+                                        var barUnitWidth = contentWidth / bars.Length;
+
+                                        labelCol.Item()
+                                            .PaddingVertical(1)
+                                            .Height(barcodeHeight)
+                                            .Row(barcodeRow =>
+                                            {
+                                                foreach (var (isBar, count) in segments)
+                                                {
+                                                    barcodeRow.ConstantItem(count * barUnitWidth)
+                                                        .Background(isBar ? Colors.Black : Colors.White);
+                                                }
+                                            });
+
+                                        var barcodeFontSize = size == BarcodeLabelSize.Small ? 5f : 6f;
+                                        labelCol.Item().AlignCenter()
+                                            .Text(label.Barcode).FontSize(barcodeFontSize);
+
+                                        if (label.Price.HasValue)
+                                        {
+                                            var currency = label.Currency ?? "GEL";
+                                            var symbol = currency == "GEL" ? CurrencySymbol : currency;
+                                            var priceFontSize = size == BarcodeLabelSize.Small ? 6f : 8f;
+                                            labelCol.Item().AlignRight()
+                                                .Text($"{symbol}{label.Price:N2}")
+                                                .FontSize(priceFontSize).Bold();
+                                        }
+
+                                        if (label.Sku is not null)
+                                        {
+                                            var skuFontSize = size == BarcodeLabelSize.Small ? 4f : 5f;
+                                            labelCol.Item().Text($"SKU: {label.Sku}")
+                                                .FontSize(skuFontSize).FontColor(Colors.Grey.Medium);
+                                        }
+                                    });
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        return document.GeneratePdf();
+    }
+
     public byte[] GenerateInvoice(InvoiceData data)
     {
         var document = Document.Create(container =>

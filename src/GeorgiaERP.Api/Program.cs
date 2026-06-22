@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Threading.RateLimiting;
 using GeorgiaERP.Application;
+using Microsoft.AspNetCore.RateLimiting;
 using GeorgiaERP.Infrastructure;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Persistence;
@@ -84,23 +85,65 @@ try
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-        options.AddPolicy("fixed", httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 100,
-                    Window = TimeSpan.FromMinutes(1)
-                }));
+        // Global policy: 100 requests per minute per IP (skip health endpoints)
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        {
+            var path = context.Request.Path.Value;
+            if (path is not null && path.StartsWith("/health", StringComparison.OrdinalIgnoreCase))
+                return RateLimitPartition.GetNoLimiter("health");
 
-        options.AddPolicy("auth", httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                _ => new FixedWindowRateLimiterOptions
+            var config = context.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:GlobalPermitLimit", 100);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 10,
-                    Window = TimeSpan.FromMinutes(1)
-                }));
+                    PermitLimit = limit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+        });
+
+        // Auth policy: 10 requests per minute per IP (login/register brute force protection)
+        options.AddPolicy("auth", context =>
+        {
+            var config = context.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:AuthPermitLimit", 10);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+        });
+
+        // Export policy: 5 requests per minute per IP (heavy operations)
+        options.AddPolicy("export", context =>
+        {
+            var config = context.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:ExportPermitLimit", 5);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+        });
+
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            context.HttpContext.Response.ContentType = "application/json";
+            await context.HttpContext.Response.WriteAsJsonAsync(
+                new { error = "Too many requests. Please try again later.", errorCode = "RATE_LIMITED" },
+                cancellationToken);
+        };
     });
 
     // Response compression: Brotli (preferred) + Gzip for JSON/text payloads.
@@ -233,8 +276,8 @@ try
     }
 
     app.UseCors("AllowFrontend");
-    app.UseRateLimiter();
     app.UseAuthentication();
+    app.UseRateLimiter();
     app.UseMiddleware<GeorgiaERP.Api.Middleware.AuditContextMiddleware>();
     app.UseAuthorization();
 
@@ -242,7 +285,7 @@ try
     app.UseHttpMetrics(); // Built-in ASP.NET Core HTTP metrics from prometheus-net
     app.MapMetrics("/metrics"); // Exposes /metrics endpoint for Prometheus scraping
 
-    app.MapControllers().RequireRateLimiting("fixed");
+    app.MapControllers();
 
     // ── Health Check Endpoints ────────────────────────────────────────
 

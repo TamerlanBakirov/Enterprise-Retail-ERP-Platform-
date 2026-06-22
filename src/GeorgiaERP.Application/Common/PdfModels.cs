@@ -51,3 +51,18 @@ public record InvoiceData
 }
 
 public record InvoiceLineData(int LineNumber, string ProductName, string Unit, decimal Quantity, decimal UnitPrice, decimal VatAmount, decimal Total);
+
+public record BarcodeLabelData(
+    string Barcode,
+    string BarcodeType,
+    string ProductName,
+    string? Sku,
+    decimal? Price,
+    string? Currency);
+
+public enum BarcodeLabelSize
+{
+    Small,
+    Medium,
+    Large
+}
