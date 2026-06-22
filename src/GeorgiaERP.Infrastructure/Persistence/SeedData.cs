@@ -1,6 +1,7 @@
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -13,13 +14,14 @@ public static class SeedData
         using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
         try
         {
             await dbContext.Database.MigrateAsync();
             await SeedRolesAndPermissionsAsync(dbContext);
-            await SeedAdminUserAsync(dbContext, passwordService);
+            await SeedAdminUserAsync(dbContext, passwordService, configuration, logger);
             logger.LogInformation("Database seeded successfully");
         }
         catch (Exception ex)
@@ -90,15 +92,30 @@ public static class SeedData
         await dbContext.SaveChangesAsync();
     }
 
-    private static async Task SeedAdminUserAsync(AppDbContext dbContext, IPasswordService passwordService)
+    private static async Task SeedAdminUserAsync(
+        AppDbContext dbContext,
+        IPasswordService passwordService,
+        IConfiguration configuration,
+        ILogger logger)
     {
         if (await dbContext.Users.AnyAsync())
             return;
 
+        // Admin password must be supplied via configuration/environment in non-dev
+        // environments. Falls back to a well-known dev default only when unset.
+        var adminPassword = configuration["Seed:AdminPassword"];
+        if (string.IsNullOrWhiteSpace(adminPassword))
+        {
+            adminPassword = "Admin@123!";
+            logger.LogWarning(
+                "Seed:AdminPassword not configured; seeding admin with the default development password. " +
+                "Set Seed:AdminPassword (or the SEED__ADMINPASSWORD environment variable) before production use.");
+        }
+
         var adminUser = User.Create(
             username: "admin",
             email: "admin@georgiaerp.local",
-            passwordHash: passwordService.HashPassword("Admin@123!"),
+            passwordHash: passwordService.HashPassword(adminPassword),
             firstName: "System",
             lastName: "Administrator",
             firstNameKa: "სისტემის",

@@ -159,4 +159,36 @@ public class ApiIntegrationTests : IClassFixture<ErpApiFactory>
         var response = await NewClient().GetAsync("/api/v1/inventory/stock-levels?page=1&pageSize=10");
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    [Theory]
+    [InlineData("/api/v1/customers?page=1&pageSize=10")]
+    [InlineData("/api/v1/finance/chart-of-accounts?page=1&pageSize=10")]
+    [InlineData("/api/v1/finance/journal-entries?page=1&pageSize=10")]
+    [InlineData("/api/v1/finance/bank-accounts?page=1&pageSize=10")]
+    [InlineData("/api/v1/procurement/suppliers?page=1&pageSize=10")]
+    [InlineData("/api/v1/procurement/purchase-orders?page=1&pageSize=10")]
+    [InlineData("/api/v1/organization/stores")]
+    [InlineData("/api/v1/organization/warehouses")]
+    [InlineData("/api/v1/users?page=1&pageSize=10")]
+    [InlineData("/api/v1/pos/sessions?page=1&pageSize=10")]
+    [InlineData("/api/v1/inventory/movements?page=1&pageSize=10")]
+    [InlineData("/api/v1/products/categories")]
+    public async Task ReadEndpoints_Authenticated_Return200(string url)
+    {
+        var client = await AuthenticatedClient();
+        var response = await client.GetAsync(url);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/customers?page=1&pageSize=10")]
+    [InlineData("/api/v1/finance/chart-of-accounts?page=1&pageSize=10")]
+    [InlineData("/api/v1/procurement/suppliers?page=1&pageSize=10")]
+    [InlineData("/api/v1/users?page=1&pageSize=10")]
+    [InlineData("/api/v1/pos/sessions?page=1&pageSize=10")]
+    public async Task ReadEndpoints_WithoutAuth_Return401(string url)
+    {
+        var response = await NewClient().GetAsync(url);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
 }

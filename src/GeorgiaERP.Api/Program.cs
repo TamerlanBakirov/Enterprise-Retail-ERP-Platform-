@@ -60,8 +60,8 @@ try
         {
             policy
                 .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:3000"])
-                .AllowAnyHeader()
-                .AllowAnyMethod()
+                .WithHeaders("Content-Type", "Authorization", "Accept")
+                .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .AllowCredentials();
         });
     });
@@ -100,6 +100,7 @@ try
 
     if (!app.Environment.IsDevelopment())
     {
+        app.UseHttpsRedirection();
         app.UseHsts();
     }
 
