@@ -1,7 +1,10 @@
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Domain.Identity;
+using GeorgiaERP.Domain.Licensing;
+using GeorgiaERP.Infrastructure.Licensing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace GeorgiaERP.Infrastructure.Persistence;
@@ -15,11 +18,17 @@ public static class SeedData
         var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
+        var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+
         try
         {
             await dbContext.Database.MigrateAsync();
             await SeedRolesAndPermissionsAsync(dbContext);
             await SeedAdminUserAsync(dbContext, passwordService);
+
+            if (environment.IsDevelopment())
+                await SeedDevelopmentLicenseAsync(dbContext, logger);
+
             logger.LogInformation("Database seeded successfully");
         }
         catch (Exception ex)
@@ -156,5 +165,26 @@ public static class SeedData
         dbContext.UserRoles.Add(userRole);
 
         await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task SeedDevelopmentLicenseAsync(AppDbContext dbContext, ILogger logger)
+    {
+        var machineId = MachineIdProvider.GetMachineId();
+
+        if (await dbContext.Set<License>().AnyAsync(l => l.MachineId == machineId && l.Status == LicenseStatus.Active))
+            return;
+
+        var license = License.Create(
+            licenseKey: "DEV-LICENSE-KEY-NOT-FOR-PRODUCTION",
+            companyName: "Development Environment",
+            machineId: machineId,
+            expiresAt: DateTimeOffset.UtcNow.AddYears(10),
+            maxUsers: 999,
+            maxStores: 999);
+
+        dbContext.Set<License>().Add(license);
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Development license seeded for machine {MachineId}", machineId);
     }
 }

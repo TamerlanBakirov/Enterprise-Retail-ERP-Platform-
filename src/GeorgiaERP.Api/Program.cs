@@ -45,6 +45,12 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddJwtAuthentication(builder.Configuration);
+
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.Services.AddScoped<GeorgiaERP.Application.Licensing.ILicenseValidator,
+            GeorgiaERP.Infrastructure.Licensing.DevelopmentLicenseValidator>();
+    }
     builder.Services.AddAuthorizationBuilder()
         .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
