@@ -61,6 +61,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.LastLoginAt);
 
+        builder.Property(u => u.ResetToken)
+            .HasMaxLength(200);
+
+        builder.Property(u => u.ResetTokenExpiry);
+
         builder.Property(u => u.IsActive)
             .HasDefaultValue(true);
 

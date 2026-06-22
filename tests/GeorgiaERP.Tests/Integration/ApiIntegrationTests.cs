@@ -248,6 +248,14 @@ public class ApiIntegrationTests
     }
 
     [Fact]
+    public async Task ForgotPassword_ReturnsOk_RegardlessOfEmail()
+    {
+        var response = await NewClient().PostAsJsonAsync("/api/v1/auth/forgot-password",
+            new { email = "nonexistent@test.local" });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Login_IsLocked_AfterFiveFailedAttempts()
     {
         var username = $"lock-{Guid.NewGuid():N}";

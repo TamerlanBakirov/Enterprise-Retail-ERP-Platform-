@@ -1,4 +1,5 @@
 using System.Text;
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
@@ -85,6 +86,9 @@ public class ErpApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IRsGeCommunicationLogger>();
             services.AddScoped<IRsGeCommunicationLogger, NullRsGeCommunicationLogger>();
+
+            services.RemoveAll<IEmailService>();
+            services.AddSingleton<IEmailService, NullEmailService>();
 
             services.RemoveAll<IRsGeSubmissionProcessor>();
             services.AddScoped<IRsGeSubmissionProcessor, NullRsGeSubmissionProcessor>();
@@ -193,5 +197,11 @@ public class ErpApiFactory : WebApplicationFactory<Program>
     {
         public Task<RsGeSubmissionResult> ProcessAsync(RsGeSubmissionMessage message, CancellationToken cancellationToken = default)
             => Task.FromResult(RsGeSubmissionResult.Success());
+    }
+
+    private sealed class NullEmailService : IEmailService
+    {
+        public Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

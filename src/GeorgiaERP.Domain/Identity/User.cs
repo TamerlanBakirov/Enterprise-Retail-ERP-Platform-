@@ -20,6 +20,8 @@ public class User : BaseEntity
     public DateTimeOffset? LockedUntil { get; private set; }
     public DateTimeOffset? LastLoginAt { get; private set; }
     public bool IsActive { get; private set; }
+    public string? ResetToken { get; private set; }
+    public DateTimeOffset? ResetTokenExpiry { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -81,6 +83,22 @@ public class User : BaseEntity
     {
         TotpSecret = null;
         Is2FaEnabled = false;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetResetToken(string hash, DateTimeOffset expiry)
+    {
+        if (string.IsNullOrWhiteSpace(hash))
+            throw new ArgumentException("Reset token hash is required.", nameof(hash));
+        ResetToken = hash;
+        ResetTokenExpiry = expiry;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ClearResetToken()
+    {
+        ResetToken = null;
+        ResetTokenExpiry = null;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

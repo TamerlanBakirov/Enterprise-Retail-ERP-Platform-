@@ -106,5 +106,15 @@ public class AuthController : ApiControllerBase
         return ToActionResult(result);
     }
 
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        await _mediator.Send(new RequestPasswordResetCommand(request.Email));
+        return Ok(new { message = "If the email exists, a reset link has been sent." });
+    }
+
     public record TwoFactorCodeRequest(string Code);
+    public record ForgotPasswordRequest(string Email);
 }

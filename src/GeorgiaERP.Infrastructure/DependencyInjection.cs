@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Caching;
+using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
@@ -19,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Polly;
 using IAuthenticationService = GeorgiaERP.Application.Common.IAuthenticationService;
+using IEmailService = GeorgiaERP.Application.Common.IEmailService;
 using IJwtTokenService = GeorgiaERP.Application.Common.IJwtTokenService;
 using IPasswordService = GeorgiaERP.Application.Common.IPasswordService;
 using IRsGeCommunicationLogger = GeorgiaERP.Application.Compliance.IRsGeCommunicationLogger;
@@ -121,6 +123,8 @@ public static class DependencyInjection
 
         services.AddSingleton<IPdfGenerationService, PdfGenerationService>();
         services.AddSingleton<IExcelService, ExcelService>();
+
+        services.AddSingleton<IEmailService, SmtpEmailService>();
 
         return services;
     }
