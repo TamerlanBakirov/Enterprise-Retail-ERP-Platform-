@@ -25,6 +25,22 @@ public partial class App : Application
 
         try
         {
+#if DEBUG
+            var authService = Services.GetRequiredService<IAuthService>();
+            var (loginOk, loginErr) = await authService.LoginAsync("admin", "Admin@123!");
+            if (loginOk)
+            {
+                var mainWindow = new Views.Shell.MainWindow();
+                mainWindow.Show();
+                MainWindow = mainWindow;
+            }
+            else
+            {
+                var loginWindow = new LoginWindow();
+                loginWindow.Show();
+                MainWindow = loginWindow;
+            }
+#else
             var licenseService = Services.GetRequiredService<ILicenseService>();
             var licenseInfo = await licenseService.GetStatusAsync();
 
@@ -40,6 +56,7 @@ public partial class App : Application
                 loginWindow.Show();
                 MainWindow = loginWindow;
             }
+#endif
         }
         catch (Exception ex)
         {
