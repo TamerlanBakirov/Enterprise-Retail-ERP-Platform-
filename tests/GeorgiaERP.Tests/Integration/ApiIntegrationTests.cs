@@ -220,6 +220,26 @@ public class ApiIntegrationTests : IClassFixture<ErpApiFactory>
     }
 
     [Fact]
+    public async Task Products_ExportExcel_ReturnsFile()
+    {
+        var client = await AuthenticatedClient();
+        var response = await client.GetAsync("/api/v1/products/export");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType
+            .Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+
+    [Fact]
+    public async Task Products_ImportTemplate_ReturnsFile()
+    {
+        var client = await AuthenticatedClient();
+        var response = await client.GetAsync("/api/v1/products/import-template");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType
+            .Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+
+    [Fact]
     public async Task AuditLogs_Endpoint_RequiresAuthentication()
     {
         var response = await NewClient().GetAsync("/api/v1/audit-logs?page=1&pageSize=10");

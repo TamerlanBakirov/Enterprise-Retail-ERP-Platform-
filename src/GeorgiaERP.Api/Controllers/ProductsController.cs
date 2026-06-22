@@ -1,3 +1,4 @@
+using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Products.Commands;
 using GeorgiaERP.Application.Products.DTOs;
 using GeorgiaERP.Application.Products.Queries;
@@ -71,6 +72,35 @@ public class ProductsController : ApiControllerBase
             return ToActionResult(result);
 
         return CreatedAtAction(nameof(GetProduct), new { id = result.Value!.Id }, result.Value);
+    }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportProducts(
+        [FromQuery] string? search,
+        [FromQuery] Guid? categoryId,
+        [FromQuery] bool? isActive)
+    {
+        var bytes = await _mediator.Send(new ExportProductsQuery(search, categoryId, isActive));
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "products.xlsx");
+    }
+
+    [HttpGet("import-template")]
+    public IActionResult GetImportTemplate([FromServices] IExcelService excelService)
+    {
+        var bytes = excelService.GenerateProductImportTemplate();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "product-import-template.xlsx");
+    }
+
+    [HttpPost("import")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> ImportProducts(IFormFile file)
+    {
+        if (file.Length == 0)
+            return BadRequest(new { error = "File is empty" });
+
+        using var stream = file.OpenReadStream();
+        var result = await _mediator.Send(new ImportProductsCommand(stream, CurrentUserId));
+        return ToActionResult(result);
     }
 
     [HttpGet("categories")]

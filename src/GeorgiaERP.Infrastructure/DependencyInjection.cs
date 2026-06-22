@@ -120,6 +120,7 @@ public static class DependencyInjection
         services.AddSingleton<IMachineIdProvider, MachineIdProviderService>();
 
         services.AddSingleton<IPdfGenerationService, PdfGenerationService>();
+        services.AddSingleton<IExcelService, ExcelService>();
 
         return services;
     }

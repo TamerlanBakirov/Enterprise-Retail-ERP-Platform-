@@ -35,6 +35,24 @@ public class Product : AuditableEntity
 
     private Product() { }
 
+    public void Update(
+        string name,
+        string? nameKa,
+        string unitOfMeasure,
+        bool vatApplicable,
+        decimal? weightKg,
+        decimal? minStockLevel,
+        decimal? maxStockLevel)
+    {
+        Name = name;
+        NameKa = nameKa;
+        UnitOfMeasure = unitOfMeasure;
+        VatApplicable = vatApplicable;
+        WeightKg = weightKg;
+        MinStockLevel = minStockLevel;
+        MaxStockLevel = maxStockLevel;
+    }
+
     public static Product Create(
         string sku,
         string name,

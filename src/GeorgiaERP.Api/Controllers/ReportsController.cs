@@ -1,3 +1,4 @@
+using GeorgiaERP.Application.Inventory.Queries;
 using GeorgiaERP.Application.Reporting.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +28,13 @@ public class ReportsController : ApiControllerBase
     {
         var result = await _mediator.Send(new StockReportQuery(warehouseId));
         return Ok(result);
+    }
+
+    [HttpGet("stock/export")]
+    public async Task<IActionResult> ExportStock([FromQuery] Guid? warehouseId)
+    {
+        var bytes = await _mediator.Send(new ExportStockQuery(warehouseId));
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "stock-levels.xlsx");
     }
 
     [HttpGet("vat")]
