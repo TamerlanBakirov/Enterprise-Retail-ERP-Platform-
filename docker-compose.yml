@@ -102,6 +102,7 @@ services:
       Jwt__Issuer: GeorgiaERP
       Jwt__Audience: GeorgiaERP.Client
       Licensing__SigningKey: "DEVELOPMENT-ONLY-LICENSE-SIGNING-KEY-CHANGE-IN-PRODUCTION-64-CHARS"
+      Authentication__TotpEncryptionKey: "DEVELOPMENT-ONLY-TOTP-ENCRYPTION-KEY-CHANGE-IN-PRODUCTION"
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: Development
     ports:

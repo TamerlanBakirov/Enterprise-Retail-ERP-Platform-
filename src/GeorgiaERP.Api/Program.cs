@@ -315,6 +315,29 @@ try
 
     var app = builder.Build();
 
+    // ── Startup Validation ────────────────────────────────────────────
+    if (!app.Environment.IsDevelopment())
+    {
+        var config = app.Configuration;
+        var missingKeys = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(config["Jwt:SecretKey"]) || config["Jwt:SecretKey"]!.Length < 64)
+            missingKeys.Add("Jwt:SecretKey (must be at least 64 characters)");
+        if (string.IsNullOrWhiteSpace(config.GetConnectionString("DefaultConnection")))
+            missingKeys.Add("ConnectionStrings:DefaultConnection");
+        if (string.IsNullOrWhiteSpace(config["Authentication:TotpEncryptionKey"]))
+            missingKeys.Add("Authentication:TotpEncryptionKey");
+        if (string.IsNullOrWhiteSpace(config["Licensing:SigningKey"]))
+            missingKeys.Add("Licensing:SigningKey");
+
+        if (missingKeys.Count > 0)
+        {
+            Log.Fatal("Missing required configuration: {MissingKeys}", string.Join(", ", missingKeys));
+            throw new InvalidOperationException(
+                $"Application cannot start — missing required configuration: {string.Join(", ", missingKeys)}");
+        }
+    }
+
     // ── Middleware Pipeline ────────────────────────────────────────────
     // Correlation ID goes first so all downstream middleware and log entries include it.
     app.UseMiddleware<GeorgiaERP.Api.Middleware.CorrelationIdMiddleware>();
@@ -358,7 +381,6 @@ try
         context.Response.OnStarting(() =>
         {
             context.Response.Headers["X-Api-Version"] = "1.0";
-            context.Response.Headers["X-Powered-By"] = "GeorgiaERP";
             return Task.CompletedTask;
         });
         await next();

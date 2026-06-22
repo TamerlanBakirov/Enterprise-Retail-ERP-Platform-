@@ -52,13 +52,12 @@ public class ErrorHandlingApiTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task Api_Powered_By_Header_Present()
+    public async Task Api_Does_Not_Leak_Powered_By_Header()
     {
         var client = NewClient();
         var response = await client.GetAsync("/health/live");
 
-        response.Headers.Should().Contain(h => h.Key == "X-Powered-By");
-        response.Headers.GetValues("X-Powered-By").First().Should().Be("GeorgiaERP");
+        response.Headers.Should().NotContain(h => h.Key == "X-Powered-By");
     }
 
     [Fact]
