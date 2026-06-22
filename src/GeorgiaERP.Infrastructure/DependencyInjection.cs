@@ -4,6 +4,7 @@ using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
 using GeorgiaERP.Infrastructure.Caching;
 using GeorgiaERP.Infrastructure.Email;
+using GeorgiaERP.Infrastructure.Export;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
@@ -121,6 +122,9 @@ public static class DependencyInjection
 
         // Localization service (en-US / ka-GE resource files)
         services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
+
+        // CSV export service
+        services.AddSingleton<IExportService, CsvExportService>();
 
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();
