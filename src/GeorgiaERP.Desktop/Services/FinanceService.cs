@@ -18,21 +18,21 @@ public class FinanceService : IFinanceService
     private readonly IApiClient _api;
     public FinanceService(IApiClient api) => _api = api;
 
-    public Task<List<AccountDto>> GetAccountsAsync(bool? isActive)
+    public async Task<List<AccountDto>> GetAccountsAsync(bool? isActive)
     {
         var q = "finance/chart-of-accounts";
         if (isActive.HasValue) q += $"?isActive={isActive}";
-        return _api.GetAsync<List<AccountDto>>(q)!;
+        return await _api.GetAsync<List<AccountDto>>(q) ?? [];
     }
 
     public Task<AccountDto?> CreateAccountAsync(CreateAccountRequest request) =>
         _api.PostAsync<CreateAccountRequest, AccountDto>("finance/chart-of-accounts", request);
 
-    public Task<PagedResult<JournalEntryDto>> GetJournalEntriesAsync(string? status, int page, int pageSize)
+    public async Task<PagedResult<JournalEntryDto>> GetJournalEntriesAsync(string? status, int page, int pageSize)
     {
         var q = $"finance/journal-entries?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
-        return _api.GetAsync<PagedResult<JournalEntryDto>>(q)!;
+        return await _api.GetAsync<PagedResult<JournalEntryDto>>(q) ?? new PagedResult<JournalEntryDto>();
     }
 
     public Task<JournalEntryDto?> CreateJournalEntryAsync(CreateJournalEntryRequest request) =>
@@ -40,7 +40,8 @@ public class FinanceService : IFinanceService
 
     public Task<ApiResult> PostJournalEntryAsync(Guid id) => _api.PostAsync($"finance/journal-entries/{id}/post");
 
-    public Task<List<BankAccountDto>> GetBankAccountsAsync() => _api.GetAsync<List<BankAccountDto>>("finance/bank-accounts")!;
+    public async Task<List<BankAccountDto>> GetBankAccountsAsync() =>
+        await _api.GetAsync<List<BankAccountDto>>("finance/bank-accounts") ?? [];
 
     public Task<BankAccountDto?> CreateBankAccountAsync(CreateBankAccountRequest request) =>
         _api.PostAsync<CreateBankAccountRequest, BankAccountDto>("finance/bank-accounts", request);

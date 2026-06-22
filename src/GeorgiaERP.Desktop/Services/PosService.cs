@@ -24,18 +24,18 @@ public class PosService : IPosService
     public Task<ApiResult> CloseSessionAsync(Guid sessionId, ClosePosSessionRequest request) =>
         _api.PostAsync($"pos/sessions/{sessionId}/close", request);
 
-    public Task<PagedResult<PosSessionDto>> GetSessionsAsync(Guid? terminalId, string? status, int page, int pageSize)
+    public async Task<PagedResult<PosSessionDto>> GetSessionsAsync(Guid? terminalId, string? status, int page, int pageSize)
     {
         var q = $"pos/sessions?page={page}&pageSize={pageSize}";
         if (terminalId.HasValue) q += $"&terminalId={terminalId}";
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
-        return _api.GetAsync<PagedResult<PosSessionDto>>(q)!;
+        return await _api.GetAsync<PagedResult<PosSessionDto>>(q) ?? new PagedResult<PosSessionDto>();
     }
 
     public Task<PosTransactionDto?> CreateTransactionAsync(CreatePosTransactionRequest request) =>
         _api.PostAsync<CreatePosTransactionRequest, PosTransactionDto>("pos/transactions", request);
 
-    public Task<PagedResult<PosTransactionDto>> GetTransactionsAsync(Guid? sessionId, Guid? storeId, string? status, DateTimeOffset? from, DateTimeOffset? to, int page, int pageSize)
+    public async Task<PagedResult<PosTransactionDto>> GetTransactionsAsync(Guid? sessionId, Guid? storeId, string? status, DateTimeOffset? from, DateTimeOffset? to, int page, int pageSize)
     {
         var q = $"pos/transactions?page={page}&pageSize={pageSize}";
         if (sessionId.HasValue) q += $"&sessionId={sessionId}";
@@ -43,7 +43,7 @@ public class PosService : IPosService
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
         if (from.HasValue) q += $"&from={from.Value:O}";
         if (to.HasValue) q += $"&to={to.Value:O}";
-        return _api.GetAsync<PagedResult<PosTransactionDto>>(q)!;
+        return await _api.GetAsync<PagedResult<PosTransactionDto>>(q) ?? new PagedResult<PosTransactionDto>();
     }
 
     public Task<PosTransactionDetailDto?> GetTransactionDetailAsync(Guid transactionId) =>

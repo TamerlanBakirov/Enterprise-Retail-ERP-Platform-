@@ -13,12 +13,12 @@ public class UserService : IUserService
     private readonly IApiClient _api;
     public UserService(IApiClient api) => _api = api;
 
-    public Task<PagedResult<UserListDto>> GetUsersAsync(string? search, bool? isActive, int page, int pageSize)
+    public async Task<PagedResult<UserListDto>> GetUsersAsync(string? search, bool? isActive, int page, int pageSize)
     {
         var q = $"users?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(search)) q += $"&search={Uri.EscapeDataString(search)}";
         if (isActive.HasValue) q += $"&isActive={isActive}";
-        return _api.GetAsync<PagedResult<UserListDto>>(q)!;
+        return await _api.GetAsync<PagedResult<UserListDto>>(q) ?? new PagedResult<UserListDto>();
     }
 
     public Task<UserListDto?> CreateUserAsync(CreateUserRequest request) =>

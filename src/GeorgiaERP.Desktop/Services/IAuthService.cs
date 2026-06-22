@@ -23,7 +23,7 @@ public class AuthService : IAuthService
     private readonly ISettingsService _settings;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public UserInfo? CurrentUser { get; private set; }
+    public UserInfo? CurrentUser { get; internal set; }
     public bool IsLoggedIn => CurrentUser is not null;
     public event Action? AuthStateChanged;
 
@@ -83,27 +83,48 @@ public class AuthService : IAuthService
 
     public async Task<TwoFactorSetupResponse?> BeginTwoFactorSetupAsync()
     {
-        var client = _httpClientFactory.CreateClient("api-auth");
-        var response = await client.PostAsync("auth/2fa/setup", null);
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<TwoFactorSetupResponse>(JsonOptions);
+        try
+        {
+            var client = _httpClientFactory.CreateClient("api-auth");
+            var response = await client.PostAsync("auth/2fa/setup", null);
+            if (!response.IsSuccessStatusCode) return null;
+            return await response.Content.ReadFromJsonAsync<TwoFactorSetupResponse>(JsonOptions);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
     }
 
     public async Task<(bool Success, string? Error)> ConfirmTwoFactorSetupAsync(string code)
     {
-        var client = _httpClientFactory.CreateClient("api-auth");
-        var response = await client.PostAsJsonAsync("auth/2fa/confirm", new TwoFactorConfirmRequest(code));
-        if (!response.IsSuccessStatusCode)
-            return (false, await response.Content.ReadAsStringAsync());
-        return (true, null);
+        try
+        {
+            var client = _httpClientFactory.CreateClient("api-auth");
+            var response = await client.PostAsJsonAsync("auth/2fa/confirm", new TwoFactorConfirmRequest(code));
+            if (!response.IsSuccessStatusCode)
+                return (false, await response.Content.ReadAsStringAsync());
+            return (true, null);
+        }
+        catch (HttpRequestException ex)
+        {
+            return (false, $"Connection error: {ex.Message}");
+        }
     }
 
     public async Task<(bool Success, string? Error)> DisableTwoFactorAsync(string code)
     {
-        var client = _httpClientFactory.CreateClient("api-auth");
-        var response = await client.PostAsJsonAsync("auth/2fa/disable", new TwoFactorDisableRequest(code));
-        if (!response.IsSuccessStatusCode)
-            return (false, await response.Content.ReadAsStringAsync());
-        return (true, null);
+        try
+        {
+            var client = _httpClientFactory.CreateClient("api-auth");
+            var response = await client.PostAsJsonAsync("auth/2fa/disable", new TwoFactorDisableRequest(code));
+            if (!response.IsSuccessStatusCode)
+                return (false, await response.Content.ReadAsStringAsync());
+            return (true, null);
+        }
+        catch (HttpRequestException ex)
+        {
+            return (false, $"Connection error: {ex.Message}");
+        }
     }
 }

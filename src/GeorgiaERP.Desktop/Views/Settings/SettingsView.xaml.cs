@@ -18,7 +18,15 @@ public partial class SettingsView : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        await _viewModel.LoadLicenseCommand.ExecuteAsync(null);
+        IsVisibleChanged += OnVisibilityChanged;
+        if (Visibility == Visibility.Visible)
+            await _viewModel.LoadLicenseCommand.ExecuteAsync(null);
+    }
+
+    private async void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is Visibility v && v == Visibility.Visible)
+            await _viewModel.LoadLicenseCommand.ExecuteAsync(null);
     }
 
     private void OnManage2FA(object sender, RoutedEventArgs e)

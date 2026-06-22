@@ -15,12 +15,12 @@ public class CustomerService : ICustomerService
     private readonly IApiClient _api;
     public CustomerService(IApiClient api) => _api = api;
 
-    public Task<PagedResult<CustomerDto>> GetCustomersAsync(string? search, bool? isActive, int page, int pageSize)
+    public async Task<PagedResult<CustomerDto>> GetCustomersAsync(string? search, bool? isActive, int page, int pageSize)
     {
         var q = $"customers?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(search)) q += $"&search={Uri.EscapeDataString(search)}";
         if (isActive.HasValue) q += $"&isActive={isActive}";
-        return _api.GetAsync<PagedResult<CustomerDto>>(q)!;
+        return await _api.GetAsync<PagedResult<CustomerDto>>(q) ?? new PagedResult<CustomerDto>();
     }
 
     public Task<CustomerDto?> CreateCustomerAsync(CreateCustomerRequest request) =>

@@ -18,7 +18,14 @@ public partial class WarehouseView : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (_viewModel.ReceivingOrders.Count == 0)
+        IsVisibleChanged += OnVisibilityChanged;
+        if (Visibility == Visibility.Visible && _viewModel.ReceivingOrders.Count == 0)
+            await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    private async void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is Visibility v && v == Visibility.Visible && _viewModel.ReceivingOrders.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
 

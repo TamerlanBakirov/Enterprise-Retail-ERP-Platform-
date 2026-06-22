@@ -29,29 +29,29 @@ public class WarehouseService : IWarehouseService
     public Task<WarehouseDetailDto?> GetWarehouseAsync(Guid id) =>
         _api.GetAsync<WarehouseDetailDto>($"warehouse/{id}");
 
-    public Task<List<WarehouseLocationDto>> GetLocationsAsync(Guid warehouseId, string? locationType, bool? isActive)
+    public async Task<List<WarehouseLocationDto>> GetLocationsAsync(Guid warehouseId, string? locationType, bool? isActive)
     {
         var q = $"warehouse/{warehouseId}/locations";
         var sep = '?';
         if (locationType is not null) { q += $"{sep}locationType={locationType}"; sep = '&'; }
         if (isActive.HasValue) { q += $"{sep}isActive={isActive.Value}"; }
-        return _api.GetAsync<List<WarehouseLocationDto>>(q)!;
+        return await _api.GetAsync<List<WarehouseLocationDto>>(q) ?? [];
     }
 
-    public Task<PagedResult<ReceivingOrderDto>> GetReceivingOrdersAsync(Guid? warehouseId, string? status, int page, int pageSize)
+    public async Task<PagedResult<ReceivingOrderDto>> GetReceivingOrdersAsync(Guid? warehouseId, string? status, int page, int pageSize)
     {
         var q = $"warehouse/receiving?page={page}&pageSize={pageSize}";
         if (warehouseId.HasValue) q += $"&warehouseId={warehouseId}";
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
-        return _api.GetAsync<PagedResult<ReceivingOrderDto>>(q)!;
+        return await _api.GetAsync<PagedResult<ReceivingOrderDto>>(q) ?? new PagedResult<ReceivingOrderDto>();
     }
 
-    public Task<PagedResult<ShippingOrderDto>> GetShippingOrdersAsync(Guid? warehouseId, string? status, int page, int pageSize)
+    public async Task<PagedResult<ShippingOrderDto>> GetShippingOrdersAsync(Guid? warehouseId, string? status, int page, int pageSize)
     {
         var q = $"warehouse/shipping?page={page}&pageSize={pageSize}";
         if (warehouseId.HasValue) q += $"&warehouseId={warehouseId}";
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
-        return _api.GetAsync<PagedResult<ShippingOrderDto>>(q)!;
+        return await _api.GetAsync<PagedResult<ShippingOrderDto>>(q) ?? new PagedResult<ShippingOrderDto>();
     }
 
     public Task<ApiResult> StartReceivingAsync(Guid orderId) =>

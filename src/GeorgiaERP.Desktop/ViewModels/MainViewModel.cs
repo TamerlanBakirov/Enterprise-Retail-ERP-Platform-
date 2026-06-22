@@ -75,6 +75,11 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task Logout()
     {
+#if DEBUG
+        // In DEBUG mode there is no login flow, so just shut down the app.
+        await Task.CompletedTask;
+        Application.Current.Shutdown();
+#else
         _toastService.StopListening();
         await _signalR.DisconnectAsync();
         await _authService.LogoutAsync();
@@ -82,6 +87,7 @@ public partial class MainViewModel : ObservableObject
         loginWindow.Show();
         Application.Current.MainWindow?.Close();
         Application.Current.MainWindow = loginWindow;
+#endif
     }
 
     [RelayCommand]

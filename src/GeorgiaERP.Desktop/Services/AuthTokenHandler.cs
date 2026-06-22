@@ -23,7 +23,19 @@ public class AuthTokenHandler : DelegatingHandler
         if (!string.IsNullOrEmpty(_settings.AccessToken))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.AccessToken);
 
-        var response = await base.SendAsync(request, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await base.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            {
+                RequestMessage = request,
+                ReasonPhrase = "API server unreachable"
+            };
+        }
 
         if (response.StatusCode == HttpStatusCode.Unauthorized && !string.IsNullOrEmpty(_settings.RefreshToken))
         {
@@ -34,7 +46,18 @@ public class AuthTokenHandler : DelegatingHandler
                 if (refreshed)
                 {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.AccessToken);
-                    response = await base.SendAsync(request, cancellationToken);
+                    try
+                    {
+                        response = await base.SendAsync(request, cancellationToken);
+                    }
+                    catch (HttpRequestException)
+                    {
+                        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                        {
+                            RequestMessage = request,
+                            ReasonPhrase = "API server unreachable"
+                        };
+                    }
                 }
             }
             finally

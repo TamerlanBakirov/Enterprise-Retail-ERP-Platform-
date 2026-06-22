@@ -31,73 +31,122 @@ public class ApiClient : IApiClient
 
     public async Task<T?> GetAsync<T>(string endpoint, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.GetAsync(endpoint, ct);
-        if (!response.IsSuccessStatusCode) return default;
-        return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
+        try
+        {
+            var client = CreateClient();
+            var response = await client.GetAsync(endpoint, ct);
+            if (!response.IsSuccessStatusCode) return default;
+            return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
+        }
+        catch (HttpRequestException)
+        {
+            return default;
+        }
     }
 
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string endpoint, TRequest body, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.PostAsJsonAsync(endpoint, body, JsonOptions, ct);
-        if (!response.IsSuccessStatusCode) return default;
-        return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, ct);
+        try
+        {
+            var client = CreateClient();
+            var response = await client.PostAsJsonAsync(endpoint, body, JsonOptions, ct);
+            if (!response.IsSuccessStatusCode) return default;
+            return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, ct);
+        }
+        catch (HttpRequestException)
+        {
+            return default;
+        }
     }
 
     public async Task<ApiResult> PostAsync<TRequest>(string endpoint, TRequest body, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.PostAsJsonAsync(endpoint, body, JsonOptions, ct);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var error = await response.Content.ReadAsStringAsync(ct);
-            return new ApiResult { IsSuccess = false, Error = error };
+            var client = CreateClient();
+            var response = await client.PostAsJsonAsync(endpoint, body, JsonOptions, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync(ct);
+                return new ApiResult { IsSuccess = false, Error = error };
+            }
+            return new ApiResult { IsSuccess = true };
         }
-        return new ApiResult { IsSuccess = true };
+        catch (HttpRequestException ex)
+        {
+            return new ApiResult { IsSuccess = false, Error = ex.Message };
+        }
     }
 
     public async Task<ApiResult> PostAsync(string endpoint, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.PostAsync(endpoint, null, ct);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var error = await response.Content.ReadAsStringAsync(ct);
-            return new ApiResult { IsSuccess = false, Error = error };
+            var client = CreateClient();
+            var response = await client.PostAsync(endpoint, null, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync(ct);
+                return new ApiResult { IsSuccess = false, Error = error };
+            }
+            return new ApiResult { IsSuccess = true };
         }
-        return new ApiResult { IsSuccess = true };
+        catch (HttpRequestException ex)
+        {
+            return new ApiResult { IsSuccess = false, Error = ex.Message };
+        }
     }
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string endpoint, TRequest body, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.PutAsJsonAsync(endpoint, body, JsonOptions, ct);
-        if (!response.IsSuccessStatusCode) return default;
-        return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, ct);
+        try
+        {
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync(endpoint, body, JsonOptions, ct);
+            if (!response.IsSuccessStatusCode) return default;
+            return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, ct);
+        }
+        catch (HttpRequestException)
+        {
+            return default;
+        }
     }
 
     public async Task<ApiResult> PutAsync<TRequest>(string endpoint, TRequest body, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.PutAsJsonAsync(endpoint, body, JsonOptions, ct);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var error = await response.Content.ReadAsStringAsync(ct);
-            return new ApiResult { IsSuccess = false, Error = error };
+            var client = CreateClient();
+            var response = await client.PutAsJsonAsync(endpoint, body, JsonOptions, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync(ct);
+                return new ApiResult { IsSuccess = false, Error = error };
+            }
+            return new ApiResult { IsSuccess = true };
         }
-        return new ApiResult { IsSuccess = true };
+        catch (HttpRequestException ex)
+        {
+            return new ApiResult { IsSuccess = false, Error = ex.Message };
+        }
     }
 
     public async Task<ApiResult> DeleteAsync(string endpoint, CancellationToken ct = default)
     {
-        var client = CreateClient();
-        var response = await client.DeleteAsync(endpoint, ct);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var error = await response.Content.ReadAsStringAsync(ct);
-            return new ApiResult { IsSuccess = false, Error = error };
+            var client = CreateClient();
+            var response = await client.DeleteAsync(endpoint, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync(ct);
+                return new ApiResult { IsSuccess = false, Error = error };
+            }
+            return new ApiResult { IsSuccess = true };
         }
-        return new ApiResult { IsSuccess = true };
+        catch (HttpRequestException ex)
+        {
+            return new ApiResult { IsSuccess = false, Error = ex.Message };
+        }
     }
 }

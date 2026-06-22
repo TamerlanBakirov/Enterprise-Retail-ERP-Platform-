@@ -24,8 +24,8 @@ public class ComplianceService : IComplianceService
     public Task<RsGeHealthDto?> CheckRsGeHealthAsync() =>
         _api.GetAsync<RsGeHealthDto>("compliance/rsge/health");
 
-    public Task<List<WaybillDto>> GetWaybillsAsync(int page, int pageSize) =>
-        _api.GetAsync<List<WaybillDto>>($"compliance/waybills?page={page}&pageSize={pageSize}")!;
+    public async Task<List<WaybillDto>> GetWaybillsAsync(int page, int pageSize) =>
+        await _api.GetAsync<List<WaybillDto>>($"compliance/waybills?page={page}&pageSize={pageSize}") ?? [];
 
     public Task<WaybillDto?> CreateWaybillAsync(CreateWaybillRequest request) =>
         _api.PostAsync<CreateWaybillRequest, WaybillDto>("compliance/waybills", request);
@@ -36,12 +36,12 @@ public class ComplianceService : IComplianceService
     public Task<ApiResult> CloseWaybillAsync(Guid fiscalDocumentId) =>
         _api.PostAsync($"compliance/waybills/{fiscalDocumentId}/close");
 
-    public Task<List<FiscalDocumentDto>> GetFiscalDocumentsAsync(string? type, string? status, int page, int pageSize)
+    public async Task<List<FiscalDocumentDto>> GetFiscalDocumentsAsync(string? type, string? status, int page, int pageSize)
     {
         var q = $"compliance/fiscal-documents?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(type)) q += $"&type={type}";
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
-        return _api.GetAsync<List<FiscalDocumentDto>>(q)!;
+        return await _api.GetAsync<List<FiscalDocumentDto>>(q) ?? [];
     }
 
     public Task<VatSummaryDto?> GetVatSummaryAsync(int? year, int? month)

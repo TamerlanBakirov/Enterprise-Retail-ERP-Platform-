@@ -17,32 +17,32 @@ public class PricingService : IPricingService
     private readonly IApiClient _api;
     public PricingService(IApiClient api) => _api = api;
 
-    public Task<PagedResult<PriceListDto>> GetPriceListsAsync(string? priceType, bool? isActive, int page, int pageSize)
+    public async Task<PagedResult<PriceListDto>> GetPriceListsAsync(string? priceType, bool? isActive, int page, int pageSize)
     {
         var q = $"pricing/price-lists?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(priceType)) q += $"&priceType={priceType}";
         if (isActive.HasValue) q += $"&isActive={isActive}";
-        return _api.GetAsync<PagedResult<PriceListDto>>(q)!;
+        return await _api.GetAsync<PagedResult<PriceListDto>>(q) ?? new PagedResult<PriceListDto>();
     }
 
     public Task<PriceListDto?> CreatePriceListAsync(CreatePriceListRequest request) =>
         _api.PostAsync<CreatePriceListRequest, PriceListDto>("pricing/price-lists", request);
 
-    public Task<PagedResult<PriceListItemDto>> GetPriceListItemsAsync(Guid priceListId, string? search, int page, int pageSize)
+    public async Task<PagedResult<PriceListItemDto>> GetPriceListItemsAsync(Guid priceListId, string? search, int page, int pageSize)
     {
         var q = $"pricing/price-lists/{priceListId}/items?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(search)) q += $"&search={Uri.EscapeDataString(search)}";
-        return _api.GetAsync<PagedResult<PriceListItemDto>>(q)!;
+        return await _api.GetAsync<PagedResult<PriceListItemDto>>(q) ?? new PagedResult<PriceListItemDto>();
     }
 
     public Task<PriceListItemDto?> SetPriceAsync(SetPriceRequest request) =>
         _api.PostAsync<SetPriceRequest, PriceListItemDto>("pricing/prices", request);
 
-    public Task<PagedResult<PromotionDto>> GetPromotionsAsync(bool? isActive, int page, int pageSize)
+    public async Task<PagedResult<PromotionDto>> GetPromotionsAsync(bool? isActive, int page, int pageSize)
     {
         var q = $"pricing/promotions?page={page}&pageSize={pageSize}";
         if (isActive.HasValue) q += $"&isActive={isActive}";
-        return _api.GetAsync<PagedResult<PromotionDto>>(q)!;
+        return await _api.GetAsync<PagedResult<PromotionDto>>(q) ?? new PagedResult<PromotionDto>();
     }
 
     public Task<PromotionDto?> CreatePromotionAsync(CreatePromotionRequest request) =>

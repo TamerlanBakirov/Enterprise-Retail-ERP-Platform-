@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using GeorgiaERP.Desktop.Models;
 using GeorgiaERP.Desktop.Services;
 using GeorgiaERP.Desktop.ViewModels;
 using GeorgiaERP.Desktop.Views.Login;
@@ -27,19 +28,19 @@ public partial class App : Application
         {
 #if DEBUG
             var authService = Services.GetRequiredService<IAuthService>();
-            var (loginOk, loginErr) = await authService.LoginAsync("admin", "Admin@123!");
-            if (loginOk)
+            var (success, _) = await authService.LoginAsync("admin", "Admin@123!");
+
+            if (!success)
             {
-                var mainWindow = new Views.Shell.MainWindow();
-                mainWindow.Show();
-                MainWindow = mainWindow;
+                ((AuthService)authService).CurrentUser = new UserInfo(
+                    Guid.Empty, "admin", "admin@dev.local",
+                    "Dev", "Admin", "დევ", "ადმინი", "ka",
+                    new[] { "Administrator" }, null);
             }
-            else
-            {
-                var loginWindow = new LoginWindow();
-                loginWindow.Show();
-                MainWindow = loginWindow;
-            }
+
+            var mainWindow = new Views.Shell.MainWindow();
+            mainWindow.Show();
+            MainWindow = mainWindow;
 #else
             var licenseService = Services.GetRequiredService<ILicenseService>();
             var licenseInfo = await licenseService.GetStatusAsync();

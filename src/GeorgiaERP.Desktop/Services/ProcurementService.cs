@@ -19,23 +19,23 @@ public class ProcurementService : IProcurementService
     private readonly IApiClient _api;
     public ProcurementService(IApiClient api) => _api = api;
 
-    public Task<PagedResult<SupplierDto>> GetSuppliersAsync(string? search, bool? isActive, int page, int pageSize)
+    public async Task<PagedResult<SupplierDto>> GetSuppliersAsync(string? search, bool? isActive, int page, int pageSize)
     {
         var q = $"procurement/suppliers?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrEmpty(search)) q += $"&search={Uri.EscapeDataString(search)}";
         if (isActive.HasValue) q += $"&isActive={isActive}";
-        return _api.GetAsync<PagedResult<SupplierDto>>(q)!;
+        return await _api.GetAsync<PagedResult<SupplierDto>>(q) ?? new PagedResult<SupplierDto>();
     }
 
     public Task<SupplierDto?> CreateSupplierAsync(CreateSupplierRequest request) =>
         _api.PostAsync<CreateSupplierRequest, SupplierDto>("procurement/suppliers", request);
 
-    public Task<PagedResult<PurchaseOrderDto>> GetPurchaseOrdersAsync(Guid? supplierId, string? status, int page, int pageSize)
+    public async Task<PagedResult<PurchaseOrderDto>> GetPurchaseOrdersAsync(Guid? supplierId, string? status, int page, int pageSize)
     {
         var q = $"procurement/purchase-orders?page={page}&pageSize={pageSize}";
         if (supplierId.HasValue) q += $"&supplierId={supplierId}";
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
-        return _api.GetAsync<PagedResult<PurchaseOrderDto>>(q)!;
+        return await _api.GetAsync<PagedResult<PurchaseOrderDto>>(q) ?? new PagedResult<PurchaseOrderDto>();
     }
 
     public Task<PurchaseOrderDto?> CreatePurchaseOrderAsync(CreatePurchaseOrderRequest request) =>
