@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Pricing.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -11,6 +12,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Pricing")]
+[EnableRateLimiting("read")]
 public class PricingController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -28,6 +30,7 @@ public class PricingController : ApiControllerBase
     }
 
     [HttpPost("price-lists")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreatePriceList([FromBody] CreatePriceListCommand command)
     {
         var result = await _mediator.Send(command);
@@ -47,6 +50,7 @@ public class PricingController : ApiControllerBase
     }
 
     [HttpPost("prices")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> SetPrice([FromBody] SetPriceCommand command)
     {
         var result = await _mediator.Send(command);
@@ -65,6 +69,7 @@ public class PricingController : ApiControllerBase
     }
 
     [HttpPost("promotions")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreatePromotion([FromBody] CreatePromotionCommand command)
     {
         var result = await _mediator.Send(command);

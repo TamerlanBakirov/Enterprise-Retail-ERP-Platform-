@@ -4,6 +4,7 @@ using GeorgiaERP.Application.Compliance.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Api.Controllers;
@@ -14,6 +15,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Compliance")]
+[EnableRateLimiting("read")]
 public class ComplianceController : ApiControllerBase
 {
     private readonly IRsGeSoapClient _rsGeClient;
@@ -103,6 +105,7 @@ public class ComplianceController : ApiControllerBase
         !string.IsNullOrWhiteSpace(tin) && System.Text.RegularExpressions.Regex.IsMatch(tin, @"^\d{9,11}$");
 
     [HttpPost("waybills")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateWaybill([FromBody] CreateWaybillCommand command)
     {
         var result = await _mediator.Send(command);
@@ -114,6 +117,7 @@ public class ComplianceController : ApiControllerBase
     }
 
     [HttpPost("waybills/{fiscalDocumentId:guid}/confirm")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ConfirmWaybill(Guid fiscalDocumentId)
     {
         var result = await _mediator.Send(new EnqueueWaybillOperationCommand(fiscalDocumentId, RsGeOperation.ConfirmWaybill));
@@ -121,6 +125,7 @@ public class ComplianceController : ApiControllerBase
     }
 
     [HttpPost("waybills/{fiscalDocumentId:guid}/close")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CloseWaybill(Guid fiscalDocumentId)
     {
         var result = await _mediator.Send(new EnqueueWaybillOperationCommand(fiscalDocumentId, RsGeOperation.CloseWaybill));

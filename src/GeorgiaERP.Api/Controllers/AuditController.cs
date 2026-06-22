@@ -2,6 +2,7 @@ using GeorgiaERP.Application.Audit.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -11,6 +12,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize(Roles = "super_admin,admin")]
 [Tags("Audit")]
+[EnableRateLimiting("read")]
 public class AuditController : ApiControllerBase
 {
     private readonly IMediator _mediator;

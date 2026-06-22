@@ -131,6 +131,7 @@ try
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+        // Global fallback policy: 100 requests/min per IP
         options.AddPolicy("fixed", httpContext =>
         {
             var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
@@ -144,10 +145,53 @@ try
                 });
         });
 
+        // Auth endpoints: stricter limit (20/min) to prevent brute force
         options.AddPolicy("auth", httpContext =>
         {
             var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
-            var limit = config.GetValue("RateLimiting:AuthPermitLimit", 10);
+            var limit = config.GetValue("RateLimiting:AuthPermitLimit", 20);
+            return RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limit,
+                    Window = TimeSpan.FromMinutes(1)
+                });
+        });
+
+        // Read endpoints: relaxed limit (200/min) for GET queries and listings
+        options.AddPolicy("read", httpContext =>
+        {
+            var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:ReadPermitLimit", 200);
+            return RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limit,
+                    Window = TimeSpan.FromMinutes(1)
+                });
+        });
+
+        // Write endpoints: moderate limit (50/min) for POST/PUT/DELETE mutations
+        options.AddPolicy("write", httpContext =>
+        {
+            var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:WritePermitLimit", 50);
+            return RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = limit,
+                    Window = TimeSpan.FromMinutes(1)
+                });
+        });
+
+        // Export endpoints: strict limit (10/min) to prevent resource exhaustion
+        options.AddPolicy("export", httpContext =>
+        {
+            var config = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var limit = config.GetValue("RateLimiting:ExportPermitLimit", 10);
             return RateLimitPartition.GetFixedWindowLimiter(
                 httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions

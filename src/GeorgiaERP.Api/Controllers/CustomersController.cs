@@ -3,6 +3,7 @@ using GeorgiaERP.Application.CRM.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -11,6 +12,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("CRM")]
+[EnableRateLimiting("read")]
 public class CustomersController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -32,6 +34,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerCommand command)
     {
         var result = await _mediator.Send(command);
@@ -41,6 +44,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpPost("{customerId:guid}/loyalty/earn")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> EarnPoints(Guid customerId, [FromBody] EarnPointsRequest request)
     {
         var result = await _mediator.Send(new EarnLoyaltyPointsCommand(
@@ -51,6 +55,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpPost("{customerId:guid}/loyalty/redeem")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> RedeemPoints(Guid customerId, [FromBody] RedeemPointsRequest request)
     {
         var result = await _mediator.Send(new RedeemLoyaltyPointsCommand(customerId, request.Points, request.Description));

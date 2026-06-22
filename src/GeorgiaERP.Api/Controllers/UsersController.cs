@@ -4,6 +4,7 @@ using GeorgiaERP.Application.Identity.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Users")]
+[EnableRateLimiting("read")]
 public class UsersController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -33,6 +35,7 @@ public class UsersController : ApiControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         var command = new CreateUserCommand(

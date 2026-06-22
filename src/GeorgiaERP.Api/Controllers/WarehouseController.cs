@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Warehouse.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Warehouse")]
+[EnableRateLimiting("read")]
 public class WarehouseController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -31,6 +33,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseCommand command)
     {
         var result = await _mediator.Send(command);
@@ -40,6 +43,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> UpdateWarehouse(Guid id, [FromBody] UpdateWarehouseRequest request)
     {
         var command = new UpdateWarehouseCommand(id, request.Name, request.NameKa,
@@ -49,6 +53,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("{id:guid}/activate")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ActivateWarehouse(Guid id)
     {
         var result = await _mediator.Send(new ActivateWarehouseCommand(id));
@@ -56,6 +61,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("{id:guid}/deactivate")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> DeactivateWarehouse(Guid id)
     {
         var result = await _mediator.Send(new DeactivateWarehouseCommand(id));
@@ -75,6 +81,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("{warehouseId:guid}/locations")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateLocation(Guid warehouseId, [FromBody] CreateLocationRequest request)
     {
         var command = new CreateWarehouseLocationCommand(
@@ -88,6 +95,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPut("locations/{id:guid}")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> UpdateLocation(Guid id, [FromBody] UpdateLocationRequest request)
     {
         var command = new UpdateWarehouseLocationCommand(
@@ -97,6 +105,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("locations/{id:guid}/deactivate")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> DeactivateLocation(Guid id)
     {
         var result = await _mediator.Send(new DeactivateWarehouseLocationCommand(id));
@@ -124,6 +133,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("receiving")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateReceivingOrder([FromBody] CreateReceivingOrderCommand command)
     {
         var result = await _mediator.Send(command);
@@ -133,6 +143,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("receiving/{id:guid}/start")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> StartReceiving(Guid id)
     {
         var result = await _mediator.Send(new StartReceivingCommand(id));
@@ -140,6 +151,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("receiving/{orderId:guid}/lines/{lineId:guid}/receive")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ReceiveLine(
         Guid orderId, Guid lineId, [FromBody] ReceiveLineRequest request)
     {
@@ -151,6 +163,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("receiving/{id:guid}/complete")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CompleteReceiving(Guid id)
     {
         var result = await _mediator.Send(new CompleteReceivingCommand(id, CurrentUserId));
@@ -158,6 +171,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("receiving/{id:guid}/cancel")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CancelReceiving(Guid id)
     {
         var result = await _mediator.Send(new CancelReceivingCommand(id));
@@ -185,6 +199,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("shipping")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateShippingOrder([FromBody] CreateShippingOrderCommand command)
     {
         var result = await _mediator.Send(command);
@@ -194,6 +209,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("shipping/{id:guid}/pick")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> StartPicking(Guid id)
     {
         var result = await _mediator.Send(new StartPickingCommand(id));
@@ -201,6 +217,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("shipping/{orderId:guid}/lines/{lineId:guid}/pick")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> PickLine(
         Guid orderId, Guid lineId, [FromBody] PickLineRequest request)
     {
@@ -210,6 +227,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("shipping/{id:guid}/pack")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> PackOrder(Guid id)
     {
         var result = await _mediator.Send(new PackShippingOrderCommand(id));
@@ -217,6 +235,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("shipping/{id:guid}/ship")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ShipOrder(Guid id, [FromBody] ShipOrderRequest request)
     {
         var command = new ShipOrderCommand(id, CurrentUserId, request.TrackingNumber);
@@ -225,6 +244,7 @@ public class WarehouseController : ApiControllerBase
     }
 
     [HttpPost("shipping/{id:guid}/cancel")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CancelShipping(Guid id)
     {
         var result = await _mediator.Send(new CancelShippingOrderCommand(id));

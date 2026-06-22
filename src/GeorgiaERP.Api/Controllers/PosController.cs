@@ -3,6 +3,7 @@ using GeorgiaERP.Application.POS.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("POS")]
+[EnableRateLimiting("read")]
 public class PosController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -22,6 +24,7 @@ public class PosController : ApiControllerBase
     }
 
     [HttpPost("sessions")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> OpenSession([FromBody] OpenPosSessionCommand command)
     {
         var result = await _mediator.Send(command);
@@ -31,6 +34,7 @@ public class PosController : ApiControllerBase
     }
 
     [HttpPost("sessions/{sessionId:guid}/close")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CloseSession(Guid sessionId, [FromBody] ClosePosSessionRequest request)
     {
         var command = new ClosePosSessionCommand(sessionId, request.ClosingBalance, request.Notes);
@@ -52,6 +56,7 @@ public class PosController : ApiControllerBase
     }
 
     [HttpPost("transactions")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateTransaction([FromBody] CreatePosTransactionCommand command)
     {
         var result = await _mediator.Send(command);
@@ -83,6 +88,7 @@ public class PosController : ApiControllerBase
     }
 
     [HttpPost("transactions/{transactionId:guid}/void")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> VoidTransaction(Guid transactionId, [FromBody] VoidTransactionRequest request)
     {
         var command = new VoidPosTransactionCommand(transactionId, CurrentUserId, request.Reason);

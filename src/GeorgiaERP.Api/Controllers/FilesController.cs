@@ -4,6 +4,7 @@ using GeorgiaERP.Infrastructure.FileStorage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace GeorgiaERP.Api.Controllers;
@@ -31,6 +32,7 @@ public class FilesController : ApiControllerBase
     /// <param name="id">The product ID to attach the image to.</param>
     /// <param name="file">The image file (JPEG, PNG, GIF, WebP, BMP).</param>
     [HttpPost("/api/v1/products/{id:guid}/image")]
+    [EnableRateLimiting("write")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -60,6 +62,7 @@ public class FilesController : ApiControllerBase
     /// <param name="entityId">Optional entity ID to link the document to.</param>
     /// <param name="entityType">Optional entity type name (e.g., "PurchaseOrder").</param>
     [HttpPost("/api/v1/documents/upload")]
+    [EnableRateLimiting("write")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB
@@ -90,6 +93,7 @@ public class FilesController : ApiControllerBase
     /// </summary>
     /// <param name="id">The file metadata ID.</param>
     [HttpGet("{id:guid}")]
+    [EnableRateLimiting("read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetFile(Guid id)

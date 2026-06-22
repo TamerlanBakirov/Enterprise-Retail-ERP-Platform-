@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Finance.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Finance")]
+[EnableRateLimiting("read")]
 public class FinanceController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -29,6 +31,7 @@ public class FinanceController : ApiControllerBase
     }
 
     [HttpPost("chart-of-accounts")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountCommand command)
     {
         var result = await _mediator.Send(command);
@@ -48,6 +51,7 @@ public class FinanceController : ApiControllerBase
     }
 
     [HttpPost("journal-entries")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateJournalEntry([FromBody] CreateJournalEntryCommand command)
     {
         var result = await _mediator.Send(command);
@@ -57,6 +61,7 @@ public class FinanceController : ApiControllerBase
     }
 
     [HttpPost("journal-entries/{id:guid}/post")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> PostJournalEntry(Guid id)
     {
         var result = await _mediator.Send(new PostJournalEntryCommand(id, CurrentUserId));
@@ -71,6 +76,7 @@ public class FinanceController : ApiControllerBase
     }
 
     [HttpPost("bank-accounts")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateBankAccount([FromBody] CreateBankAccountCommand command)
     {
         var result = await _mediator.Send(command);

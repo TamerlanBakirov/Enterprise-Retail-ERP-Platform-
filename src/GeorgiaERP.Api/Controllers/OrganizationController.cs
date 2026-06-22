@@ -2,6 +2,7 @@ using GeorgiaERP.Application.Organization.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -10,6 +11,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Organization")]
+[EnableRateLimiting("read")]
 public class OrganizationController : ApiControllerBase
 {
     private readonly IMediator _mediator;

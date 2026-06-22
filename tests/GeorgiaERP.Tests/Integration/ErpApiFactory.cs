@@ -39,7 +39,10 @@ public class ErpApiFactory : WebApplicationFactory<Program>
                 ["Seed:Demo"] = "false",
                 ["HealthChecksUI:Enabled"] = "false",
                 ["RateLimiting:FixedPermitLimit"] = "10000",
-                ["RateLimiting:AuthPermitLimit"] = "10000"
+                ["RateLimiting:AuthPermitLimit"] = "10000",
+                ["RateLimiting:ReadPermitLimit"] = "10000",
+                ["RateLimiting:WritePermitLimit"] = "10000",
+                ["RateLimiting:ExportPermitLimit"] = "10000"
             });
         });
 

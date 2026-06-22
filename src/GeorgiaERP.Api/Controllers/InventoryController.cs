@@ -3,6 +3,7 @@ using GeorgiaERP.Application.Inventory.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -12,6 +13,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Inventory")]
+[EnableRateLimiting("read")]
 public class InventoryController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -45,6 +47,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("adjust")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> AdjustStock([FromBody] AdjustStockCommand command)
     {
         var result = await _mediator.Send(command);
@@ -65,6 +68,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("transfers")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateTransferOrder([FromBody] CreateTransferOrderCommand command)
     {
         var result = await _mediator.Send(command);
@@ -74,6 +78,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("transfers/{id:guid}/approve")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ApproveTransfer(Guid id)
     {
         var result = await _mediator.Send(new ApproveTransferCommand(id, CurrentUserId));
@@ -81,6 +86,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("transfers/{id:guid}/ship")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ShipTransfer(Guid id)
     {
         var result = await _mediator.Send(new ShipTransferCommand(id));
@@ -88,6 +94,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("transfers/{id:guid}/receive")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> ReceiveTransfer(Guid id, [FromBody] ReceiveTransferRequest? request = null)
     {
         var result = await _mediator.Send(new ReceiveTransferCommand(id, request?.Lines));
@@ -95,6 +102,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("transfers/{id:guid}/cancel")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CancelTransfer(Guid id)
     {
         var result = await _mediator.Send(new CancelTransferCommand(id));
@@ -115,6 +123,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("counts")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateStockCount([FromBody] CreateStockCountCommand command)
     {
         var result = await _mediator.Send(command);
@@ -124,6 +133,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("counts/{countId:guid}/lines/{lineId:guid}/record")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> RecordCountLine(Guid countId, Guid lineId, [FromBody] RecordCountRequest request)
     {
         var result = await _mediator.Send(new RecordCountLineCommand(countId, lineId, request.CountedQty, CurrentUserId));
@@ -131,6 +141,7 @@ public class InventoryController : ApiControllerBase
     }
 
     [HttpPost("counts/{countId:guid}/complete")]
+    [EnableRateLimiting("write")]
     public async Task<IActionResult> CompleteStockCount(Guid countId)
     {
         var result = await _mediator.Send(new CompleteStockCountCommand(countId, CurrentUserId));

@@ -4,6 +4,7 @@ using GeorgiaERP.Application.Products.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -26,6 +27,7 @@ public class ProductsController : ApiControllerBase
     /// Retrieves a paginated list of products with optional filtering.
     /// </summary>
     [HttpGet]
+    [EnableRateLimiting("read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int page = 1,
@@ -43,6 +45,7 @@ public class ProductsController : ApiControllerBase
     /// Gets a single product by its unique identifier.
     /// </summary>
     [HttpGet("{id:guid}")]
+    [EnableRateLimiting("read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(Guid id)
@@ -57,6 +60,7 @@ public class ProductsController : ApiControllerBase
     /// Creates a new product in the catalog.
     /// </summary>
     [HttpPost]
+    [EnableRateLimiting("write")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
@@ -96,6 +100,7 @@ public class ProductsController : ApiControllerBase
     /// Updates an existing product's details.
     /// </summary>
     [HttpPut("{id:guid}")]
+    [EnableRateLimiting("write")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -124,6 +129,7 @@ public class ProductsController : ApiControllerBase
     /// Soft-deletes a product by marking it inactive.
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [EnableRateLimiting("write")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProduct(Guid id)
@@ -135,6 +141,7 @@ public class ProductsController : ApiControllerBase
     }
 
     [HttpGet("categories")]
+    [EnableRateLimiting("read")]
     public async Task<IActionResult> GetCategories(
         [FromQuery] Guid? parentId = null,
         [FromQuery] bool? isActive = null)

@@ -2,6 +2,7 @@ using GeorgiaERP.Application.Export;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
@@ -11,6 +12,7 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Export")]
+[EnableRateLimiting("export")]
 public class ExportController : ApiControllerBase
 {
     private readonly IMediator _mediator;
