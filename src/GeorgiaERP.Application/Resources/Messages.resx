@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- Validation Messages -->
+  <data name="Validation.Required" xml:space="preserve"><value>{0} is required.</value></data>
+  <data name="Validation.InvalidEmail" xml:space="preserve"><value>Please enter a valid email address.</value></data>
+  <data name="Validation.InvalidPhone" xml:space="preserve"><value>Please enter a valid phone number.</value></data>
+  <data name="Validation.MinLength" xml:space="preserve"><value>{0} must be at least {1} characters.</value></data>
+  <data name="Validation.MaxLength" xml:space="preserve"><value>{0} must not exceed {1} characters.</value></data>
+  <data name="Validation.MustBePositive" xml:space="preserve"><value>{0} must be a positive number.</value></data>
+  <data name="Validation.InvalidRange" xml:space="preserve"><value>{0} must be between {1} and {2}.</value></data>
+  <data name="Validation.DuplicateValue" xml:space="preserve"><value>A record with this {0} already exists.</value></data>
+  <data name="Validation.InvalidSku" xml:space="preserve"><value>SKU format is invalid. Expected alphanumeric with dashes.</value></data>
+  <data name="Validation.InvalidBarcode" xml:space="preserve"><value>Barcode format is invalid.</value></data>
+  <data name="Validation.InvalidTin" xml:space="preserve"><value>Tax Identification Number (TIN) format is invalid.</value></data>
+  <data name="Validation.PasswordTooWeak" xml:space="preserve"><value>Password must contain at least 8 characters, including uppercase, lowercase, digit, and special character.</value></data>
+
+  <!-- API Error Messages -->
+  <data name="Error.NotFound" xml:space="preserve"><value>{0} was not found.</value></data>
+  <data name="Error.Unauthorized" xml:space="preserve"><value>Authentication is required to access this resource.</value></data>
+  <data name="Error.Forbidden" xml:space="preserve"><value>You do not have permission to perform this action.</value></data>
+  <data name="Error.Conflict" xml:space="preserve"><value>A conflict occurred. The resource may have been modified by another user.</value></data>
+  <data name="Error.InternalError" xml:space="preserve"><value>An unexpected error occurred. Please try again later.</value></data>
+  <data name="Error.RateLimitExceeded" xml:space="preserve"><value>Too many requests. Please wait before trying again.</value></data>
+  <data name="Error.InvalidCredentials" xml:space="preserve"><value>Invalid username or password.</value></data>
+  <data name="Error.AccountLocked" xml:space="preserve"><value>Account has been locked due to too many failed login attempts.</value></data>
+  <data name="Error.TokenExpired" xml:space="preserve"><value>Your session has expired. Please log in again.</value></data>
+  <data name="Error.InsufficientStock" xml:space="preserve"><value>Insufficient stock for {0}. Available: {1}, Requested: {2}.</value></data>
+  <data name="Error.InvalidTransferState" xml:space="preserve"><value>Transfer order cannot be {0} in its current state ({1}).</value></data>
+  <data name="Error.JournalNotBalanced" xml:space="preserve"><value>Journal entry is not balanced. Debit total ({0:C}) does not equal credit total ({1:C}).</value></data>
+  <data name="Error.WaybillSubmissionFailed" xml:space="preserve"><value>Waybill submission to RS.GE failed: {0}.</value></data>
+
+  <!-- Common Labels -->
+  <data name="Label.Product" xml:space="preserve"><value>Product</value></data>
+  <data name="Label.Products" xml:space="preserve"><value>Products</value></data>
+  <data name="Label.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Label.Inventory" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Label.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Label.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Label.Customers" xml:space="preserve"><value>Customers</value></data>
+  <data name="Label.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Label.Order" xml:space="preserve"><value>Order</value></data>
+  <data name="Label.Invoice" xml:space="preserve"><value>Invoice</value></data>
+  <data name="Label.Waybill" xml:space="preserve"><value>Waybill</value></data>
+  <data name="Label.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Label.Subtotal" xml:space="preserve"><value>Subtotal</value></data>
+  <data name="Label.Vat" xml:space="preserve"><value>VAT</value></data>
+  <data name="Label.Quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="Label.Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Label.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Label.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Label.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Label.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Label.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Label.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Label.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Label.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Label.Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Label.Import" xml:space="preserve"><value>Import</value></data>
+
+  <!-- Email Template Strings -->
+  <data name="Email.LowStockSubject" xml:space="preserve"><value>Low Stock Alert - {0} items require attention</value></data>
+  <data name="Email.WaybillFailedSubject" xml:space="preserve"><value>Waybill Submission Failed - {0}</value></data>
+  <data name="Email.WelcomeSubject" xml:space="preserve"><value>Welcome to Georgia ERP Platform</value></data>
+  <data name="Email.PasswordResetSubject" xml:space="preserve"><value>Password Reset Request</value></data>
+
+  <!-- Notification Strings -->
+  <data name="Notification.LowStockTitle" xml:space="preserve"><value>Low Stock Alert</value></data>
+  <data name="Notification.LowStockMessage" xml:space="preserve"><value>{0} items are below minimum stock level, {1} items are out of stock.</value></data>
+  <data name="Notification.OrderPlacedTitle" xml:space="preserve"><value>New Order Placed</value></data>
+  <data name="Notification.WaybillStatusTitle" xml:space="preserve"><value>Waybill Status Updated</value></data>
+</root>

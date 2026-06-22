@@ -7,7 +7,9 @@ using GeorgiaERP.Application.Common;
 using GeorgiaERP.Infrastructure;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Persistence;
+using System.Globalization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -182,6 +184,17 @@ try
     builder.Services.AddSignalR();
     builder.Services.AddSingleton<INotificationService, SignalRNotificationService>();
 
+    // ── Localization ─────────────────────────────────────────────────
+    builder.Services.AddLocalization();
+    builder.Services.Configure<RequestLocalizationOptions>(options =>
+    {
+        var supportedCultures = new[] { new CultureInfo("en-US"), new CultureInfo("ka-GE") };
+        options.DefaultRequestCulture = new RequestCulture("en-US");
+        options.SupportedCultures = supportedCultures;
+        options.SupportedUICultures = supportedCultures;
+        options.ApplyCurrentCultureToResponseHeaders = true;
+    });
+
     // ── Health Checks ─────────────────────────────────────────────────
     var healthChecks = builder.Services.AddHealthChecks()
         .AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
@@ -304,6 +317,7 @@ try
         });
     }
 
+    app.UseRequestLocalization();
     app.UseCors("AllowFrontend");
     app.UseRateLimiter();
     app.UseAuthentication();

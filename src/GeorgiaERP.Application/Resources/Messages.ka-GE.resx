@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- ვალიდაციის შეტყობინებები (Validation Messages) -->
+  <data name="Validation.Required" xml:space="preserve"><value>{0} სავალდებულოა.</value></data>
+  <data name="Validation.InvalidEmail" xml:space="preserve"><value>გთხოვთ შეიყვანოთ სწორი ელფოსტის მისამართი.</value></data>
+  <data name="Validation.InvalidPhone" xml:space="preserve"><value>გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი.</value></data>
+  <data name="Validation.MinLength" xml:space="preserve"><value>{0} უნდა შეიცავდეს მინიმუმ {1} სიმბოლოს.</value></data>
+  <data name="Validation.MaxLength" xml:space="preserve"><value>{0} არ უნდა აღემატებოდეს {1} სიმბოლოს.</value></data>
+  <data name="Validation.MustBePositive" xml:space="preserve"><value>{0} უნდა იყოს დადებითი რიცხვი.</value></data>
+  <data name="Validation.InvalidRange" xml:space="preserve"><value>{0} უნდა იყოს {1}-სა და {2}-ს შორის.</value></data>
+  <data name="Validation.DuplicateValue" xml:space="preserve"><value>ჩანაწერი ამ {0}-ით უკვე არსებობს.</value></data>
+  <data name="Validation.InvalidSku" xml:space="preserve"><value>SKU ფორმატი არასწორია. მოსალოდნელია ალფანუმერული ტირეებით.</value></data>
+  <data name="Validation.InvalidBarcode" xml:space="preserve"><value>შტრიხკოდის ფორმატი არასწორია.</value></data>
+  <data name="Validation.InvalidTin" xml:space="preserve"><value>საიდენტიფიკაციო ნომრის (ს/კ) ფორმატი არასწორია.</value></data>
+  <data name="Validation.PasswordTooWeak" xml:space="preserve"><value>პაროლი უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს, მათ შორის დიდ ასოს, პატარა ასოს, ციფრს და სპეციალურ სიმბოლოს.</value></data>
+
+  <!-- API შეცდომების შეტყობინებები (Error Messages) -->
+  <data name="Error.NotFound" xml:space="preserve"><value>{0} ვერ მოიძებნა.</value></data>
+  <data name="Error.Unauthorized" xml:space="preserve"><value>ამ რესურსზე წვდომისთვის საჭიროა ავტორიზაცია.</value></data>
+  <data name="Error.Forbidden" xml:space="preserve"><value>თქვენ არ გაქვთ ამ მოქმედების შესრულების უფლება.</value></data>
+  <data name="Error.Conflict" xml:space="preserve"><value>კონფლიქტი წარმოიქმნა. რესურსი შესაძლოა სხვა მომხმარებელმა შეცვალა.</value></data>
+  <data name="Error.InternalError" xml:space="preserve"><value>მოხდა მოულოდნელი შეცდომა. გთხოვთ სცადოთ მოგვიანებით.</value></data>
+  <data name="Error.RateLimitExceeded" xml:space="preserve"><value>ძალიან ბევრი მოთხოვნა. გთხოვთ მოიცადოთ.</value></data>
+  <data name="Error.InvalidCredentials" xml:space="preserve"><value>არასწორი მომხმარებლის სახელი ან პაროლი.</value></data>
+  <data name="Error.AccountLocked" xml:space="preserve"><value>ანგარიში დაბლოკილია ბევრი წარუმატებელი შესვლის მცდელობის გამო.</value></data>
+  <data name="Error.TokenExpired" xml:space="preserve"><value>თქვენი სესია ამოიწურა. გთხოვთ ხელახლა შეხვიდეთ.</value></data>
+  <data name="Error.InsufficientStock" xml:space="preserve"><value>არასაკმარისი მარაგი {0}-სთვის. ხელმისაწვდომი: {1}, მოთხოვნილი: {2}.</value></data>
+  <data name="Error.InvalidTransferState" xml:space="preserve"><value>ტრანსფერის ბრძანება ვერ შესრულდება ({0}) მიმდინარე მდგომარეობაში ({1}).</value></data>
+  <data name="Error.JournalNotBalanced" xml:space="preserve"><value>ბუღალტრული ჩანაწერი არ არის დაბალანსებული. დებეტი ({0:C}) არ უდრის კრედიტს ({1:C}).</value></data>
+  <data name="Error.WaybillSubmissionFailed" xml:space="preserve"><value>ზედნადების RS.GE-ზე გაგზავნა ვერ მოხერხდა: {0}.</value></data>
+
+  <!-- საერთო წარწერები (Common Labels) -->
+  <data name="Label.Product" xml:space="preserve"><value>პროდუქტი</value></data>
+  <data name="Label.Products" xml:space="preserve"><value>პროდუქტები</value></data>
+  <data name="Label.Category" xml:space="preserve"><value>კატეგორია</value></data>
+  <data name="Label.Inventory" xml:space="preserve"><value>ინვენტარი</value></data>
+  <data name="Label.Warehouse" xml:space="preserve"><value>საწყობი</value></data>
+  <data name="Label.Customer" xml:space="preserve"><value>მომხმარებელი</value></data>
+  <data name="Label.Customers" xml:space="preserve"><value>მომხმარებლები</value></data>
+  <data name="Label.Supplier" xml:space="preserve"><value>მომწოდებელი</value></data>
+  <data name="Label.Order" xml:space="preserve"><value>შეკვეთა</value></data>
+  <data name="Label.Invoice" xml:space="preserve"><value>ინვოისი</value></data>
+  <data name="Label.Waybill" xml:space="preserve"><value>ზედნადები</value></data>
+  <data name="Label.Total" xml:space="preserve"><value>ჯამი</value></data>
+  <data name="Label.Subtotal" xml:space="preserve"><value>ქვეჯამი</value></data>
+  <data name="Label.Vat" xml:space="preserve"><value>დღგ</value></data>
+  <data name="Label.Quantity" xml:space="preserve"><value>რაოდენობა</value></data>
+  <data name="Label.Price" xml:space="preserve"><value>ფასი</value></data>
+  <data name="Label.Status" xml:space="preserve"><value>სტატუსი</value></data>
+  <data name="Label.Date" xml:space="preserve"><value>თარიღი</value></data>
+  <data name="Label.Actions" xml:space="preserve"><value>მოქმედებები</value></data>
+  <data name="Label.Save" xml:space="preserve"><value>შენახვა</value></data>
+  <data name="Label.Cancel" xml:space="preserve"><value>გაუქმება</value></data>
+  <data name="Label.Delete" xml:space="preserve"><value>წაშლა</value></data>
+  <data name="Label.Edit" xml:space="preserve"><value>რედაქტირება</value></data>
+  <data name="Label.Search" xml:space="preserve"><value>ძიება</value></data>
+  <data name="Label.Export" xml:space="preserve"><value>ექსპორტი</value></data>
+  <data name="Label.Import" xml:space="preserve"><value>იმპორტი</value></data>
+
+  <!-- ელფოსტის შაბლონები (Email Template Strings) -->
+  <data name="Email.LowStockSubject" xml:space="preserve"><value>დაბალი მარაგის გაფრთხილება - {0} ერთეული საჭიროებს ყურადღებას</value></data>
+  <data name="Email.WaybillFailedSubject" xml:space="preserve"><value>ზედნადების გაგზავნა ვერ მოხერხდა - {0}</value></data>
+  <data name="Email.WelcomeSubject" xml:space="preserve"><value>კეთილი იყოს თქვენი მობრძანება Georgia ERP პლატფორმაზე</value></data>
+  <data name="Email.PasswordResetSubject" xml:space="preserve"><value>პაროლის აღდგენის მოთხოვნა</value></data>
+
+  <!-- შეტყობინებები (Notification Strings) -->
+  <data name="Notification.LowStockTitle" xml:space="preserve"><value>დაბალი მარაგის გაფრთხილება</value></data>
+  <data name="Notification.LowStockMessage" xml:space="preserve"><value>{0} ერთეული მინიმალურ მარაგზე ნაკლებია, {1} ერთეული ამოიწურა.</value></data>
+  <data name="Notification.OrderPlacedTitle" xml:space="preserve"><value>ახალი შეკვეთა შეიქმნა</value></data>
+  <data name="Notification.WaybillStatusTitle" xml:space="preserve"><value>ზედნადების სტატუსი განახლდა</value></data>
+</root>

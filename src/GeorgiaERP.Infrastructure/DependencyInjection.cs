@@ -7,6 +7,7 @@ using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
+using GeorgiaERP.Infrastructure.Localization;
 using GeorgiaERP.Infrastructure.Messaging;
 using GeorgiaERP.Infrastructure.Persistence;
 using GeorgiaERP.Infrastructure.RsGe;
@@ -117,6 +118,9 @@ public static class DependencyInjection
         // Email notification service (SMTP)
         services.Configure<SmtpEmailOptions>(configuration.GetSection(SmtpEmailOptions.SectionName));
         services.AddSingleton<IEmailService, SmtpEmailService>();
+
+        // Localization service (en-US / ka-GE resource files)
+        services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
 
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();
