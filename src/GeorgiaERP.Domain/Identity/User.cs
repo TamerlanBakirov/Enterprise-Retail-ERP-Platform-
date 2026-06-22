@@ -84,6 +84,29 @@ public class User : BaseEntity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    public void Update(
+        string? email = null,
+        string? firstName = null,
+        string? lastName = null,
+        string? firstNameKa = null,
+        string? lastNameKa = null,
+        string? phone = null,
+        Guid? defaultStoreId = null,
+        string? defaultLanguage = null,
+        bool? isActive = null)
+    {
+        if (email is not null) Email = email;
+        if (firstName is not null) FirstName = firstName;
+        if (lastName is not null) LastName = lastName;
+        if (firstNameKa is not null) FirstNameKa = firstNameKa;
+        if (lastNameKa is not null) LastNameKa = lastNameKa;
+        if (phone is not null) Phone = phone;
+        if (defaultStoreId.HasValue) DefaultStoreId = defaultStoreId;
+        if (defaultLanguage is not null) DefaultLanguage = defaultLanguage;
+        if (isActive.HasValue) IsActive = isActive.Value;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     private User() { }
 
     public static User Create(

@@ -33,3 +33,16 @@ public record CreateCustomerRequest(
     string? Gender,
     bool ConsentSms,
     bool ConsentEmail);
+
+public record UpdateCustomerRequest(
+    string? FirstName,
+    string? LastName,
+    string? FirstNameKa,
+    string? LastNameKa,
+    string? CompanyName,
+    string? Tin,
+    string? Phone,
+    string? Email,
+    bool? ConsentSms,
+    bool? ConsentEmail,
+    bool? IsActive);

@@ -8,9 +8,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
-/// <summary>
-/// User management endpoints for creating and listing users with role assignments.
-/// </summary>
 [Authorize]
 [Tags("Users")]
 [EnableRateLimiting("read")]
@@ -32,6 +29,13 @@ public class UsersController : ApiControllerBase
     {
         var result = await _mediator.Send(new GetUsersQuery(page, pageSize, search, isActive));
         return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetUserById(Guid id)
+    {
+        var result = await _mediator.Send(new GetUserByIdQuery(id));
+        return ToActionResult(result);
     }
 
     [HttpPost]
@@ -56,6 +60,18 @@ public class UsersController : ApiControllerBase
         if (result.IsFailure)
             return ToActionResult(result);
 
-        return CreatedAtAction(nameof(GetUsers), new { id = result.Value!.Id }, result.Value);
+        return CreatedAtAction(nameof(GetUserById), new { id = result.Value!.Id }, result.Value);
+    }
+
+    [HttpPut("{id:guid}")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
+    {
+        var result = await _mediator.Send(new UpdateUserCommand(
+            id, request.Email, request.FirstName, request.LastName,
+            request.FirstNameKa, request.LastNameKa, request.Phone,
+            request.DefaultStoreId, request.DefaultLanguage, request.IsActive));
+
+        return ToActionResult(result);
     }
 }

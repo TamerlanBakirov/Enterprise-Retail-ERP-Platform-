@@ -1,4 +1,5 @@
 using GeorgiaERP.Application.CRM.Commands;
+using GeorgiaERP.Application.CRM.DTOs;
 using GeorgiaERP.Application.CRM.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -7,9 +8,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeorgiaERP.Api.Controllers;
 
-/// <summary>
-/// Customer relationship management (CRM) including customer profiles and loyalty programs.
-/// </summary>
 [Authorize]
 [Tags("CRM")]
 [EnableRateLimiting("read")]
@@ -33,6 +31,13 @@ public class CustomersController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetCustomerById(Guid id)
+    {
+        var result = await _mediator.Send(new GetCustomerByIdQuery(id));
+        return ToActionResult(result);
+    }
+
     [HttpPost]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerCommand command)
@@ -40,7 +45,21 @@ public class CustomersController : ApiControllerBase
         var result = await _mediator.Send(command);
         if (result.IsFailure)
             return ToActionResult(result);
-        return Created($"/api/v1/customers/{result.Value!.Id}", result.Value);
+        return CreatedAtAction(nameof(GetCustomerById), new { id = result.Value!.Id }, result.Value);
+    }
+
+    [HttpPut("{id:guid}")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> UpdateCustomer(Guid id, [FromBody] UpdateCustomerRequest request)
+    {
+        var result = await _mediator.Send(new UpdateCustomerCommand(
+            id, request.FirstName, request.LastName,
+            request.FirstNameKa, request.LastNameKa,
+            request.CompanyName, request.Tin,
+            request.Phone, request.Email,
+            request.ConsentSms, request.ConsentEmail, request.IsActive));
+
+        return ToActionResult(result);
     }
 
     [HttpPost("{customerId:guid}/loyalty/earn")]
