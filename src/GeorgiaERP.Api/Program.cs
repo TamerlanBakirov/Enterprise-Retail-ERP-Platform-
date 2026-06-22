@@ -366,9 +366,7 @@ finally
     Log.CloseAndFlush();
 }
 
-/// <summary>
-/// Writes a minimal health response (just status text) for the liveness probe.
-/// </summary>
+// Writes a minimal health response (just status text) for the liveness probe.
 static Task WriteMinimalHealthResponse(HttpContext context, HealthReport report)
 {
     context.Response.ContentType = "application/json";
@@ -376,10 +374,8 @@ static Task WriteMinimalHealthResponse(HttpContext context, HealthReport report)
     return context.Response.WriteAsync($"{{\"status\":\"{status}\"}}");
 }
 
-/// <summary>
-/// Writes a detailed health response with per-component status, duration,
-/// and exception details for the readiness probe and admin diagnostics.
-/// </summary>
+// Writes a detailed health response with per-component status, duration,
+// and exception details for the readiness probe and admin diagnostics.
 static Task WriteDetailedHealthResponse(HttpContext context, HealthReport report)
 {
     context.Response.ContentType = "application/json";
