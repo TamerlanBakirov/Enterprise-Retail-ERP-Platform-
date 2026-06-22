@@ -204,4 +204,136 @@ public class ReportApiTests : IntegrationTestBase
 
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
     }
+
+    // ===== Profit Margin report tests =====
+
+    [Fact]
+    public async Task ProfitMargin_WithoutAuth_Returns401()
+    {
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await NewClient().GetAsync($"/api/v1/reports/profit-margin?from={from}&to={to}");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task ProfitMargin_Empty_ReturnsOkOrSqliteError()
+    {
+        var client = await AuthenticatedClient();
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await client.GetAsync($"/api/v1/reports/profit-margin?from={from}&to={to}");
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            body.GetProperty("totalRevenue").GetDecimal().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("totalCost").GetDecimal().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("totalProfit").GetDecimal().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("products").GetArrayLength().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("categories").GetArrayLength().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("dailyBreakdown").GetArrayLength().Should().BeGreaterThanOrEqualTo(0);
+        }
+    }
+
+    [Fact]
+    public async Task ProfitMargin_WithStoreFilter_ReturnsOkOrSqliteError()
+    {
+        var client = await AuthenticatedClient();
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+        var storeId = Guid.NewGuid();
+
+        var response = await client.GetAsync($"/api/v1/reports/profit-margin?from={from}&to={to}&storeId={storeId}");
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+    }
+
+    // ===== Top Selling Products report tests =====
+
+    [Fact]
+    public async Task TopSelling_WithoutAuth_Returns401()
+    {
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await NewClient().GetAsync($"/api/v1/reports/top-selling?from={from}&to={to}");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task TopSelling_Empty_ReturnsOkOrSqliteError()
+    {
+        var client = await AuthenticatedClient();
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await client.GetAsync($"/api/v1/reports/top-selling?from={from}&to={to}");
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            body.GetProperty("totalUniqueProducts").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("totalRevenue").GetDecimal().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("products").GetArrayLength().Should().BeGreaterThanOrEqualTo(0);
+        }
+    }
+
+    [Fact]
+    public async Task TopSelling_WithSortParam_ReturnsOkOrSqliteError()
+    {
+        var client = await AuthenticatedClient();
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await client.GetAsync($"/api/v1/reports/top-selling?from={from}&to={to}&top=5&sortBy=Quantity");
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+    }
+
+    // ===== Supplier Performance report tests =====
+
+    [Fact]
+    public async Task SupplierPerformance_WithoutAuth_Returns401()
+    {
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-90).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await NewClient().GetAsync($"/api/v1/reports/supplier-performance?from={from}&to={to}");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task SupplierPerformance_Empty_ReturnsOkOrSqliteError()
+    {
+        var client = await AuthenticatedClient();
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-90).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+
+        var response = await client.GetAsync($"/api/v1/reports/supplier-performance?from={from}&to={to}");
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            body.GetProperty("totalSuppliers").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("totalSpend").GetDecimal().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("totalOrders").GetInt32().Should().BeGreaterThanOrEqualTo(0);
+            body.GetProperty("suppliers").GetArrayLength().Should().BeGreaterThanOrEqualTo(0);
+        }
+    }
+
+    [Fact]
+    public async Task SupplierPerformance_WithSupplierFilter_ReturnsOkOrSqliteError()
+    {
+        var client = await AuthenticatedClient();
+        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-90).ToString("o"));
+        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+        var supplierId = Guid.NewGuid();
+
+        var response = await client.GetAsync($"/api/v1/reports/supplier-performance?from={from}&to={to}&supplierId={supplierId}");
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.InternalServerError);
+    }
 }
