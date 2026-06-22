@@ -128,6 +128,10 @@ public class ErpApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IFileStorageService>();
             services.AddSingleton<IFileStorageService, InMemoryFileStorageService>();
 
+            // Replace webhook service with null implementation for tests
+            services.RemoveAll<IWebhookService>();
+            services.AddSingleton<IWebhookService, NullWebhookService>();
+
             // Replace health checks with basic (no external probes in tests)
             var healthDescriptors = services
                 .Where(d => d.ServiceType.FullName?.Contains("HealthCheck") == true
@@ -216,6 +220,12 @@ public class ErpApiFactory : WebApplicationFactory<Program>
         public Task SendToUserAsync(Guid userId, string eventType, object payload, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
         public Task SendToGroupAsync(string group, string eventType, object payload, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    private sealed class NullWebhookService : IWebhookService
+    {
+        public Task DeliverAsync(string eventType, object payload, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }
 

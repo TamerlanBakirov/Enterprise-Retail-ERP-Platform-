@@ -7,6 +7,7 @@ using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.Export;
 using GeorgiaERP.Infrastructure.FileStorage;
 using GeorgiaERP.Infrastructure.HealthChecks;
+using GeorgiaERP.Infrastructure.Webhooks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
 using GeorgiaERP.Infrastructure.Localization;
@@ -130,6 +131,10 @@ public static class DependencyInjection
         // File storage service (local disk)
         services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+
+        // Webhook delivery service
+        services.AddHttpClient("webhook");
+        services.AddSingleton<IWebhookService, WebhookDeliveryService>();
 
         // Background cleanup of expired/revoked refresh tokens
         services.AddHostedService<ExpiredRefreshTokenCleanupService>();

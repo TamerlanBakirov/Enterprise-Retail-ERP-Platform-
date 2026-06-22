@@ -72,6 +72,10 @@ public interface IAppDbContext
     // Files
     DbSet<Domain.Common.FileMetadata> FileMetadata { get; }
 
+    // Webhooks
+    DbSet<Domain.Common.WebhookSubscription> WebhookSubscriptions { get; }
+    DbSet<Domain.Common.WebhookDeliveryLog> WebhookDeliveryLogs { get; }
+
     // Audit
     DbSet<Domain.Common.AuditLog> AuditLogs { get; }
 

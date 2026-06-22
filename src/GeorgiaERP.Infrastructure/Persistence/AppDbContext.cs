@@ -108,6 +108,10 @@ public class AppDbContext : DbContext, IAppDbContext
     // Files
     public DbSet<FileMetadata> FileMetadata => Set<FileMetadata>();
 
+    // Webhooks
+    public DbSet<WebhookSubscription> WebhookSubscriptions => Set<WebhookSubscription>();
+    public DbSet<WebhookDeliveryLog> WebhookDeliveryLogs => Set<WebhookDeliveryLog>();
+
     // Audit
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
