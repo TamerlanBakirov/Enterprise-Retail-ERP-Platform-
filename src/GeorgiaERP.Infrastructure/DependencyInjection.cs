@@ -8,6 +8,7 @@ using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
 using GeorgiaERP.Infrastructure.Persistence;
+using GeorgiaERP.Infrastructure.Reporting;
 using GeorgiaERP.Infrastructure.RsGe;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -29,6 +30,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<IAuditContextAccessor, AuditContextAccessor>();
+        services.AddScoped<AuditSaveChangesInterceptor>();
+
         services.AddDbContext<AppDbContext>((provider, options) =>
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -42,6 +46,8 @@ public static class DependencyInjection
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorCodesToAdd: null);
             });
+
+            options.AddInterceptors(provider.GetRequiredService<AuditSaveChangesInterceptor>());
         });
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
@@ -112,6 +118,8 @@ public static class DependencyInjection
         services.AddScoped<ILicenseValidator, LocalLicenseValidator>();
         services.AddSingleton<ILicenseKeyValidator, HmacLicenseKeyValidator>();
         services.AddSingleton<IMachineIdProvider, MachineIdProviderService>();
+
+        services.AddSingleton<IPdfGenerationService, PdfGenerationService>();
 
         return services;
     }

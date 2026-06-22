@@ -235,6 +235,7 @@ try
     app.UseCors("AllowFrontend");
     app.UseRateLimiter();
     app.UseAuthentication();
+    app.UseMiddleware<GeorgiaERP.Api.Middleware.AuditContextMiddleware>();
     app.UseAuthorization();
 
     // ── Prometheus Metrics Endpoint ───────────────────────────────────

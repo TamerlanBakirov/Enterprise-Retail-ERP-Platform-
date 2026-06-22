@@ -19,7 +19,8 @@ public static class SeedData
 
         try
         {
-            await dbContext.Database.MigrateAsync();
+            if (!dbContext.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) ?? true)
+                await dbContext.Database.MigrateAsync();
             await SeedRolesAndPermissionsAsync(dbContext);
             await SeedAdminUserAsync(dbContext, passwordService, configuration, logger);
             logger.LogInformation("Database seeded successfully");

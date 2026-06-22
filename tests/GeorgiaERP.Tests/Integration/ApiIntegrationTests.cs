@@ -220,6 +220,13 @@ public class ApiIntegrationTests : IClassFixture<ErpApiFactory>
     }
 
     [Fact]
+    public async Task AuditLogs_Endpoint_RequiresAuthentication()
+    {
+        var response = await NewClient().GetAsync("/api/v1/audit-logs?page=1&pageSize=10");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task Login_IsLocked_AfterFiveFailedAttempts()
     {
         var username = $"lock-{Guid.NewGuid():N}";

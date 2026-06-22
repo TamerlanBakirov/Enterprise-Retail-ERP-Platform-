@@ -84,6 +84,24 @@ public class PosController : ApiControllerBase
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
+
+    [HttpGet("transactions/{transactionId:guid}/receipt")]
+    public async Task<IActionResult> GetReceipt(Guid transactionId)
+    {
+        var result = await _mediator.Send(new GenerateReceiptQuery(transactionId));
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return File(result.Value!, "application/pdf", $"receipt-{transactionId}.pdf");
+    }
+
+    [HttpGet("transactions/{transactionId:guid}/invoice")]
+    public async Task<IActionResult> GetInvoice(Guid transactionId)
+    {
+        var result = await _mediator.Send(new GenerateInvoiceQuery(transactionId));
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return File(result.Value!, "application/pdf", $"invoice-{transactionId}.pdf");
+    }
 }
 
 public record ClosePosSessionRequest(decimal ClosingBalance, string? Notes = null);

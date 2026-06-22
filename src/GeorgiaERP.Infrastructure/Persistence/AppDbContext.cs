@@ -104,6 +104,9 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<ShippingOrder> ShippingOrders => Set<ShippingOrder>();
     public DbSet<ShippingOrderLine> ShippingOrderLines => Set<ShippingOrderLine>();
 
+    // Compliance – Audit
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(_schema);

@@ -53,6 +53,14 @@ public class ErpApiFactory : WebApplicationFactory<Program>
 
             _connection.Open();
 
+            var schemaOptions = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(_connection)
+                .Options;
+            using (var schemaDb = new AppDbContext(schemaOptions))
+            {
+                schemaDb.Database.EnsureCreated();
+            }
+
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlite(_connection);
@@ -60,7 +68,6 @@ public class ErpApiFactory : WebApplicationFactory<Program>
                     w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             });
 
-            // Ensure schema created
             services.AddSingleton<SqliteConnection>(_connection);
 
             // Stub out external infrastructure
@@ -126,14 +133,7 @@ public class ErpApiFactory : WebApplicationFactory<Program>
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        var host = base.CreateHost(builder);
-
-        using var scope = host.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.EnsureDeleted();
-        db.Database.EnsureCreated();
-
-        return host;
+        return base.CreateHost(builder);
     }
 
     protected override void Dispose(bool disposing)

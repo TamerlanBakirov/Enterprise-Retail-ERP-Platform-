@@ -69,5 +69,8 @@ public interface IAppDbContext
     DbSet<ShippingOrder> ShippingOrders { get; }
     DbSet<ShippingOrderLine> ShippingOrderLines { get; }
 
+    // Compliance – Audit
+    DbSet<AuditLog> AuditLogs { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
