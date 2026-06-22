@@ -5,9 +5,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Application.Organization.Queries;
 
+public record GetCompanyQuery : IRequest<CompanyDto?>;
+
 public record GetStoresQuery(bool? IsActive = null) : IRequest<IReadOnlyList<StoreDto>>;
 
 public record GetWarehousesQuery(bool? IsActive = null) : IRequest<IReadOnlyList<WarehouseDto>>;
+
+public class GetCompanyQueryHandler : IRequestHandler<GetCompanyQuery, CompanyDto?>
+{
+    private readonly IAppDbContext _dbContext;
+    public GetCompanyQueryHandler(IAppDbContext dbContext) => _dbContext = dbContext;
+
+    public async Task<CompanyDto?> Handle(GetCompanyQuery request, CancellationToken cancellationToken)
+    {
+        return await _dbContext.Companies
+            .AsNoTracking()
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new CompanyDto(
+                c.Id, c.Code, c.Name, c.NameKa, c.Tin, c.IsVatPayer,
+                c.VatRegistrationDate, c.LegalAddress, c.ActualAddress,
+                c.Phone, c.Email, c.IsActive, c.CreatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+}
 
 public class GetStoresQueryHandler : IRequestHandler<GetStoresQuery, IReadOnlyList<StoreDto>>
 {

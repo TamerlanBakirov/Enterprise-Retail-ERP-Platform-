@@ -43,4 +43,20 @@ public class Store : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Update(string name, string? nameKa, string? address, string? city, string? region, string? phone)
+    {
+        Name = name;
+        NameKa = nameKa;
+        Address = address;
+        City = city;
+        Region = region;
+        Phone = phone;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetManager(Guid? managerUserId) { ManagerUserId = managerUserId; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void SetLocation(double? latitude, double? longitude) { Latitude = latitude; Longitude = longitude; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void Activate() { IsActive = true; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void Deactivate() { IsActive = false; UpdatedAt = DateTimeOffset.UtcNow; }
 }

@@ -35,4 +35,25 @@ public class Company : BaseEntity
             UpdatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    public void Update(string name, string? nameKa, string? legalAddress, string? actualAddress, string? phone, string? email)
+    {
+        Name = name;
+        NameKa = nameKa;
+        LegalAddress = legalAddress;
+        ActualAddress = actualAddress;
+        Phone = phone;
+        Email = email;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetVatStatus(bool isVatPayer, DateTimeOffset? registrationDate = null)
+    {
+        IsVatPayer = isVatPayer;
+        VatRegistrationDate = registrationDate;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Activate() { IsActive = true; UpdatedAt = DateTimeOffset.UtcNow; }
+    public void Deactivate() { IsActive = false; UpdatedAt = DateTimeOffset.UtcNow; }
 }

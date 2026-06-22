@@ -1,3 +1,5 @@
+using GeorgiaERP.Application.Organization.Commands;
+using GeorgiaERP.Application.Organization.DTOs;
 using GeorgiaERP.Application.Organization.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -11,24 +13,66 @@ namespace GeorgiaERP.Api.Controllers;
 /// </summary>
 [Authorize]
 [Tags("Organization")]
-[EnableRateLimiting("read")]
 public class OrganizationController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
-    public OrganizationController(IMediator mediator)
+    public OrganizationController(IMediator mediator) => _mediator = mediator;
+
+    [HttpGet("company")]
+    [EnableRateLimiting("read")]
+    public async Task<IActionResult> GetCompany()
     {
-        _mediator = mediator;
+        var result = await _mediator.Send(new GetCompanyQuery());
+        if (result is null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpPost("company")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
+    [HttpPut("company/{id:guid}")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> UpdateCompany(Guid id, [FromBody] UpdateCompanyCommand command)
+    {
+        if (id != command.Id) return BadRequest("ID mismatch.");
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
     }
 
     [HttpGet("stores")]
+    [EnableRateLimiting("read")]
     public async Task<IActionResult> GetStores([FromQuery] bool? isActive = null)
     {
         var result = await _mediator.Send(new GetStoresQuery(isActive));
         return Ok(result);
     }
 
+    [HttpPost("stores")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> CreateStore([FromBody] CreateStoreCommand command)
+    {
+        var result = await _mediator.Send(command);
+        if (result.IsFailure) return ToActionResult(result);
+        return CreatedAtAction(nameof(GetStores), null, result.Value);
+    }
+
+    [HttpPut("stores/{id:guid}")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> UpdateStore(Guid id, [FromBody] UpdateStoreCommand command)
+    {
+        if (id != command.Id) return BadRequest("ID mismatch.");
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
     [HttpGet("warehouses")]
+    [EnableRateLimiting("read")]
     public async Task<IActionResult> GetWarehouses([FromQuery] bool? isActive = null)
     {
         var result = await _mediator.Send(new GetWarehousesQuery(isActive));
