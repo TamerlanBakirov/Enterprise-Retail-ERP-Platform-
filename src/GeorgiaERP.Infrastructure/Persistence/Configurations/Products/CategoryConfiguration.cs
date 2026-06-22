@@ -47,5 +47,9 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.HasMany(c => c.Products)
             .WithOne(p => p.Category)
             .HasForeignKey(p => p.CategoryId);
+
+        // Parent category FK index for hierarchy traversal
+        builder.HasIndex(c => c.ParentId)
+            .HasDatabaseName("IX_categories_parent");
     }
 }

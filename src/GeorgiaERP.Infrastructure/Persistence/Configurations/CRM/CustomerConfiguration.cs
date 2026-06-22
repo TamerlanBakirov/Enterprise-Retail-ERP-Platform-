@@ -88,5 +88,24 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.HasMany(c => c.LoyaltyTransactions)
             .WithOne(lt => lt.Customer)
             .HasForeignKey(lt => lt.CustomerId);
+
+        // Phone number lookup for customer identification at POS
+        builder.HasIndex(c => c.Phone)
+            .HasDatabaseName("IX_customers_phone")
+            .HasFilter("\"Phone\" IS NOT NULL");
+
+        // Email lookup for customer communications
+        builder.HasIndex(c => c.Email)
+            .HasDatabaseName("IX_customers_email")
+            .HasFilter("\"Email\" IS NOT NULL");
+
+        // TIN lookup for B2B customers
+        builder.HasIndex(c => c.Tin)
+            .HasDatabaseName("IX_customers_tin")
+            .HasFilter("\"Tin\" IS NOT NULL");
+
+        // Loyalty tier for tier-based queries and promotions
+        builder.HasIndex(c => c.LoyaltyTier)
+            .HasDatabaseName("IX_customers_loyalty_tier");
     }
 }

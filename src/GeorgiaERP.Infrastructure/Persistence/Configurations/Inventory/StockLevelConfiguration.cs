@@ -44,6 +44,19 @@ public class StockLevelConfiguration : IEntityTypeConfiguration<StockLevel>
         builder.Property(s => s.UpdatedAt);
 
         builder.HasIndex(s => new { s.ProductId, s.VariantId, s.WarehouseId })
-            .IsUnique();
+            .IsUnique()
+            .HasDatabaseName("IX_stock_levels_product_variant_warehouse");
+
+        // FK index for warehouse stock queries
+        builder.HasIndex(s => s.WarehouseId)
+            .HasDatabaseName("IX_stock_levels_warehouse");
+
+        // Product stock across all warehouses
+        builder.HasIndex(s => s.ProductId)
+            .HasDatabaseName("IX_stock_levels_product");
+
+        // Composite for fast product+warehouse lookup (without variant)
+        builder.HasIndex(s => new { s.ProductId, s.WarehouseId })
+            .HasDatabaseName("IX_stock_levels_product_warehouse");
     }
 }

@@ -37,5 +37,13 @@ public class TransferOrderLineConfiguration : IEntityTypeConfiguration<TransferO
             .WithMany(to => to.Lines)
             .HasForeignKey(t => t.TransferOrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for transfer order line lookups
+        builder.HasIndex(t => t.TransferOrderId)
+            .HasDatabaseName("IX_transfer_order_lines_transfer_order");
+
+        // Product transfer tracking
+        builder.HasIndex(t => t.ProductId)
+            .HasDatabaseName("IX_transfer_order_lines_product");
     }
 }

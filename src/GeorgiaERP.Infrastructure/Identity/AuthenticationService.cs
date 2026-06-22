@@ -15,24 +15,35 @@ public class AuthenticationService : IAuthenticationService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly ITotpVerifier _totpVerifier;
+    private readonly ITotpSecretProtector _totpSecretProtector;
     private readonly int _refreshTokenExpiryDays;
+    private readonly int _maxFailedAttempts;
+    private readonly TimeSpan _lockoutDuration;
 
     public AuthenticationService(
         AppDbContext dbContext,
         IPasswordService passwordService,
         IJwtTokenService jwtTokenService,
+        ITotpVerifier totpVerifier,
+        ITotpSecretProtector totpSecretProtector,
         IConfiguration configuration,
         ILogger<AuthenticationService> logger)
     {
         _dbContext = dbContext;
         _passwordService = passwordService;
         _jwtTokenService = jwtTokenService;
+        _totpVerifier = totpVerifier;
+        _totpSecretProtector = totpSecretProtector;
         _configuration = configuration;
         _logger = logger;
         _refreshTokenExpiryDays = int.TryParse(_configuration["Jwt:RefreshTokenExpiryDays"], out var days) ? days : 7;
+        _maxFailedAttempts = int.TryParse(_configuration["Authentication:MaxFailedAttempts"], out var attempts) ? attempts : 5;
+        _lockoutDuration = TimeSpan.FromMinutes(
+            int.TryParse(_configuration["Authentication:LockoutMinutes"], out var minutes) ? minutes : 15);
     }
 
-    public async Task<AuthResult> LoginAsync(string username, string password, string? ipAddress, string? deviceInfo)
+    public async Task<AuthResult> LoginAsync(string username, string password, string? twoFactorCode, string? ipAddress, string? deviceInfo)
     {
         var user = await _dbContext.Users
             .Include(u => u.UserRoles)
@@ -61,9 +72,27 @@ public class AuthenticationService : IAuthenticationService
 
         if (!_passwordService.VerifyPassword(password, user.PasswordHash))
         {
+            user.RecordFailedLogin(_maxFailedAttempts, _lockoutDuration);
+            await _dbContext.SaveChangesAsync();
             _logger.LogWarning("Failed login attempt for user: {UserId}", user.Id);
             return new AuthResult(false, null, null, null, "Invalid username or password.");
         }
+
+        if (user.Is2FaEnabled &&
+            (string.IsNullOrWhiteSpace(user.TotpSecret) || string.IsNullOrWhiteSpace(twoFactorCode) ||
+             !VerifyTwoFactorSecret(user.TotpSecret, twoFactorCode)))
+        {
+            user.RecordFailedLogin(_maxFailedAttempts, _lockoutDuration);
+            await _dbContext.SaveChangesAsync();
+            _logger.LogWarning("Invalid two-factor code for user: {UserId}", user.Id);
+            return new AuthResult(false, null, null, null, "Invalid two-factor authentication code.");
+        }
+
+        if (user.Is2FaEnabled && user.TotpSecret is not null &&
+            !user.TotpSecret.StartsWith("v1.", StringComparison.Ordinal))
+            user.ReplaceTwoFactorSecret(_totpSecretProtector.Protect(user.TotpSecret));
+
+        user.RecordSuccessfulLogin();
 
         var roles = user.UserRoles
             .Select(ur => ur.Role.Code)
@@ -215,5 +244,18 @@ public class AuthenticationService : IAuthenticationService
     {
         var randomBytes = RandomNumberGenerator.GetBytes(64);
         return Convert.ToBase64String(randomBytes);
+    }
+
+    private bool VerifyTwoFactorSecret(string protectedSecret, string code)
+    {
+        try
+        {
+            return _totpVerifier.Verify(_totpSecretProtector.Unprotect(protectedSecret), code, DateTimeOffset.UtcNow);
+        }
+        catch (Exception ex) when (ex is CryptographicException or FormatException)
+        {
+            _logger.LogError(ex, "Stored TOTP secret could not be decrypted");
+            return false;
+        }
     }
 }

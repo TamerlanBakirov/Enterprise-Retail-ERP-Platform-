@@ -50,3 +50,18 @@ public record AdjustStockRequest(
     Guid WarehouseId,
     decimal NewQuantity,
     string Reason);
+
+public record CreateTransferOrderRequest(
+    Guid SourceWarehouseId,
+    Guid DestinationWarehouseId,
+    List<TransferLineInput> Lines,
+    string? Notes);
+
+public record TransferLineInput(
+    Guid ProductId,
+    decimal Quantity);
+
+public record CreateStockCountRequest(
+    Guid WarehouseId,
+    string CountType,
+    Guid? ProductId);

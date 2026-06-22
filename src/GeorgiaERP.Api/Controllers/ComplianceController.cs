@@ -1,7 +1,6 @@
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Compliance.Commands;
-using GeorgiaERP.Infrastructure.RsGe;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,18 +32,19 @@ public class ComplianceController : ApiControllerBase
             {
                 Service = "RS.GE Integration",
                 Status = "Connected",
-                ServerIp = ip,
-                WaybillServiceUrl = "https://services.rs.ge/WayBillService/WayBillService.asmx",
-                InvoiceServiceUrl = "https://webserv.rs.ge/specinvoices/SpecInvoicesService.asmx"
+                // SECURITY: Do not expose server IP or internal service URLs to clients.
+                // These are logged server-side for troubleshooting.
+                Timestamp = DateTimeOffset.UtcNow
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
+            // SECURITY: Do not expose exception details to the client (OWASP A09:2021).
             return Ok(new
             {
                 Service = "RS.GE Integration",
-                Status = "Error",
-                Error = ex.Message
+                Status = "Unavailable",
+                Timestamp = DateTimeOffset.UtcNow
             });
         }
     }
@@ -73,6 +73,9 @@ public class ComplianceController : ApiControllerBase
     [HttpGet("rsge/tin/{tin}/name")]
     public async Task<IActionResult> GetNameFromTin(string tin)
     {
+        if (!IsValidTin(tin))
+            return BadRequest(new { error = "TIN must be 9-11 digits." });
+
         var result = await _rsGeClient.GetNameFromTinAsync(tin);
         return Ok(result);
     }
@@ -80,9 +83,19 @@ public class ComplianceController : ApiControllerBase
     [HttpGet("rsge/tin/{tin}/vat-status")]
     public async Task<IActionResult> GetVatStatus(string tin)
     {
+        if (!IsValidTin(tin))
+            return BadRequest(new { error = "TIN must be 9-11 digits." });
+
         var isVatPayer = await _rsGeClient.IsVatPayerAsync(tin);
         return Ok(new { Tin = tin, IsVatPayer = isVatPayer });
     }
+
+    /// <summary>
+    /// Validates that a TIN is 9-11 digits only, preventing injection of
+    /// arbitrary strings into RS.GE SOAP requests.
+    /// </summary>
+    private static bool IsValidTin(string tin) =>
+        !string.IsNullOrWhiteSpace(tin) && System.Text.RegularExpressions.Regex.IsMatch(tin, @"^\d{9,11}$");
 
     [HttpPost("waybills")]
     public async Task<IActionResult> CreateWaybill([FromBody] CreateWaybillCommand command)
@@ -90,7 +103,7 @@ public class ComplianceController : ApiControllerBase
         var result = await _mediator.Send(command);
 
         if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
+            return ToActionResult(result);
 
         return Accepted(result.Value);
     }
@@ -99,21 +112,25 @@ public class ComplianceController : ApiControllerBase
     public async Task<IActionResult> ConfirmWaybill(Guid fiscalDocumentId)
     {
         var result = await _mediator.Send(new EnqueueWaybillOperationCommand(fiscalDocumentId, RsGeOperation.ConfirmWaybill));
-        return result.IsSuccess ? Accepted() : BadRequest(new { error = result.Error });
+        return result.IsSuccess ? Accepted() : ToActionResult(result);
     }
 
     [HttpPost("waybills/{fiscalDocumentId:guid}/close")]
     public async Task<IActionResult> CloseWaybill(Guid fiscalDocumentId)
     {
         var result = await _mediator.Send(new EnqueueWaybillOperationCommand(fiscalDocumentId, RsGeOperation.CloseWaybill));
-        return result.IsSuccess ? Accepted() : BadRequest(new { error = result.Error });
+        return result.IsSuccess ? Accepted() : ToActionResult(result);
     }
 
     [HttpGet("waybills")]
     public async Task<IActionResult> GetWaybills(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var waybills = await _dbContext.RsGeWaybills
             .OrderByDescending(w => w.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -133,7 +150,7 @@ public class ComplianceController : ApiControllerBase
                 w.EndAddress,
                 w.CreatedAt
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(waybills);
     }
@@ -143,8 +160,12 @@ public class ComplianceController : ApiControllerBase
         [FromQuery] string? type = null,
         [FromQuery] string? status = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var query = _dbContext.FiscalDocuments.AsQueryable();
 
         if (!string.IsNullOrEmpty(type) && Enum.TryParse<Domain.Compliance.FiscalDocumentType>(type, true, out var docType))
@@ -173,13 +194,16 @@ public class ComplianceController : ApiControllerBase
                 d.LastError,
                 d.CreatedAt
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(documents);
     }
 
     [HttpGet("vat-summary")]
-    public async Task<IActionResult> GetVatSummary([FromQuery] int? year = null, [FromQuery] int? month = null)
+    public async Task<IActionResult> GetVatSummary(
+        [FromQuery] int? year = null,
+        [FromQuery] int? month = null,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         year ??= now.Year;
@@ -190,7 +214,7 @@ public class ComplianceController : ApiControllerBase
 
         var declaration = await _dbContext.VatDeclarations
             .Where(v => v.PeriodStart >= periodStart && v.PeriodEnd <= periodEnd)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         return Ok(new
         {
@@ -200,6 +224,47 @@ public class ComplianceController : ApiControllerBase
             NetVat = declaration?.NetVat ?? 0m,
             Status = declaration?.Status.ToString() ?? "NotFiled",
             Currency = "GEL"
+        });
+    }
+
+    [HttpGet("deadlines")]
+    public async Task<IActionResult> GetSubmissionDeadlines(
+        [FromQuery] int warningDays = 7,
+        CancellationToken cancellationToken = default)
+    {
+        warningDays = Math.Clamp(warningDays, 1, 30);
+        var now = DateTimeOffset.UtcNow;
+        var warningCutoff = now.AddDays(warningDays);
+        var pendingStatuses = new[]
+        {
+            Domain.Compliance.FiscalDocumentStatus.Pending,
+            Domain.Compliance.FiscalDocumentStatus.Queued,
+            Domain.Compliance.FiscalDocumentStatus.Failed
+        };
+
+        var atRisk = await _dbContext.FiscalDocuments
+            .Where(d => d.SubmissionDeadline != null && pendingStatuses.Contains(d.Status) &&
+                        d.SubmissionDeadline <= warningCutoff)
+            .OrderBy(d => d.SubmissionDeadline)
+            .Select(d => new
+            {
+                d.Id,
+                Type = d.DocumentType.ToString(),
+                d.InternalRef,
+                Status = d.Status.ToString(),
+                Deadline = d.SubmissionDeadline,
+                IsOverdue = d.SubmissionDeadline < now,
+                d.LastError
+            })
+            .Take(200)
+            .ToListAsync(cancellationToken);
+
+        return Ok(new
+        {
+            CheckedAt = now,
+            OverdueCount = atRisk.Count(d => d.IsOverdue),
+            DueSoonCount = atRisk.Count(d => !d.IsOverdue),
+            Documents = atRisk
         });
     }
 }

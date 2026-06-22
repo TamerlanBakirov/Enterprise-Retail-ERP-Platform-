@@ -68,7 +68,7 @@ public class ProductsController : ApiControllerBase
         var result = await _mediator.Send(command);
 
         if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
+            return ToActionResult(result);
 
         return CreatedAtAction(nameof(GetProduct), new { id = result.Value!.Id }, result.Value);
     }

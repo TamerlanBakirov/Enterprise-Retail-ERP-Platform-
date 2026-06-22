@@ -1,20 +1,17 @@
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using GeorgiaERP.Desktop.Services;
 using GeorgiaERP.Desktop.Views.Shell;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class LoginViewModel : ObservableObject
+public partial class LoginViewModel : BaseViewModel
 {
     private readonly IAuthService _authService;
     private readonly ISettingsService _settings;
 
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _serverUrl = string.Empty;
-    [ObservableProperty] private string? _errorMessage;
-    [ObservableProperty] private bool _isLoading;
 
     public LoginViewModel(IAuthService authService, ISettingsService settings)
     {
@@ -23,7 +20,7 @@ public partial class LoginViewModel : ObservableObject
         _serverUrl = settings.ApiBaseUrl.Replace("/api/v1/", "");
     }
 
-    public async Task LoginAsync(string password)
+    public async Task LoginAsync(string password, string? twoFactorCode)
     {
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(password))
         {
@@ -31,21 +28,24 @@ public partial class LoginViewModel : ObservableObject
             return;
         }
 
-        ErrorMessage = null;
-        IsLoading = true;
-
-        try
+        await ExecuteAsync(async () =>
         {
             if (!string.IsNullOrWhiteSpace(ServerUrl))
             {
                 var url = ServerUrl.TrimEnd('/');
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var serverUri) ||
+                    (serverUri.Scheme != Uri.UriSchemeHttps && !serverUri.IsLoopback))
+                {
+                    ErrorMessage = "Remote servers must use HTTPS";
+                    return;
+                }
                 if (!url.EndsWith("/api/v1")) url += "/api/v1/";
                 else url += "/";
                 _settings.ApiBaseUrl = url;
                 _settings.Save();
             }
 
-            var (success, error) = await _authService.LoginAsync(Username, password);
+            var (success, error) = await _authService.LoginAsync(Username, password, twoFactorCode);
             if (success)
             {
                 var mainWindow = new MainWindow();
@@ -57,14 +57,6 @@ public partial class LoginViewModel : ObservableObject
             {
                 ErrorMessage = error ?? "Login failed";
             }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Connection error: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        });
     }
 }

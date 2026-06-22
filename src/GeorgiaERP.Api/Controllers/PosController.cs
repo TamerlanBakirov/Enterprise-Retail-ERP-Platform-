@@ -20,7 +20,9 @@ public class PosController : ApiControllerBase
     public async Task<IActionResult> OpenSession([FromBody] OpenPosSessionCommand command)
     {
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Ok(result.Value);
     }
 
     [HttpPost("sessions/{sessionId:guid}/close")]
@@ -28,7 +30,9 @@ public class PosController : ApiControllerBase
     {
         var command = new ClosePosSessionCommand(sessionId, request.ClosingBalance, request.Notes);
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Ok(result.Value) : BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Ok(result.Value);
     }
 
     [HttpGet("sessions")]
@@ -46,10 +50,8 @@ public class PosController : ApiControllerBase
     public async Task<IActionResult> CreateTransaction([FromBody] CreatePosTransactionCommand command)
     {
         var result = await _mediator.Send(command);
-
         if (result.IsFailure)
-            return BadRequest(new { error = result.Error });
-
+            return ToActionResult(result);
         return Created($"/api/v1/pos/transactions/{result.Value!.TransactionId}", result.Value);
     }
 
@@ -72,7 +74,7 @@ public class PosController : ApiControllerBase
     public async Task<IActionResult> GetTransaction(Guid transactionId)
     {
         var result = await _mediator.Send(new GetPosTransactionDetailQuery(transactionId));
-        return result.IsSuccess ? Ok(result.Value) : NotFound(new { error = result.Error });
+        return ToActionResult(result);
     }
 
     [HttpPost("transactions/{transactionId:guid}/void")]
@@ -80,7 +82,7 @@ public class PosController : ApiControllerBase
     {
         var command = new VoidPosTransactionCommand(transactionId, CurrentUserId, request.Reason);
         var result = await _mediator.Send(command);
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return ToActionResult(result);
     }
 }
 

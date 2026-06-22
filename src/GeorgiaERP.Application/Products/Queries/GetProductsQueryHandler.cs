@@ -16,7 +16,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
 
     public async Task<PagedResult<ProductDto>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Products.AsQueryable();
+        var query = _dbContext.Products.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -24,7 +24,8 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
             query = query.Where(p =>
                 p.Sku.ToLower().Contains(search) ||
                 p.Name.ToLower().Contains(search) ||
-                (p.NameKa != null && p.NameKa.ToLower().Contains(search)));
+                (p.NameKa != null && p.NameKa.ToLower().Contains(search)) ||
+                p.Barcodes.Any(b => b.Barcode.Contains(search)));
         }
 
         if (request.CategoryId.HasValue)
@@ -39,9 +40,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
             .OrderBy(p => p.Name)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Include(p => p.Category)
-            .Include(p => p.Barcodes)
-            .Include(p => p.Variants)
+            .AsSplitQuery()
             .Select(p => new ProductDto(
                 p.Id,
                 p.Sku,
@@ -84,10 +83,9 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
     public async Task<ProductDto?> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
     {
         return await _dbContext.Products
+            .AsNoTracking()
             .Where(p => p.Id == request.Id)
-            .Include(p => p.Category)
-            .Include(p => p.Barcodes)
-            .Include(p => p.Variants)
+            .AsSplitQuery()
             .Select(p => new ProductDto(
                 p.Id,
                 p.Sku,
@@ -110,6 +108,43 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
     }
 }
 
+public class GetProductByBarcodeQueryHandler : IRequestHandler<GetProductByBarcodeQuery, ProductDto?>
+{
+    private readonly IAppDbContext _dbContext;
+
+    public GetProductByBarcodeQueryHandler(IAppDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<ProductDto?> Handle(GetProductByBarcodeQuery request, CancellationToken cancellationToken)
+    {
+        return await _dbContext.ProductBarcodes
+            .AsNoTracking()
+            .Where(b => b.Barcode == request.Barcode)
+            .Select(b => b.Product)
+            .Select(p => new ProductDto(
+                p.Id,
+                p.Sku,
+                p.Name,
+                p.NameKa,
+                p.Description,
+                p.CategoryId,
+                p.Category.Name,
+                p.UnitOfMeasure,
+                p.VatApplicable,
+                p.WeightKg,
+                p.IsSerialized,
+                p.IsBatchTracked,
+                p.HasExpiry,
+                p.IsActive,
+                p.CreatedAt,
+                p.Barcodes.Select(bc => new ProductBarcodeDto(bc.Id, bc.Barcode, bc.BarcodeType.ToString(), bc.IsPrimary)).ToList(),
+                p.Variants.Select(v => new ProductVariantDto(v.Id, v.Sku, v.Name, v.Attributes, v.IsActive)).ToList()))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+}
+
 public class GetCategoriesQueryHandler : IRequestHandler<GetCategoriesQuery, IReadOnlyList<CategoryDto>>
 {
     private readonly IAppDbContext _dbContext;
@@ -121,7 +156,7 @@ public class GetCategoriesQueryHandler : IRequestHandler<GetCategoriesQuery, IRe
 
     public async Task<IReadOnlyList<CategoryDto>> Handle(GetCategoriesQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Categories.AsQueryable();
+        var query = _dbContext.Categories.AsNoTracking();
 
         if (request.ParentId.HasValue)
             query = query.Where(c => c.ParentId == request.ParentId.Value);

@@ -79,7 +79,9 @@ public sealed class RabbitMqConnection : IRabbitMqConnection
             var args = new Dictionary<string, object?>
             {
                 ["x-dead-letter-exchange"] = RsGeQueueTopology.DeadLetterExchange,
-                ["x-dead-letter-routing-key"] = RsGeQueueTopology.DeadLetterRoutingKey
+                ["x-dead-letter-routing-key"] = RsGeQueueTopology.DeadLetterRoutingKey,
+                ["x-message-ttl"] = RsGeQueueTopology.MessageTtlMs,
+                ["x-max-priority"] = RsGeQueueTopology.MaxPriority
             };
 
             await channel.QueueDeclareAsync(

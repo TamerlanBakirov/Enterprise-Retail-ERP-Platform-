@@ -21,4 +21,21 @@ public partial class ProcurementView : UserControl
         if (_viewModel.Suppliers.Count == 0 && _viewModel.PurchaseOrders.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
+
+    private async void OnAddSupplier(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<SupplierEditViewModel>();
+        var window = new SupplierEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
+
+    private async void OnAddPurchaseOrder(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<PurchaseOrderEditViewModel>();
+        await vm.LoadDataAsync();
+        var window = new PurchaseOrderEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved) await _viewModel.LoadCommand.ExecuteAsync(null);
+    }
 }

@@ -75,6 +75,7 @@ public class FiscalDocument : BaseEntity
     /// <summary>Transitions the document into the queue, ready for asynchronous RS.GE submission.</summary>
     public void MarkQueued()
     {
+        EnsureValidTransition(FiscalDocumentStatus.Queued);
         Status = FiscalDocumentStatus.Queued;
         Touch();
     }
@@ -82,6 +83,7 @@ public class FiscalDocument : BaseEntity
     /// <summary>The request reached RS.GE and a server-side identifier was assigned.</summary>
     public void MarkSubmitted(string? rsGeId, string? documentNumber = null)
     {
+        EnsureValidTransition(FiscalDocumentStatus.Submitted);
         Status = FiscalDocumentStatus.Submitted;
         RsGeId = rsGeId;
         if (documentNumber is not null)
@@ -94,6 +96,7 @@ public class FiscalDocument : BaseEntity
     /// <summary>RS.GE accepted and confirmed the document (terminal success).</summary>
     public void MarkConfirmed(string? rsGeStatus = null)
     {
+        EnsureValidTransition(FiscalDocumentStatus.Confirmed);
         Status = FiscalDocumentStatus.Confirmed;
         RsGeStatus = rsGeStatus;
         ConfirmedAt = DateTimeOffset.UtcNow;
@@ -104,6 +107,7 @@ public class FiscalDocument : BaseEntity
     /// <summary>RS.GE rejected the document (terminal failure requiring manual correction).</summary>
     public void MarkRejected(string? error)
     {
+        EnsureValidTransition(FiscalDocumentStatus.Rejected);
         Status = FiscalDocumentStatus.Rejected;
         LastError = error;
         Touch();
@@ -112,9 +116,45 @@ public class FiscalDocument : BaseEntity
     /// <summary>A transient failure occurred; the document remains eligible for retry.</summary>
     public void MarkFailed(string? error)
     {
+        EnsureValidTransition(FiscalDocumentStatus.Failed);
         Status = FiscalDocumentStatus.Failed;
         LastError = error;
         Touch();
+    }
+
+    /// <summary>
+    /// Validates that a fiscal document status transition is legal:
+    ///   Pending -> Queued -> Submitted -> Confirmed (terminal)
+    ///                     \-> Failed (retryable, can go back to Queued)
+    ///                     \-> Rejected (terminal)
+    ///   Cancelled is terminal and can be reached from Pending, Queued, or Failed.
+    /// </summary>
+    private void EnsureValidTransition(FiscalDocumentStatus target)
+    {
+        var valid = (Status, target) switch
+        {
+            (FiscalDocumentStatus.Pending,   FiscalDocumentStatus.Queued)    => true,
+            (FiscalDocumentStatus.Pending,   FiscalDocumentStatus.Cancelled) => true,
+            (FiscalDocumentStatus.Queued,    FiscalDocumentStatus.Submitted) => true,
+            (FiscalDocumentStatus.Queued,    FiscalDocumentStatus.Failed)    => true,
+            (FiscalDocumentStatus.Queued,    FiscalDocumentStatus.Rejected)  => true,
+            (FiscalDocumentStatus.Queued,    FiscalDocumentStatus.Cancelled) => true,
+            (FiscalDocumentStatus.Submitted, FiscalDocumentStatus.Confirmed) => true,
+            (FiscalDocumentStatus.Submitted, FiscalDocumentStatus.Rejected)  => true,
+            (FiscalDocumentStatus.Submitted, FiscalDocumentStatus.Failed)    => true,
+            (FiscalDocumentStatus.Failed,    FiscalDocumentStatus.Queued)    => true,
+            (FiscalDocumentStatus.Failed,    FiscalDocumentStatus.Submitted) => true,
+            (FiscalDocumentStatus.Failed,    FiscalDocumentStatus.Rejected)  => true,
+            (FiscalDocumentStatus.Failed,    FiscalDocumentStatus.Cancelled) => true,
+            _ => false
+        };
+
+        if (!valid)
+        {
+            throw new InvalidOperationException(
+                $"Invalid fiscal document state transition from {Status} to {target}. " +
+                $"Document {Id} cannot transition to {target} from its current state.");
+        }
     }
 
     public void IncrementRetry()

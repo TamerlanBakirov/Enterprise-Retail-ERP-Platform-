@@ -17,6 +17,6 @@ public partial class LoginWindow : Window
 
     private async void OnLoginClick(object sender, RoutedEventArgs e)
     {
-        await _viewModel.LoginAsync(PasswordBox.Password);
+        await _viewModel.LoginAsync(PasswordBox.Password, TwoFactorCodeBox.Text);
     }
 }

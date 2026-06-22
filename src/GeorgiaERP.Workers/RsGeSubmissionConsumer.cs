@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using GeorgiaERP.Application.Compliance;
@@ -25,6 +26,7 @@ public class RsGeSubmissionConsumer : BackgroundService
     private readonly IRabbitMqConnection _connection;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RsGeQueueOptions _options;
+    private readonly IMessageDeduplicator _deduplicator;
     private readonly ILogger<RsGeSubmissionConsumer> _logger;
 
     private IChannel? _channel;
@@ -35,11 +37,13 @@ public class RsGeSubmissionConsumer : BackgroundService
         IRabbitMqConnection connection,
         IServiceScopeFactory scopeFactory,
         IOptions<RsGeQueueOptions> options,
+        IMessageDeduplicator deduplicator,
         ILogger<RsGeSubmissionConsumer> logger)
     {
         _connection = connection;
         _scopeFactory = scopeFactory;
         _options = options.Value;
+        _deduplicator = deduplicator;
         _logger = logger;
     }
 
@@ -101,6 +105,24 @@ public class RsGeSubmissionConsumer : BackgroundService
             await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false);
             return;
         }
+
+        // Deduplication: skip messages that have already been successfully processed.
+        // The MessageId format is "{FiscalDocumentId}:{Operation}:{Attempt}".
+        var messageId = ea.BasicProperties.MessageId;
+        if (!string.IsNullOrEmpty(messageId) && await _deduplicator.IsDuplicateAsync(messageId))
+        {
+            _logger.LogInformation("Skipping duplicate message {MessageId} for document {DocumentId}",
+                messageId, message.FiscalDocumentId);
+            await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+            return;
+        }
+
+        // Propagate correlation ID from the message properties into the Activity
+        // so downstream SOAP calls and logs share the same trace context.
+        using var activity = new Activity("RsGeSubmission.Process");
+        if (!string.IsNullOrEmpty(ea.BasicProperties.CorrelationId))
+            activity.SetParentId(ea.BasicProperties.CorrelationId);
+        activity.Start();
 
         try
         {

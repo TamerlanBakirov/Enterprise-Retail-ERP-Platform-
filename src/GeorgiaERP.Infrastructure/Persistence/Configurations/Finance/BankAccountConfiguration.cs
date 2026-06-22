@@ -51,5 +51,14 @@ public class BankAccountConfiguration : IEntityTypeConfiguration<BankAccount>
             .HasForeignKey(b => b.GlAccountId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // FK index for GL account lookups
+        builder.HasIndex(b => b.GlAccountId)
+            .HasDatabaseName("IX_bank_accounts_gl_account");
+
+        // IBAN lookup
+        builder.HasIndex(b => b.Iban)
+            .HasDatabaseName("IX_bank_accounts_iban")
+            .HasFilter("\"Iban\" IS NOT NULL");
     }
 }

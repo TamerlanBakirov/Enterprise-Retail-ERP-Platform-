@@ -40,5 +40,13 @@ public class PosPaymentConfiguration : IEntityTypeConfiguration<PosPayment>
             .WithMany(t => t.Payments)
             .HasForeignKey(p => p.TransactionId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for transaction payment lookups
+        builder.HasIndex(p => p.TransactionId)
+            .HasDatabaseName("IX_pos_payments_transaction");
+
+        // Payment method reporting (cash vs card analysis)
+        builder.HasIndex(p => new { p.PaymentMethod, p.CreatedAt })
+            .HasDatabaseName("IX_pos_payments_method_date");
     }
 }

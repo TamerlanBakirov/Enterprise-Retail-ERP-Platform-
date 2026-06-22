@@ -43,3 +43,14 @@ public record CreateProductRequest(
     bool TrackBatches,
     bool TrackExpiry,
     decimal? Weight);
+
+public record UpdateProductRequest(
+    string? Name,
+    string? NameKa,
+    string? Description,
+    Guid? CategoryId,
+    string? UnitOfMeasure,
+    decimal? RetailPrice,
+    decimal? WholesalePrice,
+    decimal? VatRate,
+    bool? IsActive);

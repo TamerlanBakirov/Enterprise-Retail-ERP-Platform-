@@ -168,7 +168,7 @@ public class CreatePosTransactionCommandHandler
                 new RsGeSubmissionMessage
                 {
                     FiscalDocumentId = fiscalDoc.Id,
-                    Operation = RsGeOperation.SubmitWaybill
+                    Operation = RsGeOperation.SubmitInvoice
                 },
                 cancellationToken);
         }

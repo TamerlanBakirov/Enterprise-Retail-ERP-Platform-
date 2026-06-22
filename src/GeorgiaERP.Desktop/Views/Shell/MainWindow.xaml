@@ -10,6 +10,10 @@
         xmlns:finance="clr-namespace:GeorgiaERP.Desktop.Views.Finance"
         xmlns:reports="clr-namespace:GeorgiaERP.Desktop.Views.Reports"
         xmlns:settings="clr-namespace:GeorgiaERP.Desktop.Views.Settings"
+        xmlns:warehouse="clr-namespace:GeorgiaERP.Desktop.Views.Warehouse"
+        xmlns:admin="clr-namespace:GeorgiaERP.Desktop.Views.Admin"
+        xmlns:pricing="clr-namespace:GeorgiaERP.Desktop.Views.Pricing"
+        xmlns:compliance="clr-namespace:GeorgiaERP.Desktop.Views.Compliance"
         Title="Georgia ERP"
         Width="1400" Height="850"
         MinWidth="1100" MinHeight="650"
@@ -17,13 +21,51 @@
         WindowState="Maximized">
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="240" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <!-- Update banner -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2"
+                Background="#FFF3CD" Padding="12,8"
+                Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Download"
+                        Style="{StaticResource PrimaryButton}" Padding="16,6"
+                        Command="{Binding DownloadUpdateCommand}" Margin="8,0,0,0" />
+                <Button DockPanel.Dock="Right" Content="X"
+                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                        Foreground="#856404" FontWeight="Bold"
+                        Command="{Binding DismissUpdateCommand}" Margin="8,0,0,0" />
+                <TextBlock VerticalAlignment="Center" Foreground="#856404">
+                    <Run Text="A new version (" /><Run Text="{Binding UpdateVersion}" FontWeight="Bold" /><Run Text=") is available." />
+                </TextBlock>
+            </DockPanel>
+        </Border>
+
+        <!-- Offline indicator -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2"
+                Background="#FEE2E2" Padding="12,6"
+                Visibility="{Binding OfflinePendingCount, Converter={StaticResource NullToCollapsedConverter}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Retry"
+                        Style="{StaticResource SecondaryButton}" Padding="16,4"
+                        Command="{Binding RetryOfflineCommand}" Margin="8,0,0,0" />
+                <TextBlock VerticalAlignment="Center" Foreground="#991B1B">
+                    <Run Text="{Binding OfflinePendingCount}" FontWeight="Bold" />
+                    <Run Text=" pending offline operation(s)" />
+                </TextBlock>
+            </DockPanel>
+        </Border>
+
         <!-- Sidebar -->
-        <Border Background="{StaticResource SidebarBgBrush}">
+        <Border Grid.Row="2" Grid.Column="0" Background="{StaticResource SidebarBgBrush}">
             <DockPanel>
                 <!-- Logo area -->
                 <Border DockPanel.Dock="Top" Padding="20,24,20,20">
@@ -84,6 +126,12 @@
                                      CommandParameter="Inventory" />
 
                         <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Warehouse"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Warehouse}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Warehouse" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
                                      Content="Customers"
                                      IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}"
                                      Command="{Binding NavigateCommand}"
@@ -96,10 +144,22 @@
                                      CommandParameter="Procurement" />
 
                         <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Pricing"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Pricing}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Pricing" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
                                      Content="Finance"
                                      IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}"
                                      Command="{Binding NavigateCommand}"
                                      CommandParameter="Finance" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="RS.GE / Compliance"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Compliance}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Compliance" />
 
                         <RadioButton Style="{StaticResource NavButton}"
                                      Content="Reports"
@@ -108,6 +168,12 @@
                                      CommandParameter="Reports" />
 
                         <Border Height="1" Background="#334155" Margin="16,12" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Users"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Users}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Users" />
 
                         <RadioButton Style="{StaticResource NavButton}"
                                      Content="Settings"
@@ -120,17 +186,21 @@
         </Border>
 
         <!-- Content area -->
-        <Border Grid.Column="1" Background="{StaticResource ContentBgBrush}">
+        <Border Grid.Row="2" Grid.Column="1" Background="{StaticResource ContentBgBrush}">
             <Grid>
-                <dashboard:DashboardView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}" />
-                <pos:PosView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}" />
-                <products:ProductsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}" />
-                <inventory:InventoryView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}" />
-                <customers:CustomersView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
-                <procurement:ProcurementView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
-                <finance:FinanceView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
-                <reports:ReportsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
-                <settings:SettingsView Visibility="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
+                <dashboard:DashboardView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}" />
+                <pos:PosView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=POS}" />
+                <products:ProductsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Products}" />
+                <inventory:InventoryView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Inventory}" />
+                <warehouse:WarehouseView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Warehouse}" />
+                <customers:CustomersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Customers}" />
+                <procurement:ProcurementView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Procurement}" />
+                <pricing:PricingView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Pricing}" />
+                <finance:FinanceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Finance}" />
+                <compliance:ComplianceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Compliance}" />
+                <reports:ReportsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
+                <admin:UsersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Users}" />
+                <settings:SettingsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
             </Grid>
         </Border>
     </Grid>

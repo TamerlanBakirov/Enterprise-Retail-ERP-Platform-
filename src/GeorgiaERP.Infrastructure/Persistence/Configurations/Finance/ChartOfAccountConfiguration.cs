@@ -49,5 +49,13 @@ public class ChartOfAccountConfiguration : IEntityTypeConfiguration<ChartOfAccou
             .WithMany(a => a.Children)
             .HasForeignKey(a => a.ParentId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Account type filtering for balance sheet/P&L views
+        builder.HasIndex(a => a.AccountType)
+            .HasDatabaseName("IX_chart_of_accounts_type");
+
+        // Parent lookup for account hierarchy
+        builder.HasIndex(a => a.ParentId)
+            .HasDatabaseName("IX_chart_of_accounts_parent");
     }
 }

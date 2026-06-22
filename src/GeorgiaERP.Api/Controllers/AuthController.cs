@@ -37,6 +37,7 @@ public class AuthController : ApiControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
@@ -51,8 +52,11 @@ public class AuthController : ApiControllerBase
 
     [Authorize]
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
     {
+        var result = await _mediator.Send(new RevokeRefreshTokenCommand(request.RefreshToken));
+        if (result.IsFailure)
+            return ToActionResult(result);
         return Ok(new { message = "Logged out successfully" });
     }
 
@@ -60,12 +64,47 @@ public class AuthController : ApiControllerBase
     [HttpGet("me")]
     public IActionResult GetCurrentUser()
     {
-        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        // SECURITY: Return only non-sensitive claim types. Never expose
+        // raw token internals, permission lists, or internal IDs that
+        // could aid privilege-escalation reconnaissance.
+        var roles = User.Claims
+            .Where(c => c.Type == "roles")
+            .Select(c => c.Value)
+            .ToList();
+
         return Ok(new
         {
             UserId = CurrentUserId,
             CompanyId = CurrentCompanyId,
-            Claims = claims
+            Username = User.FindFirst("username")?.Value,
+            Email = User.FindFirst("email")?.Value,
+            Roles = roles
         });
     }
+
+    [Authorize]
+    [HttpPost("2fa/setup")]
+    public async Task<IActionResult> BeginTwoFactorSetup()
+    {
+        var result = await _mediator.Send(new BeginTwoFactorSetupCommand(CurrentUserId));
+        return ToActionResult(result);
+    }
+
+    [Authorize]
+    [HttpPost("2fa/confirm")]
+    public async Task<IActionResult> ConfirmTwoFactorSetup([FromBody] TwoFactorCodeRequest request)
+    {
+        var result = await _mediator.Send(new ConfirmTwoFactorSetupCommand(CurrentUserId, request.Code));
+        return ToActionResult(result);
+    }
+
+    [Authorize]
+    [HttpPost("2fa/disable")]
+    public async Task<IActionResult> DisableTwoFactor([FromBody] TwoFactorCodeRequest request)
+    {
+        var result = await _mediator.Send(new DisableTwoFactorCommand(CurrentUserId, request.Code));
+        return ToActionResult(result);
+    }
+
+    public record TwoFactorCodeRequest(string Code);
 }

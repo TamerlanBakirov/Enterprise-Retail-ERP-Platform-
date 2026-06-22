@@ -7,10 +7,13 @@ using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Inventory;
 using GeorgiaERP.Domain.Licensing;
 using GeorgiaERP.Domain.Organization;
+using GeorgiaERP.Domain.Warehouse;
+using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 using GeorgiaERP.Domain.POS;
 using GeorgiaERP.Domain.Pricing;
 using GeorgiaERP.Domain.Procurement;
 using GeorgiaERP.Domain.Products;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Infrastructure.Persistence;
@@ -18,17 +21,19 @@ namespace GeorgiaERP.Infrastructure.Persistence;
 public class AppDbContext : DbContext, IAppDbContext
 {
     private readonly string _schema;
+    private readonly IMediator? _mediator;
 
-    public AppDbContext(DbContextOptions<AppDbContext> options, string schema = "public")
+    public AppDbContext(DbContextOptions<AppDbContext> options, IMediator? mediator = null, string schema = "public")
         : base(options)
     {
+        _mediator = mediator;
         _schema = schema;
     }
 
     // Organization
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Store> Stores => Set<Store>();
-    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<WarehouseEntity> Warehouses => Set<WarehouseEntity>();
 
     // Identity
     public DbSet<User> Users => Set<User>();
@@ -92,9 +97,17 @@ public class AppDbContext : DbContext, IAppDbContext
     // Licensing
     public DbSet<License> Licenses => Set<License>();
 
+    // Warehouse
+    public DbSet<WarehouseLocation> WarehouseLocations => Set<WarehouseLocation>();
+    public DbSet<ReceivingOrder> ReceivingOrders => Set<ReceivingOrder>();
+    public DbSet<ReceivingOrderLine> ReceivingOrderLines => Set<ReceivingOrderLine>();
+    public DbSet<ShippingOrder> ShippingOrders => Set<ShippingOrder>();
+    public DbSet<ShippingOrderLine> ShippingOrderLines => Set<ShippingOrderLine>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(_schema);
+        modelBuilder.Ignore<DomainEvent>();
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // Apply global query filter for soft-deleted entities
@@ -140,6 +153,32 @@ public class AppDbContext : DbContext, IAppDbContext
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        // Collect domain events before saving so they survive the Clear below.
+        var entitiesWithEvents = ChangeTracker.Entries<BaseEntity>()
+            .Where(e => e.Entity.DomainEvents.Count > 0)
+            .Select(e => e.Entity)
+            .ToList();
+
+        var domainEvents = entitiesWithEvents
+            .SelectMany(e => e.DomainEvents)
+            .ToList();
+
+        // Clear events before dispatching to prevent re-entrancy issues
+        // if a handler triggers another SaveChangesAsync call.
+        foreach (var entity in entitiesWithEvents)
+            entity.ClearDomainEvents();
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // Dispatch domain events after successful persistence.
+        // Events are dispatched via MediatR as INotification (the DomainEvent
+        // base record implements INotification), enabling decoupled handlers.
+        if (_mediator is not null)
+        {
+            foreach (var domainEvent in domainEvents)
+                await _mediator.Publish(domainEvent, cancellationToken);
+        }
+
+        return result;
     }
 }

@@ -32,6 +32,10 @@
                          Foreground="{StaticResource TextPrimaryBrush}"
                          IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Transfers}"
                          Command="{Binding SwitchTabCommand}" CommandParameter="Transfers" />
+            <RadioButton Content="Stock Counts" Style="{StaticResource NavButton}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=StockCounts}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="StockCounts" />
         </StackPanel>
 
         <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3"
@@ -74,20 +78,53 @@
         </Border>
 
         <!-- Transfers -->
-        <Border Style="{StaticResource Card}" Padding="0"
-                Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Transfers}">
-            <DataGrid Style="{StaticResource ModernDataGrid}"
-                      ItemsSource="{Binding Transfers}"
-                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
-                      RowStyle="{StaticResource ModernDataGridRow}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Transfer #" Binding="{Binding TransferNumber}" Width="130" />
-                    <DataGridTextColumn Header="From" Binding="{Binding SourceWarehouseName}" Width="*" />
-                    <DataGridTextColumn Header="To" Binding="{Binding DestinationWarehouseName}" Width="*" />
-                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
-                    <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=d}" Width="100" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+        <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Transfers}">
+            <Button DockPanel.Dock="Top" Content="+ Create Transfer" Style="{StaticResource PrimaryButton}"
+                    Click="OnCreateTransfer" HorizontalAlignment="Left" Margin="0,0,0,8" />
+            <Border Style="{StaticResource Card}" Padding="0">
+                <DataGrid Style="{StaticResource ModernDataGrid}"
+                          ItemsSource="{Binding Transfers}"
+                          ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                          RowStyle="{StaticResource ModernDataGridRow}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Transfer #" Binding="{Binding TransferNumber}" Width="130" />
+                        <DataGridTextColumn Header="From" Binding="{Binding SourceWarehouseName}" Width="*" />
+                        <DataGridTextColumn Header="To" Binding="{Binding DestinationWarehouseName}" Width="*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                        <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=d}" Width="100" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </DockPanel>
+
+        <!-- Stock Counts -->
+        <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=StockCounts}">
+            <Button DockPanel.Dock="Top" Content="+ Create Stock Count" Style="{StaticResource PrimaryButton}"
+                    Click="OnCreateStockCount" HorizontalAlignment="Left" Margin="0,0,0,8" />
+            <Border Style="{StaticResource Card}" Padding="0">
+                <DataGrid Style="{StaticResource ModernDataGrid}"
+                          ItemsSource="{Binding StockCounts}"
+                          ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                          RowStyle="{StaticResource ModernDataGridRow}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Count #" Binding="{Binding CountNumber}" Width="130" />
+                        <DataGridTextColumn Header="Warehouse" Binding="{Binding WarehouseName}" Width="*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                        <DataGridTextColumn Header="Lines" Binding="{Binding TotalLines}" Width="60" />
+                        <DataGridTextColumn Header="Counted" Binding="{Binding CountedLines}" Width="70" />
+                        <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=d}" Width="100" />
+                        <DataGridTemplateColumn Header="Action" Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Complete" Style="{StaticResource SecondaryButton}" Padding="8,2"
+                                            Command="{Binding DataContext.CompleteStockCountCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </DockPanel>
     </DockPanel>
 </UserControl>

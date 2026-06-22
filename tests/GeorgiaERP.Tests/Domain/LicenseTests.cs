@@ -70,10 +70,12 @@ public class LicenseTests
         var license = NewLicense(DateTimeOffset.UtcNow.AddDays(10));
         var newExpiry = DateTimeOffset.UtcNow.AddYears(1);
 
-        license.Renew(newExpiry);
+        license.Renew("GERP-TEST-RENEWED", newExpiry, 10, 2);
 
         license.ExpiresAt.Should().BeCloseTo(newExpiry, TimeSpan.FromSeconds(1));
         license.IsValid.Should().BeTrue();
+        license.LicenseKey.Should().Be("GERP-TEST-RENEWED");
+        license.MaxUsers.Should().Be(10);
     }
 
     [Fact]

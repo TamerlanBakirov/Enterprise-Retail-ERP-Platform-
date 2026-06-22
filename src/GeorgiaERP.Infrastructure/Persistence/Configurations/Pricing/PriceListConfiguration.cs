@@ -53,5 +53,18 @@ public class PriceListConfiguration : IEntityTypeConfiguration<PriceList>
         builder.HasMany(p => p.Items)
             .WithOne(i => i.PriceList)
             .HasForeignKey(i => i.PriceListId);
+
+        // Store-specific price list lookups
+        builder.HasIndex(p => p.StoreId)
+            .HasDatabaseName("IX_price_lists_store")
+            .HasFilter("\"StoreId\" IS NOT NULL");
+
+        // Active price lists with validity period
+        builder.HasIndex(p => new { p.IsActive, p.ValidFrom, p.ValidTo })
+            .HasDatabaseName("IX_price_lists_active_validity");
+
+        // Price type filtering (RETAIL, WHOLESALE, etc.)
+        builder.HasIndex(p => p.PriceType)
+            .HasDatabaseName("IX_price_lists_type");
     }
 }

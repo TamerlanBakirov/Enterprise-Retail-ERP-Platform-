@@ -9,11 +9,13 @@ public class ActivateLicenseCommandHandler : IRequestHandler<ActivateLicenseComm
 {
     private readonly IAppDbContext _dbContext;
     private readonly IMachineIdProvider _machineIdProvider;
+    private readonly ILicenseKeyValidator _licenseKeyValidator;
 
-    public ActivateLicenseCommandHandler(IAppDbContext dbContext, IMachineIdProvider machineIdProvider)
+    public ActivateLicenseCommandHandler(IAppDbContext dbContext, IMachineIdProvider machineIdProvider, ILicenseKeyValidator licenseKeyValidator)
     {
         _dbContext = dbContext;
         _machineIdProvider = machineIdProvider;
+        _licenseKeyValidator = licenseKeyValidator;
     }
 
     public async Task<Result<LicenseActivationResponse>> Handle(ActivateLicenseCommand request, CancellationToken cancellationToken)
@@ -23,6 +25,12 @@ public class ActivateLicenseCommandHandler : IRequestHandler<ActivateLicenseComm
 
         if (string.IsNullOrWhiteSpace(request.CompanyName))
             return Result.Failure<LicenseActivationResponse>("Company name is required.");
+
+        var validation = _licenseKeyValidator.Validate(request.LicenseKey);
+        if (!validation.IsValid)
+            return Result.Failure<LicenseActivationResponse>(validation.Error ?? "Invalid license key.");
+        if (!string.Equals(validation.CompanyName, request.CompanyName.Trim(), StringComparison.OrdinalIgnoreCase))
+            return Result.Failure<LicenseActivationResponse>("License key was issued for a different company.");
 
         var machineId = _machineIdProvider.GetMachineId();
 
@@ -50,9 +58,11 @@ public class ActivateLicenseCommandHandler : IRequestHandler<ActivateLicenseComm
 
         var license = License.Create(
             request.LicenseKey,
-            request.CompanyName,
+            validation.CompanyName!,
             machineId,
-            expiresAt: DateTimeOffset.UtcNow.AddYears(1));
+            expiresAt: validation.ExpiresAt!.Value,
+            maxUsers: validation.MaxUsers,
+            maxStores: validation.MaxStores);
 
         if (!string.IsNullOrWhiteSpace(request.ContactEmail))
             license.SetContactEmail(request.ContactEmail);

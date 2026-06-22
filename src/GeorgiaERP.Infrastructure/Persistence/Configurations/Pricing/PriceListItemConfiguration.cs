@@ -30,6 +30,11 @@ public class PriceListItemConfiguration : IEntityTypeConfiguration<PriceListItem
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(p => new { p.PriceListId, p.ProductId, p.VariantId })
-            .IsUnique();
+            .IsUnique()
+            .HasDatabaseName("IX_price_list_items_list_product_variant");
+
+        // Product price lookup across all price lists
+        builder.HasIndex(p => p.ProductId)
+            .HasDatabaseName("IX_price_list_items_product");
     }
 }

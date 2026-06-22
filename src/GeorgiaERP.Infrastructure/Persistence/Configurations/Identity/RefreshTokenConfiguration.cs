@@ -31,11 +31,22 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 
         builder.Property(rt => rt.CreatedAt);
 
-        builder.HasIndex(rt => rt.TokenHash);
+        // Token hash must be unique for security
+        builder.HasIndex(rt => rt.TokenHash)
+            .IsUnique()
+            .HasDatabaseName("IX_refresh_tokens_token_hash");
 
         builder.HasOne(rt => rt.User)
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for user token lookups
+        builder.HasIndex(rt => rt.UserId)
+            .HasDatabaseName("IX_refresh_tokens_user");
+
+        // Expiry cleanup - find expired tokens for purging
+        builder.HasIndex(rt => rt.ExpiresAt)
+            .HasDatabaseName("IX_refresh_tokens_expires_at");
     }
 }

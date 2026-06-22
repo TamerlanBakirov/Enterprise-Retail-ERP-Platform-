@@ -27,6 +27,63 @@ public class User : BaseEntity
     public ICollection<UserRole> UserRoles { get; private set; } = new List<UserRole>();
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
+    public void RecordFailedLogin(int maxAttempts, TimeSpan lockoutDuration)
+    {
+        FailedLoginCount++;
+        if (FailedLoginCount >= maxAttempts)
+            LockedUntil = DateTimeOffset.UtcNow.Add(lockoutDuration);
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void RecordSuccessfulLogin()
+    {
+        FailedLoginCount = 0;
+        LockedUntil = null;
+        LastLoginAt = DateTimeOffset.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void EnableTwoFactor(string totpSecret)
+    {
+        if (string.IsNullOrWhiteSpace(totpSecret))
+            throw new ArgumentException("TOTP secret is required.", nameof(totpSecret));
+        TotpSecret = totpSecret;
+        Is2FaEnabled = true;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void BeginTwoFactorSetup(string totpSecret)
+    {
+        if (string.IsNullOrWhiteSpace(totpSecret))
+            throw new ArgumentException("TOTP secret is required.", nameof(totpSecret));
+        TotpSecret = totpSecret;
+        Is2FaEnabled = false;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ConfirmTwoFactorSetup()
+    {
+        if (string.IsNullOrWhiteSpace(TotpSecret))
+            throw new InvalidOperationException("Two-factor setup has not been started.");
+        Is2FaEnabled = true;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ReplaceTwoFactorSecret(string protectedSecret)
+    {
+        if (string.IsNullOrWhiteSpace(protectedSecret))
+            throw new ArgumentException("Protected TOTP secret is required.", nameof(protectedSecret));
+        TotpSecret = protectedSecret;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void DisableTwoFactor()
+    {
+        TotpSecret = null;
+        Is2FaEnabled = false;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     private User() { }
 
     public static User Create(

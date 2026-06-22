@@ -9,6 +9,7 @@ using GeorgiaERP.Domain.Compliance;
 using GeorgiaERP.Domain.Finance;
 using GeorgiaERP.Domain.CRM;
 using GeorgiaERP.Domain.Licensing;
+using GeorgiaERP.Domain.Warehouse;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeorgiaERP.Application.Common;
@@ -17,7 +18,7 @@ public interface IAppDbContext
 {
     DbSet<Company> Companies { get; }
     DbSet<Store> Stores { get; }
-    DbSet<Warehouse> Warehouses { get; }
+    DbSet<Domain.Organization.Warehouse> Warehouses { get; }
     DbSet<User> Users { get; }
     DbSet<Role> Roles { get; }
     DbSet<Permission> Permissions { get; }
@@ -60,6 +61,13 @@ public interface IAppDbContext
     DbSet<Customer> Customers { get; }
     DbSet<LoyaltyTransaction> LoyaltyTransactions { get; }
     DbSet<License> Licenses { get; }
+
+    // Warehouse
+    DbSet<WarehouseLocation> WarehouseLocations { get; }
+    DbSet<ReceivingOrder> ReceivingOrders { get; }
+    DbSet<ReceivingOrderLine> ReceivingOrderLines { get; }
+    DbSet<ShippingOrder> ShippingOrders { get; }
+    DbSet<ShippingOrderLine> ShippingOrderLines { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

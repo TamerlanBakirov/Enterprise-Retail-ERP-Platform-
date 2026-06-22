@@ -1,4 +1,5 @@
 using GeorgiaERP.Domain.Common;
+using GeorgiaERP.Domain.POS.Events;
 
 namespace GeorgiaERP.Domain.POS;
 
@@ -29,7 +30,7 @@ public class PosPayment : BaseEntity
 
     public static PosPayment Create(Guid transactionId, PaymentMethod paymentMethod, decimal amount, string currency = "GEL")
     {
-        return new PosPayment
+        var payment = new PosPayment
         {
             TransactionId = transactionId,
             PaymentMethod = paymentMethod,
@@ -37,6 +38,17 @@ public class PosPayment : BaseEntity
             Currency = currency,
             CreatedAt = DateTimeOffset.UtcNow
         };
+
+        payment.RaiseDomainEvent(new PaymentProcessedEvent
+        {
+            PaymentId = payment.Id,
+            TransactionId = transactionId,
+            PaymentMethod = paymentMethod,
+            Amount = amount,
+            Currency = currency
+        });
+
+        return payment;
     }
 
     public void SetReference(string? reference, string? terminalRef = null)

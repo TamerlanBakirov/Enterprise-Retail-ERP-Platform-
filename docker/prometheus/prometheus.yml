@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  - job_name: "georgia-erp-api"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["api:5000"]
+        labels:
+          service: "georgia-erp-api"
+          environment: "development"
+
+  - job_name: "rabbitmq"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+        labels:
+          service: "rabbitmq"
+
+  - job_name: "postgres-exporter"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+        labels:
+          service: "postgresql"

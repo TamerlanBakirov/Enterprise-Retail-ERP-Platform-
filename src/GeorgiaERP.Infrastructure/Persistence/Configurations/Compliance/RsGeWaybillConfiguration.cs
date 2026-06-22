@@ -74,5 +74,23 @@ public class RsGeWaybillConfiguration : IEntityTypeConfiguration<RsGeWaybill>
             .WithMany()
             .HasForeignKey(w => w.FiscalDocumentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Waybill number lookup
+        builder.HasIndex(w => w.WaybillNumber)
+            .HasDatabaseName("IX_rsge_waybills_number")
+            .HasFilter("\"WaybillNumber\" IS NOT NULL");
+
+        // Status filter for active/pending waybills
+        builder.HasIndex(w => w.Status)
+            .HasDatabaseName("IX_rsge_waybills_status");
+
+        // Seller TIN lookup for compliance
+        builder.HasIndex(w => w.SellerTin)
+            .HasDatabaseName("IX_rsge_waybills_seller_tin");
+
+        // Buyer TIN lookup for compliance
+        builder.HasIndex(w => w.BuyerTin)
+            .HasDatabaseName("IX_rsge_waybills_buyer_tin")
+            .HasFilter("\"BuyerTin\" IS NOT NULL");
     }
 }

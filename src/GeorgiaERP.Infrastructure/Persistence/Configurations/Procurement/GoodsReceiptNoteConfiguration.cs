@@ -52,5 +52,25 @@ public class GoodsReceiptNoteConfiguration : IEntityTypeConfiguration<GoodsRecei
         builder.HasMany(g => g.Lines)
             .WithOne(l => l.GoodsReceiptNote)
             .HasForeignKey(l => l.GrnId);
+
+        // FK index for purchase order receipt lookups
+        builder.HasIndex(g => g.PurchaseOrderId)
+            .HasDatabaseName("IX_goods_receipt_notes_purchase_order");
+
+        // FK index for supplier receipt lookups
+        builder.HasIndex(g => g.SupplierId)
+            .HasDatabaseName("IX_goods_receipt_notes_supplier");
+
+        // FK index for warehouse receipt lookups
+        builder.HasIndex(g => g.WarehouseId)
+            .HasDatabaseName("IX_goods_receipt_notes_warehouse");
+
+        // Status filter for pending/completed receipts
+        builder.HasIndex(g => g.Status)
+            .HasDatabaseName("IX_goods_receipt_notes_status");
+
+        // Receipt date for reporting
+        builder.HasIndex(g => g.ReceiptDate)
+            .HasDatabaseName("IX_goods_receipt_notes_receipt_date");
     }
 }

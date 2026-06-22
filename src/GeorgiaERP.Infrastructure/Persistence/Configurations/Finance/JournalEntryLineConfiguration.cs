@@ -36,5 +36,13 @@ public class JournalEntryLineConfiguration : IEntityTypeConfiguration<JournalEnt
             .WithMany()
             .HasForeignKey(l => l.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // FK index for journal entry line lookups
+        builder.HasIndex(l => l.JournalEntryId)
+            .HasDatabaseName("IX_journal_entry_lines_journal_entry");
+
+        // Account balance queries - sum debits/credits by account
+        builder.HasIndex(l => l.AccountId)
+            .HasDatabaseName("IX_journal_entry_lines_account");
     }
 }

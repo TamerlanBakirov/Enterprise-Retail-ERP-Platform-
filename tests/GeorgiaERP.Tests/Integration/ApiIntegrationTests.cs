@@ -6,6 +6,7 @@ using FluentAssertions;
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Infrastructure.Persistence;
+using GeorgiaERP.Infrastructure.Licensing;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -107,8 +108,11 @@ public class ApiIntegrationTests : IClassFixture<ErpApiFactory>
     [Fact]
     public async Task License_Activate_WithValidData_Succeeds()
     {
+        var key = HmacLicenseKeyValidator.CreateKey(
+            "TEST-LICENSE-SIGNING-KEY-WITH-AT-LEAST-THIRTY-TWO-CHARS",
+            "Test LLC", DateTimeOffset.UtcNow.AddYears(1), 5, 1);
         var response = await NewClient().PostAsJsonAsync("/api/v1/license/activate",
-            new { licenseKey = $"KEY-{Guid.NewGuid():N}", companyName = "Test LLC", contactEmail = "test@test.ge" });
+            new { licenseKey = key, companyName = "Test LLC", contactEmail = "test@test.ge" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -190,5 +194,55 @@ public class ApiIntegrationTests : IClassFixture<ErpApiFactory>
     {
         var response = await NewClient().GetAsync(url);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task AuthenticatedUser_WithoutPermission_Returns403()
+    {
+        var username = $"viewer-{Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+            db.Users.Add(User.Create(username, $"{username}@test.local",
+                passwordService.HashPassword("Valid@123!"), "Read", "Only"));
+            await db.SaveChangesAsync();
+        }
+
+        var client = NewClient();
+        var login = await client.PostAsJsonAsync("/api/v1/auth/login",
+            new { username, password = "Valid@123!" });
+        var body = await login.Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", body.GetProperty("accessToken").GetString());
+
+        var response = await client.GetAsync("/api/v1/products?page=1&pageSize=10");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Login_IsLocked_AfterFiveFailedAttempts()
+    {
+        var username = $"lock-{Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+            db.Users.Add(User.Create(username, $"{username}@test.local",
+                passwordService.HashPassword("Valid@123!"), "Lock", "Test"));
+            await db.SaveChangesAsync();
+        }
+
+        var client = NewClient();
+        for (var i = 0; i < 5; i++)
+        {
+            var failed = await client.PostAsJsonAsync("/api/v1/auth/login",
+                new { username, password = "wrong" });
+            failed.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
+
+        var correct = await client.PostAsJsonAsync("/api/v1/auth/login",
+            new { username, password = "Valid@123!" });
+        correct.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

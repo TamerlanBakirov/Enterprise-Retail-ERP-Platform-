@@ -19,7 +19,7 @@ public class GetCustomersQueryHandler : IRequestHandler<GetCustomersQuery, Paged
 
     public async Task<PagedResult<CustomerDto>> Handle(GetCustomersQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.Customers.AsQueryable();
+        var query = _dbContext.Customers.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

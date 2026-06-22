@@ -3,9 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace GeorgiaERP.Api.Controllers;
 
-[ApiController]
-[Route("api/v1/[controller]")]
-public class UpdatesController : ControllerBase
+public class UpdatesController : ApiControllerBase
 {
     private readonly IConfiguration _configuration;
 
@@ -17,12 +15,14 @@ public class UpdatesController : ControllerBase
         var version = _configuration["App:LatestVersion"] ?? "1.0.0";
         var downloadUrl = _configuration["App:DownloadUrl"];
         var releaseNotes = _configuration["App:ReleaseNotes"];
+        var sha256 = _configuration["App:Sha256"];
 
         return Ok(new
         {
             version,
             downloadUrl,
             releaseNotes,
+            sha256,
             fileSize = 0L
         });
     }

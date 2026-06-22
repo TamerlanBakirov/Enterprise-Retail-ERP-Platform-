@@ -52,6 +52,20 @@ public class JournalEntryConfiguration : IEntityTypeConfiguration<JournalEntry>
             .WithOne(l => l.JournalEntry)
             .HasForeignKey(l => l.JournalEntryId);
 
-        builder.HasIndex(j => j.EntryDate);
+        // Date ordering for financial period queries
+        builder.HasIndex(j => j.EntryDate)
+            .HasDatabaseName("IX_journal_entries_entry_date");
+
+        // Source document lookup (POS sale, purchase, etc.)
+        builder.HasIndex(j => new { j.SourceType, j.SourceId })
+            .HasDatabaseName("IX_journal_entries_source");
+
+        // Status filter for posted/draft/reversed entries
+        builder.HasIndex(j => j.Status)
+            .HasDatabaseName("IX_journal_entries_status");
+
+        // Date ordering for chronological listing
+        builder.HasIndex(j => j.CreatedAt)
+            .HasDatabaseName("IX_journal_entries_created_at");
     }
 }

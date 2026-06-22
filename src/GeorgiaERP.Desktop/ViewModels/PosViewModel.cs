@@ -6,7 +6,7 @@ using GeorgiaERP.Desktop.Services;
 
 namespace GeorgiaERP.Desktop.ViewModels;
 
-public partial class PosViewModel : ObservableObject
+public partial class PosViewModel : BaseViewModel
 {
     private readonly IPosService _posService;
     private readonly IProductService _productService;
@@ -15,8 +15,6 @@ public partial class PosViewModel : ObservableObject
     [ObservableProperty] private string _barcodeInput = string.Empty;
     [ObservableProperty] private decimal _cashReceived;
     [ObservableProperty] private string _selectedPaymentMethod = "Cash";
-    [ObservableProperty] private bool _isLoading;
-    [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private string? _successMessage;
 
     public ObservableCollection<PosCartItem> CartItems { get; } = [];
@@ -33,6 +31,14 @@ public partial class PosViewModel : ObservableObject
     {
         _posService = posService;
         _productService = productService;
+    }
+
+    private void NotifyCartTotals()
+    {
+        OnPropertyChanged(nameof(SubTotal));
+        OnPropertyChanged(nameof(TotalVat));
+        OnPropertyChanged(nameof(GrandTotal));
+        OnPropertyChanged(nameof(ChangeAmount));
     }
 
     [RelayCommand]
@@ -69,10 +75,7 @@ public partial class PosViewModel : ObservableObject
                     Quantity = 1
                 });
             }
-            OnPropertyChanged(nameof(SubTotal));
-            OnPropertyChanged(nameof(TotalVat));
-            OnPropertyChanged(nameof(GrandTotal));
-            OnPropertyChanged(nameof(ChangeAmount));
+            NotifyCartTotals();
         }
         catch (Exception ex)
         {
@@ -88,10 +91,7 @@ public partial class PosViewModel : ObservableObject
     private void RemoveItem(PosCartItem item)
     {
         CartItems.Remove(item);
-        OnPropertyChanged(nameof(SubTotal));
-        OnPropertyChanged(nameof(TotalVat));
-        OnPropertyChanged(nameof(GrandTotal));
-        OnPropertyChanged(nameof(ChangeAmount));
+        NotifyCartTotals();
     }
 
     [RelayCommand]
@@ -109,9 +109,7 @@ public partial class PosViewModel : ObservableObject
             return;
         }
 
-        IsLoading = true;
-        ErrorMessage = null;
-        try
+        await ExecuteAsync(async () =>
         {
             var request = new CreatePosTransactionRequest(
                 CurrentSession.Id,
@@ -126,20 +124,9 @@ public partial class PosViewModel : ObservableObject
                 SuccessMessage = $"Sale completed: {result.TransactionNumber} — {result.GrandTotal:N2} GEL";
                 CartItems.Clear();
                 CashReceived = 0;
-                OnPropertyChanged(nameof(SubTotal));
-                OnPropertyChanged(nameof(TotalVat));
-                OnPropertyChanged(nameof(GrandTotal));
-                OnPropertyChanged(nameof(ChangeAmount));
+                NotifyCartTotals();
             }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = ex.Message;
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        });
     }
 
     [RelayCommand]
@@ -149,10 +136,7 @@ public partial class PosViewModel : ObservableObject
         CashReceived = 0;
         ErrorMessage = null;
         SuccessMessage = null;
-        OnPropertyChanged(nameof(SubTotal));
-        OnPropertyChanged(nameof(TotalVat));
-        OnPropertyChanged(nameof(GrandTotal));
-        OnPropertyChanged(nameof(ChangeAmount));
+        NotifyCartTotals();
     }
 
     partial void OnCashReceivedChanged(decimal value) => OnPropertyChanged(nameof(ChangeAmount));

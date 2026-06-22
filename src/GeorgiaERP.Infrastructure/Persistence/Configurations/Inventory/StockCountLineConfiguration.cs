@@ -32,5 +32,13 @@ public class StockCountLineConfiguration : IEntityTypeConfiguration<StockCountLi
             .WithMany(sc => sc.Lines)
             .HasForeignKey(s => s.StockCountId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // FK index for stock count line lookups
+        builder.HasIndex(s => s.StockCountId)
+            .HasDatabaseName("IX_stock_count_lines_stock_count");
+
+        // Product lookup within a count
+        builder.HasIndex(s => s.ProductId)
+            .HasDatabaseName("IX_stock_count_lines_product");
     }
 }

@@ -2,13 +2,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Georgia ERP — Login"
-        Width="450" Height="550"
+        Width="450" Height="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{StaticResource ContentBgBrush}">
 
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="40,60" VerticalAlignment="Top">
+        <Border Style="{StaticResource Card}" Margin="40,40" VerticalAlignment="Top">
             <StackPanel>
                 <!-- Logo / Title -->
                 <TextBlock Text="Georgia ERP"
@@ -40,7 +40,13 @@
                 <TextBlock Text="Password" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
                 <PasswordBox x:Name="PasswordBox"
                              Style="{StaticResource ModernPasswordBox}"
-                             Margin="0,0,0,24" />
+                             Margin="0,0,0,16" />
+
+                <TextBlock Text="Authentication code (if enabled)" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                <TextBox x:Name="TwoFactorCodeBox"
+                         Style="{StaticResource ModernTextBox}"
+                         MaxLength="6"
+                         Margin="0,0,0,24" />
 
                 <!-- Error -->
                 <TextBlock Text="{Binding ErrorMessage}"

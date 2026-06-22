@@ -4,6 +4,9 @@ using MediatR;
 
 namespace GeorgiaERP.Application.Products.Queries;
 
+/// <summary>
+/// Searches products by SKU, name, Georgian name, or barcode.
+/// </summary>
 public record GetProductsQuery(
     int Page = 1,
     int PageSize = 20,
@@ -12,6 +15,11 @@ public record GetProductsQuery(
     bool? IsActive = null) : IRequest<PagedResult<ProductDto>>;
 
 public record GetProductByIdQuery(Guid Id) : IRequest<ProductDto?>;
+
+/// <summary>
+/// Returns product by exact barcode match. Useful for POS barcode scanning.
+/// </summary>
+public record GetProductByBarcodeQuery(string Barcode) : IRequest<ProductDto?>;
 
 public record GetCategoriesQuery(
     Guid? ParentId = null,

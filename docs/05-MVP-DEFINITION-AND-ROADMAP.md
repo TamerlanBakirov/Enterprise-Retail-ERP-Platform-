@@ -4,7 +4,7 @@
 
 **Version:** 1.0
 **Date:** June 18, 2026
-**Status:** Draft — Awaiting Approval
+**Status:** Living roadmap - implementation is in progress. Checkboxes below describe target scope and are not a release-completion claim; use the README production-readiness section and automated tests for current status.
 
 ---
 
