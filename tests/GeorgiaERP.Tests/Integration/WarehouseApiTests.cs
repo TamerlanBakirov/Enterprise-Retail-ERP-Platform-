@@ -14,7 +14,8 @@ using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 
 namespace GeorgiaERP.Tests.Integration;
 
-public class WarehouseApiTests : IClassFixture<ErpApiFactory>
+[Collection("Integration")]
+public class WarehouseApiTests
 {
     private readonly ErpApiFactory _factory;
 
