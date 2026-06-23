@@ -129,5 +129,17 @@ public class AuthController : ApiControllerBase
         return ToActionResult(result);
     }
 
+    [Authorize]
+    [HttpPost("change-password")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var result = await _mediator.Send(new ChangePasswordCommand(
+            CurrentUserId, request.CurrentPassword, request.NewPassword));
+
+        return ToActionResult(result);
+    }
+
     public record TwoFactorCodeRequest(string Code);
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 }

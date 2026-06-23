@@ -74,4 +74,24 @@ public class UsersController : ApiControllerBase
 
         return ToActionResult(result);
     }
+
+    [HttpPost("{id:guid}/reset-password")]
+    [Authorize(Roles = "super_admin,admin")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> AdminResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request)
+    {
+        var result = await _mediator.Send(new AdminResetPasswordCommand(id, request.NewPassword));
+        return ToActionResult(result);
+    }
+
+    [HttpPost("{id:guid}/unlock")]
+    [Authorize(Roles = "super_admin,admin")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> UnlockAccount(Guid id)
+    {
+        var result = await _mediator.Send(new UnlockAccountCommand(id));
+        return ToActionResult(result);
+    }
 }
+
+public record AdminResetPasswordRequest(string NewPassword);

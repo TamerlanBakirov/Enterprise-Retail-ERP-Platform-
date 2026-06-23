@@ -84,6 +84,21 @@ public class User : BaseEntity
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    public void SetPasswordHash(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+        PasswordHash = passwordHash;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Unlock()
+    {
+        FailedLoginCount = 0;
+        LockedUntil = null;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void Update(
         string? email = null,
         string? firstName = null,
