@@ -1,6 +1,7 @@
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Compliance.Commands;
+using GeorgiaERP.Application.Compliance.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -235,6 +236,40 @@ public class ComplianceController : ApiControllerBase
             Status = declaration?.Status.ToString() ?? "NotFiled",
             Currency = "GEL"
         });
+    }
+
+    [HttpPost("vat-declarations")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> GenerateVatDeclaration([FromBody] GenerateVatDeclarationCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return result.IsSuccess
+            ? CreatedAtAction(nameof(GetVatDeclaration), new { id = result.Value!.Id }, result.Value)
+            : ToActionResult(result);
+    }
+
+    [HttpPost("vat-declarations/{id:guid}/submit")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> SubmitVatDeclaration(Guid id)
+    {
+        var result = await _mediator.Send(new SubmitVatDeclarationCommand(id));
+        return ToActionResult(result);
+    }
+
+    [HttpGet("vat-declarations")]
+    public async Task<IActionResult> GetVatDeclarations(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var declarations = await _mediator.Send(new GetVatDeclarationsQuery(page, pageSize));
+        return Ok(declarations);
+    }
+
+    [HttpGet("vat-declarations/{id:guid}")]
+    public async Task<IActionResult> GetVatDeclaration(Guid id)
+    {
+        var result = await _mediator.Send(new GetVatDeclarationByIdQuery(id));
+        return ToActionResult(result);
     }
 
     [HttpGet("deadlines")]

@@ -10,6 +10,12 @@ public enum VatDeclarationStatus
     Rejected
 }
 
+/// <summary>
+/// A monthly VAT return for a tax period. Output VAT (collected on sales) less
+/// input VAT (paid on purchases) yields the net VAT payable to RS.GE. The
+/// declaration is computed as a Draft, then submitted, and finally marked
+/// Accepted or Rejected based on the Revenue Service response.
+/// </summary>
 public class VatDeclaration : BaseEntity
 {
     public DateTimeOffset PeriodStart { get; private set; }
@@ -26,6 +32,9 @@ public class VatDeclaration : BaseEntity
 
     public static VatDeclaration Create(DateTimeOffset periodStart, DateTimeOffset periodEnd)
     {
+        if (periodEnd <= periodStart)
+            throw new InvalidOperationException("VAT declaration period end must be after the period start.");
+
         return new VatDeclaration
         {
             PeriodStart = periodStart,
@@ -33,5 +42,54 @@ public class VatDeclaration : BaseEntity
             Status = VatDeclarationStatus.Draft,
             CreatedAt = DateTimeOffset.UtcNow
         };
+    }
+
+    /// <summary>
+    /// Sets the computed VAT totals and derives the net VAT (output - input).
+    /// Only a Draft declaration may be (re)computed; a submitted return is immutable.
+    /// </summary>
+    public void SetTotals(decimal totalOutputVat, decimal totalInputVat)
+    {
+        if (Status != VatDeclarationStatus.Draft)
+            throw new InvalidOperationException(
+                $"VAT declaration totals can only be set while in Draft. Current status: {Status}.");
+        if (totalOutputVat < 0) throw new InvalidOperationException("Output VAT cannot be negative.");
+        if (totalInputVat < 0) throw new InvalidOperationException("Input VAT cannot be negative.");
+
+        TotalOutputVat = totalOutputVat;
+        TotalInputVat = totalInputVat;
+        NetVat = totalOutputVat - totalInputVat;
+    }
+
+    /// <summary>Marks the declaration as filed with RS.GE, recording the returned reference.</summary>
+    public void Submit(string rsGeReference)
+    {
+        if (Status != VatDeclarationStatus.Draft)
+            throw new InvalidOperationException(
+                $"Only a Draft VAT declaration can be submitted. Current status: {Status}.");
+        if (string.IsNullOrWhiteSpace(rsGeReference))
+            throw new InvalidOperationException("An RS.GE reference is required to submit a VAT declaration.");
+
+        Status = VatDeclarationStatus.Submitted;
+        RsGeReference = rsGeReference;
+        SubmittedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>RS.GE accepted the filed return (terminal success).</summary>
+    public void MarkAccepted()
+    {
+        if (Status != VatDeclarationStatus.Submitted)
+            throw new InvalidOperationException(
+                $"Only a Submitted VAT declaration can be accepted. Current status: {Status}.");
+        Status = VatDeclarationStatus.Accepted;
+    }
+
+    /// <summary>RS.GE rejected the filed return (requires correction and re-filing).</summary>
+    public void MarkRejected()
+    {
+        if (Status != VatDeclarationStatus.Submitted)
+            throw new InvalidOperationException(
+                $"Only a Submitted VAT declaration can be rejected. Current status: {Status}.");
+        Status = VatDeclarationStatus.Rejected;
     }
 }
