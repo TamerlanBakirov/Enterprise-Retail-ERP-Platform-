@@ -92,6 +92,15 @@ public class CustomersController : ApiControllerBase
         var result = await _mediator.Send(new GetLoyaltyHistoryQuery(customerId, page, pageSize));
         return ToActionResult(result);
     }
+
+    [HttpPost("loyalty/expire")]
+    [Authorize(Roles = "super_admin,company_admin")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> ExpireLoyaltyPoints([FromQuery] int inactivityMonths = 12)
+    {
+        var result = await _mediator.Send(new ExpireLoyaltyPointsCommand(inactivityMonths));
+        return ToActionResult(result);
+    }
 }
 
 public record EarnPointsRequest(int Points, string? ReferenceType = null, Guid? ReferenceId = null, string? Description = null);
