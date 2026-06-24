@@ -91,4 +91,29 @@ public class FinanceController : ApiControllerBase
         var result = await _mediator.Send(new TrialBalanceQuery(asOfDate));
         return Ok(result);
     }
+
+    /// <summary>
+    /// Profit &amp; Loss statement: revenue, expenses, and net profit for the period.
+    /// </summary>
+    [HttpGet("income-statement")]
+    public async Task<IActionResult> GetIncomeStatement(
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to)
+    {
+        if (from > to)
+            return BadRequest(new { error = "'from' must be on or before 'to'." });
+
+        var result = await _mediator.Send(new IncomeStatementQuery(from, to));
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Balance sheet as of a date: assets, liabilities, equity, and current-period earnings.
+    /// </summary>
+    [HttpGet("balance-sheet")]
+    public async Task<IActionResult> GetBalanceSheet([FromQuery] DateTimeOffset? asOfDate = null)
+    {
+        var result = await _mediator.Send(new BalanceSheetQuery(asOfDate));
+        return Ok(result);
+    }
 }

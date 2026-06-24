@@ -245,4 +245,146 @@ public class FinanceCommandHandlerTests
         result.TotalDebit.Should().Be(2000m);
         result.TotalCredit.Should().Be(2000m);
     }
+
+    // === Financial statements helpers ===
+
+    private static async Task<(Guid Cash, Guid Revenue, Guid Expense, Guid Equity, Guid Liability)> SeedFullChart(AppDbContext db)
+    {
+        var cash = ChartOfAccount.Create("1000", "Cash", AccountType.Asset, BalanceType.Debit);
+        var revenue = ChartOfAccount.Create("4000", "Sales Revenue", AccountType.Revenue, BalanceType.Credit);
+        var expense = ChartOfAccount.Create("5000", "Cost of Goods", AccountType.Expense, BalanceType.Debit);
+        var equity = ChartOfAccount.Create("3000", "Owner Capital", AccountType.Equity, BalanceType.Credit);
+        var liability = ChartOfAccount.Create("2000", "Accounts Payable", AccountType.Liability, BalanceType.Credit);
+        db.ChartOfAccounts.AddRange(cash, revenue, expense, equity, liability);
+        await db.SaveChangesAsync();
+        return (cash.Id, revenue.Id, expense.Id, equity.Id, liability.Id);
+    }
+
+    private static async Task PostEntry(AppDbContext db, string number, DateTimeOffset date,
+        params (Guid AccountId, decimal Debit, decimal Credit)[] lines)
+    {
+        var entry = JournalEntry.Create(number, date, Guid.NewGuid(), number);
+        var no = 1;
+        decimal totalDebit = 0, totalCredit = 0;
+        foreach (var (accountId, debit, credit) in lines)
+        {
+            entry.Lines.Add(JournalEntryLine.Create(entry.Id, no++, accountId, debit, credit));
+            totalDebit += debit;
+            totalCredit += credit;
+        }
+        entry.SetTotals(totalDebit, totalCredit);
+        entry.Post(Guid.NewGuid());
+        db.JournalEntries.Add(entry);
+        await db.SaveChangesAsync();
+    }
+
+    // === IncomeStatement ===
+
+    [Fact]
+    public async Task IncomeStatement_EmptyLedger_ReturnsZeros()
+    {
+        await using var db = NewContext();
+        var handler = new IncomeStatementQueryHandler(db);
+
+        var result = await handler.Handle(
+            new IncomeStatementQuery(DateTimeOffset.UtcNow.AddMonths(-1), DateTimeOffset.UtcNow),
+            CancellationToken.None);
+
+        result.TotalRevenue.Should().Be(0);
+        result.TotalExpenses.Should().Be(0);
+        result.NetProfit.Should().Be(0);
+        result.Revenue.Should().BeEmpty();
+        result.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task IncomeStatement_ComputesNetProfit()
+    {
+        await using var db = NewContext();
+        var (cash, revenue, expense, _, _) = await SeedFullChart(db);
+        var now = DateTimeOffset.UtcNow;
+
+        // Sale: cash 1000 / revenue 1000
+        await PostEntry(db, "JE-1", now.AddDays(-2),
+            (cash, 1000m, 0m), (revenue, 0m, 1000m));
+        // Cost: expense 300 / cash 300
+        await PostEntry(db, "JE-2", now.AddDays(-1),
+            (expense, 300m, 0m), (cash, 0m, 300m));
+
+        var handler = new IncomeStatementQueryHandler(db);
+        var result = await handler.Handle(
+            new IncomeStatementQuery(now.AddDays(-5), now), CancellationToken.None);
+
+        result.TotalRevenue.Should().Be(1000m);
+        result.TotalExpenses.Should().Be(300m);
+        result.NetProfit.Should().Be(700m);
+        result.Revenue.Should().ContainSingle();
+        result.Expenses.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task IncomeStatement_ExcludesOutOfPeriodEntries()
+    {
+        await using var db = NewContext();
+        var (cash, revenue, _, _, _) = await SeedFullChart(db);
+        var now = DateTimeOffset.UtcNow;
+
+        await PostEntry(db, "JE-OLD", now.AddDays(-40),
+            (cash, 500m, 0m), (revenue, 0m, 500m));
+        await PostEntry(db, "JE-IN", now.AddDays(-2),
+            (cash, 800m, 0m), (revenue, 0m, 800m));
+
+        var handler = new IncomeStatementQueryHandler(db);
+        var result = await handler.Handle(
+            new IncomeStatementQuery(now.AddDays(-7), now), CancellationToken.None);
+
+        result.TotalRevenue.Should().Be(800m);
+    }
+
+    // === BalanceSheet ===
+
+    [Fact]
+    public async Task BalanceSheet_EmptyLedger_IsBalancedZero()
+    {
+        await using var db = NewContext();
+        var handler = new BalanceSheetQueryHandler(db);
+
+        var result = await handler.Handle(new BalanceSheetQuery(), CancellationToken.None);
+
+        result.TotalAssets.Should().Be(0);
+        result.TotalLiabilities.Should().Be(0);
+        result.TotalEquity.Should().Be(0);
+        result.IsBalanced.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task BalanceSheet_BalancesWithCurrentEarnings()
+    {
+        await using var db = NewContext();
+        var (cash, revenue, expense, equity, liability) = await SeedFullChart(db);
+        var now = DateTimeOffset.UtcNow;
+
+        // Owner injects 2000 capital: cash 2000 / equity 2000
+        await PostEntry(db, "JE-CAP", now.AddDays(-5),
+            (cash, 2000m, 0m), (equity, 0m, 2000m));
+        // Buy on credit: cash 1000 / payable 1000
+        await PostEntry(db, "JE-AP", now.AddDays(-4),
+            (cash, 1000m, 0m), (liability, 0m, 1000m));
+        // Sale: cash 1500 / revenue 1500
+        await PostEntry(db, "JE-SALE", now.AddDays(-3),
+            (cash, 1500m, 0m), (revenue, 0m, 1500m));
+        // Expense: expense 400 / cash 400
+        await PostEntry(db, "JE-EXP", now.AddDays(-2),
+            (expense, 400m, 0m), (cash, 0m, 400m));
+
+        var handler = new BalanceSheetQueryHandler(db);
+        var result = await handler.Handle(new BalanceSheetQuery(now), CancellationToken.None);
+
+        // Assets: cash = 2000 + 1000 + 1500 - 400 = 4100
+        result.TotalAssets.Should().Be(4100m);
+        result.TotalLiabilities.Should().Be(1000m);
+        result.TotalEquity.Should().Be(2000m);
+        result.CurrentEarnings.Should().Be(1100m); // 1500 revenue - 400 expense
+        result.IsBalanced.Should().BeTrue();
+    }
 }
