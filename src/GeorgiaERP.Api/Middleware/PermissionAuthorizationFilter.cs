@@ -12,7 +12,10 @@ public sealed class PermissionAuthorizationFilter : IAsyncAuthorizationFilter
         ["Users"] = "identity", ["Products"] = "products", ["Pricing"] = "products",
         ["Inventory"] = "inventory", ["Pos"] = "pos", ["Procurement"] = "procurement",
         ["Compliance"] = "compliance", ["Finance"] = "finance", ["Customers"] = "crm",
-        ["Organization"] = "organization", ["Reports"] = "reports", ["Warehouse"] = "warehouse"
+        ["Organization"] = "organization", ["Reports"] = "reports", ["Warehouse"] = "warehouse",
+        // Export exposes bulk data + PII; gate it behind reports permissions
+        // instead of leaving it open to any authenticated user.
+        ["Export"] = "reports"
     };
 
     public Task OnAuthorizationAsync(AuthorizationFilterContext context)

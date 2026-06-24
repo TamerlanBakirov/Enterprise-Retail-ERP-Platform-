@@ -54,7 +54,9 @@ public class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            _logger.LogWarning("Login attempt for non-existent user: {Username}", username);
+            // Do not log the supplied username: users sometimes type their
+            // password into the username field, which would leak it to logs.
+            _logger.LogWarning("Login attempt for a non-existent user.");
             return new AuthResult(false, null, null, null, "Invalid username or password.");
         }
 

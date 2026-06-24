@@ -80,11 +80,26 @@ public class LocalFileStorageService : IFileStorageService
         return relativePath;
     }
 
+    /// <summary>
+    /// Resolves a stored file name to an absolute path and verifies it stays
+    /// within the configured base directory, defeating path-traversal
+    /// (e.g. "../../etc/passwd") should a stored name ever be tampered with.
+    /// </summary>
+    private string? ResolveWithinBase(string storedFileName)
+    {
+        var baseFull = Path.GetFullPath(_options.BasePath);
+        var fullPath = Path.GetFullPath(Path.Combine(baseFull, storedFileName.Replace('/', Path.DirectorySeparatorChar)));
+        var baseWithSep = baseFull.EndsWith(Path.DirectorySeparatorChar)
+            ? baseFull
+            : baseFull + Path.DirectorySeparatorChar;
+        return fullPath.StartsWith(baseWithSep, StringComparison.OrdinalIgnoreCase) ? fullPath : null;
+    }
+
     public Task<FileStorageResult?> GetAsync(string storedFileName, CancellationToken cancellationToken = default)
     {
-        var fullPath = Path.Combine(_options.BasePath, storedFileName.Replace('/', Path.DirectorySeparatorChar));
+        var fullPath = ResolveWithinBase(storedFileName);
 
-        if (!File.Exists(fullPath))
+        if (fullPath is null || !File.Exists(fullPath))
         {
             _logger.LogWarning("File not found on disk: {StoredFileName}", storedFileName);
             return Task.FromResult<FileStorageResult?>(null);
@@ -102,9 +117,9 @@ public class LocalFileStorageService : IFileStorageService
 
     public Task<bool> DeleteAsync(string storedFileName, CancellationToken cancellationToken = default)
     {
-        var fullPath = Path.Combine(_options.BasePath, storedFileName.Replace('/', Path.DirectorySeparatorChar));
+        var fullPath = ResolveWithinBase(storedFileName);
 
-        if (!File.Exists(fullPath))
+        if (fullPath is null || !File.Exists(fullPath))
             return Task.FromResult(false);
 
         File.Delete(fullPath);
