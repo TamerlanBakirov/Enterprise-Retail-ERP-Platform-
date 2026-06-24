@@ -57,6 +57,20 @@ public record DeadlineDocumentDto(
 public record TinLookupResult(string? Name);
 public record VatStatusResult(string Tin, bool IsVatPayer);
 
+public record VatDeclarationDto(
+    Guid Id,
+    DateTimeOffset PeriodStart,
+    DateTimeOffset PeriodEnd,
+    decimal TotalOutputVat,
+    decimal TotalInputVat,
+    decimal NetVat,
+    string Status,
+    DateTimeOffset? SubmittedAt,
+    string? RsGeReference,
+    DateTimeOffset CreatedAt);
+
+public record GenerateVatDeclarationRequest(int Year, int Month);
+
 public record CreateWaybillRequest(
     string WaybillType,
     string BuyerTin,

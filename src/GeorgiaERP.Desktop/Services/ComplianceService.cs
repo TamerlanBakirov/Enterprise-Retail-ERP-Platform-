@@ -14,6 +14,9 @@ public interface IComplianceService
     Task<DeadlinesResponse?> GetDeadlinesAsync(int warningDays = 7);
     Task<TinLookupResult?> LookupTinNameAsync(string tin);
     Task<VatStatusResult?> GetVatStatusAsync(string tin);
+    Task<List<VatDeclarationDto>> GetVatDeclarationsAsync(int page = 1, int pageSize = 20);
+    Task<VatDeclarationDto?> GenerateVatDeclarationAsync(int year, int month);
+    Task<ApiResult> SubmitVatDeclarationAsync(Guid id);
 }
 
 public class ComplianceService : IComplianceService
@@ -61,4 +64,14 @@ public class ComplianceService : IComplianceService
 
     public Task<VatStatusResult?> GetVatStatusAsync(string tin) =>
         _api.GetAsync<VatStatusResult>($"compliance/rsge/tin/{tin}/vat-status");
+
+    public async Task<List<VatDeclarationDto>> GetVatDeclarationsAsync(int page, int pageSize) =>
+        await _api.GetAsync<List<VatDeclarationDto>>($"compliance/vat-declarations?page={page}&pageSize={pageSize}") ?? [];
+
+    public Task<VatDeclarationDto?> GenerateVatDeclarationAsync(int year, int month) =>
+        _api.PostAsync<GenerateVatDeclarationRequest, VatDeclarationDto>(
+            "compliance/vat-declarations", new GenerateVatDeclarationRequest(year, month));
+
+    public Task<ApiResult> SubmitVatDeclarationAsync(Guid id) =>
+        _api.PostAsync($"compliance/vat-declarations/{id}/submit");
 }

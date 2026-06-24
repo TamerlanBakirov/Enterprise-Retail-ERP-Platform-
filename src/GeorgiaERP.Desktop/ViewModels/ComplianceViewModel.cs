@@ -18,9 +18,11 @@ public partial class ComplianceViewModel : TabbedPagedViewModel
     [ObservableProperty] private string? _tinResult;
     [ObservableProperty] private int _vatYear;
     [ObservableProperty] private int _vatMonth;
+    [ObservableProperty] private VatDeclarationDto? _selectedVatDeclaration;
 
     public ObservableCollection<WaybillDto> Waybills { get; } = [];
     public ObservableCollection<FiscalDocumentDto> FiscalDocuments { get; } = [];
+    public ObservableCollection<VatDeclarationDto> VatDeclarations { get; } = [];
 
     public ComplianceViewModel(IComplianceService complianceService)
     {
@@ -49,6 +51,10 @@ public partial class ComplianceViewModel : TabbedPagedViewModel
             case "VatSummary":
                 VatSummary = await _complianceService.GetVatSummaryAsync(VatYear, VatMonth);
                 break;
+            case "VatDeclarations":
+                var declarations = await _complianceService.GetVatDeclarationsAsync(page: CurrentPage);
+                ReplaceItems(VatDeclarations, declarations);
+                break;
             case "Deadlines":
                 Deadlines = await _complianceService.GetDeadlinesAsync();
                 break;
@@ -69,6 +75,29 @@ public partial class ComplianceViewModel : TabbedPagedViewModel
     {
         if (SelectedWaybill is null) return;
         var result = await _complianceService.CloseWaybillAsync(SelectedWaybill.FiscalDocumentId);
+        if (result.IsSuccess) await LoadAsync();
+        else ErrorMessage = result.Error;
+    }
+
+    [RelayCommand]
+    private async Task GenerateVatDeclarationAsync()
+    {
+        await ExecuteAsync(async () =>
+        {
+            var created = await _complianceService.GenerateVatDeclarationAsync(VatYear, VatMonth);
+            if (created is not null)
+            {
+                ActiveTab = "VatDeclarations";
+                await LoadAsync();
+            }
+        });
+    }
+
+    [RelayCommand]
+    private async Task SubmitVatDeclarationAsync()
+    {
+        if (SelectedVatDeclaration is null) return;
+        var result = await _complianceService.SubmitVatDeclarationAsync(SelectedVatDeclaration.Id);
         if (result.IsSuccess) await LoadAsync();
         else ErrorMessage = result.Error;
     }

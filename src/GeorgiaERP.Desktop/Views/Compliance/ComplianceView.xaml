@@ -26,6 +26,9 @@
             <RadioButton Content="VAT Summary" Style="{StaticResource NavButton}" Foreground="{StaticResource TextPrimaryBrush}"
                          IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=VatSummary}"
                          Command="{Binding SwitchTabCommand}" CommandParameter="VatSummary" />
+            <RadioButton Content="VAT Declarations" Style="{StaticResource NavButton}" Foreground="{StaticResource TextPrimaryBrush}"
+                         IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=VatDeclarations}"
+                         Command="{Binding SwitchTabCommand}" CommandParameter="VatDeclarations" />
             <RadioButton Content="Deadlines" Style="{StaticResource NavButton}" Foreground="{StaticResource TextPrimaryBrush}"
                          IsChecked="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Deadlines}"
                          Command="{Binding SwitchTabCommand}" CommandParameter="Deadlines" />
@@ -114,6 +117,33 @@
                 </StackPanel>
             </StackPanel>
         </Border>
+
+        <!-- VAT Declarations -->
+        <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=VatDeclarations}">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+                <TextBlock Text="Year" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                <TextBox Style="{StaticResource ModernTextBox}" Width="70" Text="{Binding VatYear, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0" />
+                <TextBlock Text="Month" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                <TextBox Style="{StaticResource ModernTextBox}" Width="50" Text="{Binding VatMonth, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0" />
+                <Button Content="+ Generate Declaration" Style="{StaticResource PrimaryButton}" Command="{Binding GenerateVatDeclarationCommand}" Margin="0,0,8,0" />
+                <Button Content="Submit to RS.GE" Style="{StaticResource SecondaryButton}" Command="{Binding SubmitVatDeclarationCommand}" />
+            </StackPanel>
+            <Border Style="{StaticResource Card}" Padding="0">
+                <DataGrid Style="{StaticResource ModernDataGrid}" ItemsSource="{Binding VatDeclarations}" SelectedItem="{Binding SelectedVatDeclaration}"
+                          ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}" RowStyle="{StaticResource ModernDataGridRow}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Period Start" Binding="{Binding PeriodStart, StringFormat=d}" Width="110" />
+                        <DataGridTextColumn Header="Period End" Binding="{Binding PeriodEnd, StringFormat=d}" Width="110" />
+                        <DataGridTextColumn Header="Output VAT" Binding="{Binding TotalOutputVat, StringFormat=N2}" Width="110" />
+                        <DataGridTextColumn Header="Input VAT" Binding="{Binding TotalInputVat, StringFormat=N2}" Width="110" />
+                        <DataGridTextColumn Header="Net VAT" Binding="{Binding NetVat, StringFormat=N2}" Width="110" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" />
+                        <DataGridTextColumn Header="Submitted" Binding="{Binding SubmittedAt, StringFormat=g}" Width="140" />
+                        <DataGridTextColumn Header="RS.GE Ref" Binding="{Binding RsGeReference}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </DockPanel>
 
         <!-- Deadlines -->
         <Border Style="{StaticResource Card}" Padding="16"
