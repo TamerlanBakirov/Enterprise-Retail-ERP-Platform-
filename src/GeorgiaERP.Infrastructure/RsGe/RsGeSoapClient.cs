@@ -299,6 +299,21 @@ public class RsGeSoapClient : Application.Compliance.IRsGeSoapClient
         return ParseSimpleResult(response, "save_invoiceResult");
     }
 
+    public async Task<RsGeResult> SubmitVatDeclarationAsync(RsGeVatDeclarationRequest request)
+    {
+        var soapBody = new XElement(WaybillNs + "save_vat_declaration",
+            new XElement(WaybillNs + "su", _serviceUser),
+            new XElement(WaybillNs + "sp", _servicePassword),
+            new XElement(WaybillNs + "period_start", request.PeriodStart.ToString("yyyy-MM-dd")),
+            new XElement(WaybillNs + "period_end", request.PeriodEnd.ToString("yyyy-MM-dd")),
+            new XElement(WaybillNs + "output_vat", request.TotalOutputVat),
+            new XElement(WaybillNs + "input_vat", request.TotalInputVat),
+            new XElement(WaybillNs + "net_vat", request.NetVat));
+
+        var response = await SendSoapRequestAsync("save_vat_declaration", soapBody);
+        return ParseSimpleResult(response, "save_vat_declarationResult");
+    }
+
     private RsGeResult ParseSimpleResult(XDocument response, string resultElementName)
     {
         var resultElement = response

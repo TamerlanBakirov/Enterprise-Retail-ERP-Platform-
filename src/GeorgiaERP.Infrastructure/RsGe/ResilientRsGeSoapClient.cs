@@ -71,6 +71,9 @@ public sealed class ResilientRsGeSoapClient : IRsGeSoapClient
     public Task<RsGeResult> SaveInvoiceAsync(RsGeInvoiceRequest request)
         => ExecuteWithResilienceAsync("save_invoice", () => _inner.SaveInvoiceAsync(request));
 
+    public Task<RsGeResult> SubmitVatDeclarationAsync(RsGeVatDeclarationRequest request)
+        => ExecuteWithResilienceAsync("save_vat_declaration", () => _inner.SubmitVatDeclarationAsync(request));
+
     private async Task<T> ExecuteWithResilienceAsync<T>(string operation, Func<Task<T>> action)
     {
         // Ensure a correlation ID exists for the entire call chain.

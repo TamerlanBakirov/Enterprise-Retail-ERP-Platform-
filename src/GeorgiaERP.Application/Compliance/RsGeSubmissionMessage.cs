@@ -21,5 +21,8 @@ public enum RsGeOperation
     SubmitWaybill,
     ConfirmWaybill,
     CloseWaybill,
-    SubmitInvoice
+    SubmitInvoice,
+
+    /// <summary>save_vat_declaration — files a monthly VAT return with RS.GE.</summary>
+    SubmitVatDeclaration
 }

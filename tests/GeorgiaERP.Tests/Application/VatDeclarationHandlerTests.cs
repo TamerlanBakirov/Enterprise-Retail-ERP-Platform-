@@ -1,10 +1,14 @@
 using FluentAssertions;
+using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Compliance.Commands;
 using GeorgiaERP.Application.Compliance.Queries;
+using GeorgiaERP.Domain.Compliance;
 using GeorgiaERP.Domain.POS;
 using GeorgiaERP.Domain.Procurement;
 using GeorgiaERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Xunit;
 
 namespace GeorgiaERP.Tests.Application;
@@ -15,6 +19,12 @@ public class VatDeclarationHandlerTests
         new(new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase($"vat-{Guid.NewGuid()}")
             .Options);
+
+    private static SubmitVatDeclarationCommandHandler NewSubmitHandler(
+        AppDbContext db, IRsGeQueuePublisher? publisher = null) =>
+        new(db,
+            publisher ?? Substitute.For<IRsGeQueuePublisher>(),
+            Substitute.For<ILogger<SubmitVatDeclarationCommandHandler>>());
 
     private static PosTransaction Sale(decimal vat, DateTimeOffset when)
     {
@@ -107,19 +117,46 @@ public class VatDeclarationHandlerTests
     }
 
     [Fact]
-    public async Task Submit_DraftDeclaration_TransitionsToSubmitted()
+    public async Task Submit_DraftDeclaration_TransitionsToSubmittedAndQueues()
     {
         await using var db = NewContext();
         var generated = await new GenerateVatDeclarationCommandHandler(db)
             .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+        var publisher = Substitute.For<IRsGeQueuePublisher>();
 
-        var result = await new SubmitVatDeclarationCommandHandler(db)
+        var result = await NewSubmitHandler(db, publisher)
             .Handle(new SubmitVatDeclarationCommand(generated.Value!.Id), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Status.Should().Be("Submitted");
         result.Value.RsGeReference.Should().NotBeNullOrEmpty();
         result.Value.SubmittedAt.Should().NotBeNull();
+
+        // A linked fiscal-document tracker is created and enqueued for the worker.
+        var tracker = await db.FiscalDocuments.SingleAsync();
+        tracker.DocumentType.Should().Be(FiscalDocumentType.VatDeclaration);
+        tracker.ReferenceId.Should().Be(generated.Value.Id);
+        tracker.Status.Should().Be(FiscalDocumentStatus.Queued);
+        await publisher.Received(1).PublishAsync(
+            Arg.Is<RsGeSubmissionMessage>(m => m.Operation == RsGeOperation.SubmitVatDeclaration),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Submit_PublishFailure_StillPersistsQueuedDocument()
+    {
+        await using var db = NewContext();
+        var generated = await new GenerateVatDeclarationCommandHandler(db)
+            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+        var publisher = Substitute.For<IRsGeQueuePublisher>();
+        publisher.PublishAsync(Arg.Any<RsGeSubmissionMessage>(), Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("broker down"));
+
+        var result = await NewSubmitHandler(db, publisher)
+            .Handle(new SubmitVatDeclarationCommand(generated.Value!.Id), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await db.FiscalDocuments.SingleAsync()).Status.Should().Be(FiscalDocumentStatus.Queued);
     }
 
     [Fact]
@@ -128,7 +165,7 @@ public class VatDeclarationHandlerTests
         await using var db = NewContext();
         var generated = await new GenerateVatDeclarationCommandHandler(db)
             .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
-        var submit = new SubmitVatDeclarationCommandHandler(db);
+        var submit = NewSubmitHandler(db);
         await submit.Handle(new SubmitVatDeclarationCommand(generated.Value!.Id), CancellationToken.None);
 
         var again = await submit.Handle(new SubmitVatDeclarationCommand(generated.Value.Id), CancellationToken.None);
@@ -142,7 +179,7 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
 
-        var result = await new SubmitVatDeclarationCommandHandler(db)
+        var result = await NewSubmitHandler(db)
             .Handle(new SubmitVatDeclarationCommand(Guid.NewGuid()), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();

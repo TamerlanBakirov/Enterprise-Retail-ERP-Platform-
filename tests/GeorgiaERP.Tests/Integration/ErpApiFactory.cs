@@ -197,6 +197,7 @@ public class ErpApiFactory : WebApplicationFactory<Program>
         public Task<RsGeResult> RejectWaybillAsync(int id) => Task.FromResult(new RsGeResult(true, null, null));
         public Task<RsGeWaybillData?> GetWaybillAsync(int id) => Task.FromResult<RsGeWaybillData?>(null);
         public Task<RsGeResult> SaveInvoiceAsync(RsGeInvoiceRequest r) => Task.FromResult(new RsGeResult(true, null, null));
+        public Task<RsGeResult> SubmitVatDeclarationAsync(RsGeVatDeclarationRequest r) => Task.FromResult(new RsGeResult(true, null, null));
     }
 
     private sealed class NullRsGeCommunicationLogger : IRsGeCommunicationLogger

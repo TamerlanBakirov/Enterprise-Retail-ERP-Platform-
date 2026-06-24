@@ -92,6 +92,7 @@ public sealed class CachedRsGeSoapClient : IRsGeSoapClient
     public Task<RsGeResult> RejectWaybillAsync(int waybillId) => _inner.RejectWaybillAsync(waybillId);
     public Task<RsGeWaybillData?> GetWaybillAsync(int waybillId) => _inner.GetWaybillAsync(waybillId);
     public Task<RsGeResult> SaveInvoiceAsync(RsGeInvoiceRequest request) => _inner.SaveInvoiceAsync(request);
+    public Task<RsGeResult> SubmitVatDeclarationAsync(RsGeVatDeclarationRequest request) => _inner.SubmitVatDeclarationAsync(request);
 
     /// <summary>Wrapper to cache a boolean value since JSON needs an object.</summary>
     private sealed record VatPayerCacheEntry(bool IsVatPayer);

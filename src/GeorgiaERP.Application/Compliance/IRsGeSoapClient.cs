@@ -20,6 +20,7 @@ public interface IRsGeSoapClient
     Task<RsGeResult> RejectWaybillAsync(int waybillId);
     Task<RsGeWaybillData?> GetWaybillAsync(int waybillId);
     Task<RsGeResult> SaveInvoiceAsync(RsGeInvoiceRequest request);
+    Task<RsGeResult> SubmitVatDeclarationAsync(RsGeVatDeclarationRequest request);
 }
 
 // DTOs shared between Application and Infrastructure layers
@@ -55,6 +56,15 @@ public record RsGeInvoiceRequest
 }
 
 public record RsGeInvoiceItem(string Description, decimal Quantity, decimal UnitPrice, decimal VatAmount);
+
+public record RsGeVatDeclarationRequest
+{
+    public DateTimeOffset PeriodStart { get; init; }
+    public DateTimeOffset PeriodEnd { get; init; }
+    public decimal TotalOutputVat { get; init; }
+    public decimal TotalInputVat { get; init; }
+    public decimal NetVat { get; init; }
+}
 
 public record RsGeWaybillData
 {

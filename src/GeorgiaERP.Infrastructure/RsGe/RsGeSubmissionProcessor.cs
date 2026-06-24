@@ -58,8 +58,63 @@ public class RsGeSubmissionProcessor : IRsGeSubmissionProcessor
             RsGeOperation.ConfirmWaybill => await ConfirmWaybillAsync(document, cancellationToken),
             RsGeOperation.CloseWaybill => await CloseWaybillAsync(document, cancellationToken),
             RsGeOperation.SubmitInvoice => await SubmitInvoiceAsync(document, cancellationToken),
+            RsGeOperation.SubmitVatDeclaration => await SubmitVatDeclarationAsync(document, cancellationToken),
             _ => RsGeSubmissionResult.Permanent($"Unsupported operation {message.Operation}")
         };
+    }
+
+    private async Task<RsGeSubmissionResult> SubmitVatDeclarationAsync(FiscalDocument document, CancellationToken cancellationToken)
+    {
+        if (document.DocumentType is not FiscalDocumentType.VatDeclaration)
+            return await FailPermanentAsync(document, "Document is not a VAT declaration", cancellationToken);
+
+        if (document.ReferenceId is not { } declarationId)
+            return await FailPermanentAsync(document, "VAT fiscal document is not linked to a declaration", cancellationToken);
+
+        var declaration = await _dbContext.VatDeclarations
+            .FirstOrDefaultAsync(v => v.Id == declarationId, cancellationToken);
+        if (declaration is null)
+            return await FailPermanentAsync(document, $"VAT declaration {declarationId} not found", cancellationToken);
+
+        var request = new RsGeVatDeclarationRequest
+        {
+            PeriodStart = declaration.PeriodStart,
+            PeriodEnd = declaration.PeriodEnd,
+            TotalOutputVat = declaration.TotalOutputVat,
+            TotalInputVat = declaration.TotalInputVat,
+            NetVat = declaration.NetVat
+        };
+
+        var log = StartLog(document.Id, "save_vat_declaration", SerializeForAudit(request));
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await _soapClient.SubmitVatDeclarationAsync(request);
+            stopwatch.Stop();
+            CompleteLog(log, SerializeForAudit(result), 200, (int)stopwatch.ElapsedMilliseconds,
+                result.Success ? null : $"{result.ErrorCode}: {result.ErrorMessage}");
+
+            if (!result.Success)
+            {
+                // RS.GE rejected the return content — requires correction, not retry.
+                // FailPermanentAsync persists both the document and declaration changes.
+                declaration.MarkRejected();
+                return await FailPermanentAsync(document, result.ErrorMessage, cancellationToken);
+            }
+
+            document.MarkSubmitted(result.ErrorCode, document.InternalRef);
+            document.MarkConfirmed("ACCEPTED");
+            declaration.MarkAccepted();
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("VAT declaration {DeclarationId} accepted by RS.GE", declaration.Id);
+            return RsGeSubmissionResult.Success();
+        }
+        catch (HttpRequestException ex)
+        {
+            stopwatch.Stop();
+            CompleteLog(log, null, 0, (int)stopwatch.ElapsedMilliseconds, ex.Message);
+            return await FailTransientAsync(document, ex.Message, cancellationToken);
+        }
     }
 
     private async Task<RsGeSubmissionResult> SubmitInvoiceAsync(FiscalDocument document, CancellationToken cancellationToken)
