@@ -81,6 +81,9 @@ public class GetPurchaseOrdersQueryHandler : IRequestHandler<GetPurchaseOrdersQu
 
         var totalCount = await query.CountAsync(cancellationToken);
 
+        // Ordering/paging is done client-side: SQLite (used in tests) cannot
+        // ORDER BY a DateTimeOffset, so the rows are materialized first and then
+        // ordered and paged in memory.
         var rawItems = await query
             .Include(p => p.Supplier)
             .Include(p => p.Lines)
