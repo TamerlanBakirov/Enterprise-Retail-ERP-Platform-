@@ -64,4 +64,20 @@ public class GetPurchaseOrderByIdQueryTests
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be("NOT_FOUND");
     }
+
+    [Fact]
+    public async Task GetById_OrderWithNoLines_ReturnsEmptyLines()
+    {
+        await using var db = NewContext();
+        var (suppId, whId, _) = await SeedBaseData(db);
+        var po = PurchaseOrder.Create("PO-EMPTY", suppId, whId, Guid.NewGuid());
+        db.PurchaseOrders.Add(po);
+        await db.SaveChangesAsync();
+
+        var result = await new GetPurchaseOrderByIdQueryHandler(db)
+            .Handle(new GetPurchaseOrderByIdQuery(po.Id), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Lines.Should().BeEmpty();
+    }
 }

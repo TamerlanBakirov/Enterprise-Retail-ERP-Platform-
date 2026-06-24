@@ -29,10 +29,12 @@ public class GetPurchaseOrderByIdQueryHandler : IRequestHandler<GetPurchaseOrder
             return Result.NotFound<PurchaseOrderDto>("PurchaseOrder", request.Id);
 
         var productIds = po.Lines.Select(l => l.ProductId).Distinct().ToList();
-        var productNames = await _dbContext.Products.AsNoTracking()
-            .Where(p => productIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.Name })
-            .ToDictionaryAsync(p => p.Id, p => p.Name, ct);
+        var productNames = productIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _dbContext.Products.AsNoTracking()
+                .Where(p => productIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.Name })
+                .ToDictionaryAsync(p => p.Id, p => p.Name, ct);
 
         var dto = new PurchaseOrderDto(
             po.Id, po.PoNumber, po.SupplierId, po.Supplier.Name,

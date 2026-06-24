@@ -23,19 +23,26 @@ public record LoyaltyTransactionDto(
 public record GetLoyaltyHistoryQuery(
     Guid CustomerId,
     int Page = 1,
-    int PageSize = 20) : IRequest<PagedResult<LoyaltyTransactionDto>>;
+    int PageSize = 20) : IRequest<Result<PagedResult<LoyaltyTransactionDto>>>;
 
 public class GetLoyaltyHistoryQueryHandler
-    : IRequestHandler<GetLoyaltyHistoryQuery, PagedResult<LoyaltyTransactionDto>>
+    : IRequestHandler<GetLoyaltyHistoryQuery, Result<PagedResult<LoyaltyTransactionDto>>>
 {
     private readonly IAppDbContext _dbContext;
 
     public GetLoyaltyHistoryQueryHandler(IAppDbContext dbContext) => _dbContext = dbContext;
 
-    public async Task<PagedResult<LoyaltyTransactionDto>> Handle(GetLoyaltyHistoryQuery request, CancellationToken ct)
+    public async Task<Result<PagedResult<LoyaltyTransactionDto>>> Handle(GetLoyaltyHistoryQuery request, CancellationToken ct)
     {
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
+        // Distinguish "customer has no transactions" from "customer does not exist",
+        // matching the 404 behaviour of the earn/redeem endpoints.
+        var customerExists = await _dbContext.Customers.AsNoTracking()
+            .AnyAsync(c => c.Id == request.CustomerId, ct);
+        if (!customerExists)
+            return Result.NotFound<PagedResult<LoyaltyTransactionDto>>("Customer", request.CustomerId);
 
         var query = _dbContext.LoyaltyTransactions.AsNoTracking()
             .Where(t => t.CustomerId == request.CustomerId);
@@ -58,12 +65,12 @@ public class GetLoyaltyHistoryQueryHandler
                 t.CreatedAt))
             .ToListAsync(ct);
 
-        return new PagedResult<LoyaltyTransactionDto>
+        return Result.Success(new PagedResult<LoyaltyTransactionDto>
         {
             Items = items,
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
-        };
+        });
     }
 }

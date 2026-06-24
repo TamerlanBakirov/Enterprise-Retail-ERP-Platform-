@@ -36,24 +36,26 @@ public class LoyaltyHistoryQueryTests
         var result = await new GetLoyaltyHistoryQueryHandler(db)
             .Handle(new GetLoyaltyHistoryQuery(customerId), CancellationToken.None);
 
-        result.TotalCount.Should().Be(2);
-        result.Items.Should().HaveCount(2);
-        result.Items[0].TransactionType.Should().Be("Redeem"); // newest first
-        result.Items[0].BalanceAfter.Should().Be(70);
-        result.Items[1].TransactionType.Should().Be("Earn");
-        result.Items[1].BalanceAfter.Should().Be(100);
+        result.IsSuccess.Should().BeTrue();
+        var page = result.Value!;
+        page.TotalCount.Should().Be(2);
+        page.Items.Should().HaveCount(2);
+        page.Items[0].TransactionType.Should().Be("Redeem"); // newest first
+        page.Items[0].BalanceAfter.Should().Be(70);
+        page.Items[1].TransactionType.Should().Be("Earn");
+        page.Items[1].BalanceAfter.Should().Be(100);
     }
 
     [Fact]
-    public async Task History_UnknownCustomer_ReturnsEmptyPage()
+    public async Task History_UnknownCustomer_ReturnsNotFound()
     {
         await using var db = NewContext();
 
         var result = await new GetLoyaltyHistoryQueryHandler(db)
             .Handle(new GetLoyaltyHistoryQuery(Guid.NewGuid()), CancellationToken.None);
 
-        result.TotalCount.Should().Be(0);
-        result.Items.Should().BeEmpty();
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().Be("NOT_FOUND");
     }
 
     [Fact]
@@ -72,8 +74,8 @@ public class LoyaltyHistoryQueryTests
         var result = await new GetLoyaltyHistoryQueryHandler(db)
             .Handle(new GetLoyaltyHistoryQuery(a), CancellationToken.None);
 
-        result.TotalCount.Should().Be(1);
-        result.Items[0].Points.Should().Be(50);
+        result.Value!.TotalCount.Should().Be(1);
+        result.Value.Items[0].Points.Should().Be(50);
     }
 
     [Fact]
@@ -84,12 +86,16 @@ public class LoyaltyHistoryQueryTests
         var earn = new EarnLoyaltyPointsCommandHandler(db);
         for (var i = 0; i < 5; i++)
             await earn.Handle(new EarnLoyaltyPointsCommand(customerId, 10, null, null, $"earn {i}"), CancellationToken.None);
+        var handler = new GetLoyaltyHistoryQueryHandler(db);
 
-        var page = await new GetLoyaltyHistoryQueryHandler(db)
-            .Handle(new GetLoyaltyHistoryQuery(customerId, Page: 1, PageSize: 2), CancellationToken.None);
+        var p1 = await handler.Handle(new GetLoyaltyHistoryQuery(customerId, Page: 1, PageSize: 2), CancellationToken.None);
+        var p2 = await handler.Handle(new GetLoyaltyHistoryQuery(customerId, Page: 2, PageSize: 2), CancellationToken.None);
 
-        page.TotalCount.Should().Be(5);
-        page.Items.Should().HaveCount(2);
-        page.PageSize.Should().Be(2);
+        p1.Value!.TotalCount.Should().Be(5);
+        p1.Value.Items.Should().HaveCount(2);
+        p1.Value.PageSize.Should().Be(2);
+        // Page 2 advances past page 1 — no overlap.
+        p2.Value!.Items.Should().HaveCount(2);
+        p2.Value.Items.Select(i => i.Id).Should().NotIntersectWith(p1.Value.Items.Select(i => i.Id));
     }
 }

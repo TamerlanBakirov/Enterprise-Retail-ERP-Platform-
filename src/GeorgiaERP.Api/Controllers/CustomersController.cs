@@ -90,7 +90,7 @@ public class CustomersController : ApiControllerBase
         [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetLoyaltyHistoryQuery(customerId, page, pageSize));
-        return Ok(result);
+        return ToActionResult(result);
     }
 }
 
