@@ -60,12 +60,12 @@
                           ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
                           RowStyle="{StaticResource ModernDataGridRow}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Order #" Binding="{Binding OrderNumber}" Width="130" />
+                        <DataGridTextColumn Header="Order #" Binding="{Binding PoNumber}" Width="130" />
                         <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierName}" Width="*" />
                         <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="110" />
-                        <DataGridTextColumn Header="Subtotal" Binding="{Binding SubTotal, StringFormat=N2}" Width="100" />
-                        <DataGridTextColumn Header="VAT" Binding="{Binding TotalVat, StringFormat=N2}" Width="80" />
-                        <DataGridTextColumn Header="Total" Binding="{Binding GrandTotal, StringFormat=N2}" Width="100" />
+                        <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=N2}" Width="100" />
+                        <DataGridTextColumn Header="VAT" Binding="{Binding VatTotal, StringFormat=N2}" Width="80" />
+                        <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=N2}" Width="100" />
                         <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=d}" Width="100" />
                         <DataGridTemplateColumn Header="Action" Width="90">
                             <DataGridTemplateColumn.CellTemplate>

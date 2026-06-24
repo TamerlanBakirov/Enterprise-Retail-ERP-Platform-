@@ -16,13 +16,13 @@ public record SupplierDto(
 
 public record PurchaseOrderDto(
     Guid Id,
-    string OrderNumber,
+    string PoNumber,
     Guid SupplierId,
-    string SupplierName,
+    string? SupplierName,
     string Status,
-    decimal SubTotal,
-    decimal TotalVat,
-    decimal GrandTotal,
+    decimal Subtotal,
+    decimal VatTotal,
+    decimal Total,
     string? Notes,
     DateTimeOffset CreatedAt);
 
