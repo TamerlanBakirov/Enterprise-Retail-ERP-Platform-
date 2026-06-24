@@ -448,4 +448,77 @@ public class FinanceCommandHandlerTests
         result.Lines.Should().ContainSingle();
         result.ClosingBalance.Should().Be(1000m);
     }
+
+    // === ReverseJournalEntry ===
+
+    [Fact]
+    public async Task ReverseJournalEntry_Posted_CreatesMirrorAndMarksReversed()
+    {
+        await using var db = NewContext();
+        var (debitId, creditId) = await SeedAccounts(db);
+
+        var entry = JournalEntry.Create("JE-REVME", DateTimeOffset.UtcNow, Guid.NewGuid(), "Original");
+        entry.Lines.Add(JournalEntryLine.Create(entry.Id, 1, debitId, 1000m, 0m));
+        entry.Lines.Add(JournalEntryLine.Create(entry.Id, 2, creditId, 0m, 1000m));
+        entry.SetTotals(1000m, 1000m);
+        entry.Post(Guid.NewGuid());
+        db.JournalEntries.Add(entry);
+        await db.SaveChangesAsync();
+
+        var handler = new ReverseJournalEntryCommandHandler(db);
+        var result = await handler.Handle(
+            new ReverseJournalEntryCommand(entry.Id, Guid.NewGuid(), "wrong amount"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.TotalDebit.Should().Be(1000m);
+        result.Value.TotalCredit.Should().Be(1000m);
+
+        var original = await db.JournalEntries.FirstAsync(e => e.Id == entry.Id);
+        original.Status.Should().Be(JournalEntryStatus.Reversed);
+        original.ReversedById.Should().Be(result.Value.Id);
+
+        var reversal = await db.JournalEntries.Include(e => e.Lines).FirstAsync(e => e.Id == result.Value.Id);
+        reversal.Status.Should().Be(JournalEntryStatus.Posted);
+        // Debit/credit swapped on the mirror.
+        reversal.Lines.Single(l => l.AccountId == debitId).CreditAmount.Should().Be(1000m);
+        reversal.Lines.Single(l => l.AccountId == creditId).DebitAmount.Should().Be(1000m);
+        (await db.JournalEntries.CountAsync()).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ReverseJournalEntry_NotFound_ReturnsFailure()
+    {
+        await using var db = NewContext();
+        var handler = new ReverseJournalEntryCommandHandler(db);
+
+        var result = await handler.Handle(
+            new ReverseJournalEntryCommand(Guid.NewGuid(), Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task ReverseJournalEntry_Draft_ReturnsFailure()
+    {
+        await using var db = NewContext();
+        var (debitId, creditId) = await SeedAccounts(db);
+
+        var draft = JournalEntry.Create("JE-DRAFTREV", DateTimeOffset.UtcNow, Guid.NewGuid(), "Draft");
+        draft.Lines.Add(JournalEntryLine.Create(draft.Id, 1, debitId, 500m, 0m));
+        draft.Lines.Add(JournalEntryLine.Create(draft.Id, 2, creditId, 0m, 500m));
+        draft.SetTotals(500m, 500m);
+        db.JournalEntries.Add(draft);
+        await db.SaveChangesAsync();
+
+        var handler = new ReverseJournalEntryCommandHandler(db);
+        var result = await handler.Handle(
+            new ReverseJournalEntryCommand(draft.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Contain("posted");
+    }
 }

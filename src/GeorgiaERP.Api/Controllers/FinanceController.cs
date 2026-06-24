@@ -30,6 +30,13 @@ public class FinanceController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("chart-of-accounts/{id:guid}")]
+    public async Task<IActionResult> GetAccountById(Guid id)
+    {
+        var result = await _mediator.Send(new GetChartOfAccountByIdQuery(id));
+        return result is null ? NotFound() : Ok(result);
+    }
+
     [HttpPost("chart-of-accounts")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountCommand command)
@@ -66,6 +73,20 @@ public class FinanceController : ApiControllerBase
     {
         var result = await _mediator.Send(new PostJournalEntryCommand(id, CurrentUserId));
         return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Reverses a posted journal entry by posting a mirror entry and marking the
+    /// original as reversed.
+    /// </summary>
+    [HttpPost("journal-entries/{id:guid}/reverse")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> ReverseJournalEntry(Guid id, [FromBody] ReverseJournalEntryRequest? request = null)
+    {
+        var result = await _mediator.Send(new ReverseJournalEntryCommand(id, CurrentUserId, request?.Reason));
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/finance/journal-entries/{result.Value!.Id}", result.Value);
     }
 
     [HttpGet("bank-accounts")]
@@ -134,3 +155,5 @@ public class FinanceController : ApiControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 }
+
+public record ReverseJournalEntryRequest(string? Reason = null);
