@@ -40,6 +40,16 @@ public class Supplier : BaseEntity
         };
     }
 
+    public void UpdateDetails(string name, string? nameKa, string? tin)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidOperationException("Supplier name is required.");
+        Name = name;
+        NameKa = nameKa;
+        Tin = tin;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
     public void SetContactInfo(string? contactPerson, string? phone, string? email, string? address)
     {
         ContactPerson = contactPerson;

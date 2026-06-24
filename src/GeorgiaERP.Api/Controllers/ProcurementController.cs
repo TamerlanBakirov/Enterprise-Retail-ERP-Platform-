@@ -42,6 +42,15 @@ public class ProcurementController : ApiControllerBase
         return ToActionResult(result);
     }
 
+    [HttpPut("suppliers/{id:guid}")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> UpdateSupplier(Guid id, [FromBody] UpdateSupplierCommand command)
+    {
+        if (id != command.Id) return BadRequest(new { error = "ID mismatch." });
+        var result = await _mediator.Send(command);
+        return ToActionResult(result);
+    }
+
     [HttpPost("suppliers")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierCommand command)
