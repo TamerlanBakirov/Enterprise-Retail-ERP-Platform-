@@ -47,6 +47,31 @@ public record TransferOrderDto(
     Guid RequestedBy,
     DateTimeOffset CreatedAt);
 
+public record StockCountDetailDto(
+    Guid Id,
+    Guid WarehouseId,
+    string? WarehouseName,
+    string CountType,
+    string Status,
+    DateTimeOffset? StartedAt,
+    DateTimeOffset? CompletedAt,
+    Guid CreatedBy,
+    Guid? ApprovedBy,
+    DateTimeOffset CreatedAt,
+    decimal TotalVariance,
+    int LinesWithVariance,
+    IReadOnlyList<StockCountLineDto> Lines);
+
+public record StockCountLineDto(
+    Guid Id,
+    Guid ProductId,
+    string? ProductName,
+    Guid? VariantId,
+    decimal ExpectedQty,
+    decimal? CountedQty,
+    decimal Variance,
+    Guid? CountedBy);
+
 public record TransferOrderDetailDto(
     Guid Id,
     string TransferNumber,

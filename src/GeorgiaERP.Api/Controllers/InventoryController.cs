@@ -129,6 +129,13 @@ public class InventoryController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("counts/{id:guid}")]
+    public async Task<IActionResult> GetStockCountById(Guid id)
+    {
+        var result = await _mediator.Send(new GetStockCountByIdQuery(id));
+        return ToActionResult(result);
+    }
+
     [HttpPost("counts")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateStockCount([FromBody] CreateStockCountCommand command)
