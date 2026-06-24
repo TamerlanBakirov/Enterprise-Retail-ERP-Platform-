@@ -55,6 +55,7 @@ public class Customer : BaseEntity
     public void SetPersonalInfo(DateTimeOffset? dateOfBirth, string? gender) { DateOfBirth = dateOfBirth; Gender = gender; Touch(); }
     public void SetConsent(bool sms, bool email) { ConsentSms = sms; ConsentEmail = email; Touch(); }
     public void SetLoyaltyCard(string? cardNumber, string? tier) { LoyaltyCardNumber = cardNumber; LoyaltyTier = tier; Touch(); }
+    public void AssignLoyaltyTier(string? tier) { LoyaltyTier = tier; Touch(); }
     public void AddPoints(int points) { LoyaltyPoints += points; Touch(); }
     public void DeductPoints(int points) { LoyaltyPoints -= points; Touch(); }
     public void RecordVisit(decimal purchaseAmount) { TotalVisits++; TotalPurchases += purchaseAmount; LastVisitAt = DateTimeOffset.UtcNow; Touch(); }

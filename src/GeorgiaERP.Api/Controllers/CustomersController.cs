@@ -101,6 +101,15 @@ public class CustomersController : ApiControllerBase
         var result = await _mediator.Send(new ExpireLoyaltyPointsCommand(inactivityMonths));
         return ToActionResult(result);
     }
+
+    [HttpPost("loyalty/recalculate-tiers")]
+    [Authorize(Roles = "super_admin,company_admin")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> RecalculateLoyaltyTiers()
+    {
+        var result = await _mediator.Send(new RecalculateLoyaltyTiersCommand());
+        return ToActionResult(result);
+    }
 }
 
 public record EarnPointsRequest(int Points, string? ReferenceType = null, Guid? ReferenceId = null, string? Description = null);
