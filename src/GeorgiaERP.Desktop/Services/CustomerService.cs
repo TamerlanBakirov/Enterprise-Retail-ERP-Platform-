@@ -9,6 +9,8 @@ public interface ICustomerService
     Task<ApiResult> EarnPointsAsync(Guid customerId, EarnPointsRequest request);
     Task<ApiResult> RedeemPointsAsync(Guid customerId, RedeemPointsRequest request);
     Task<PagedResult<LoyaltyTransactionDto>> GetLoyaltyHistoryAsync(Guid customerId, int page = 1, int pageSize = 20);
+    Task<ApiResult> ExpireLoyaltyPointsAsync(int inactivityMonths = 12);
+    Task<ApiResult> RecalculateLoyaltyTiersAsync();
 }
 
 public class CustomerService : ICustomerService
@@ -37,4 +39,10 @@ public class CustomerService : ICustomerService
         await _api.GetAsync<PagedResult<LoyaltyTransactionDto>>(
             $"customers/{customerId}/loyalty/transactions?page={page}&pageSize={pageSize}")
         ?? new PagedResult<LoyaltyTransactionDto>();
+
+    public Task<ApiResult> ExpireLoyaltyPointsAsync(int inactivityMonths) =>
+        _api.PostAsync($"customers/loyalty/expire?inactivityMonths={inactivityMonths}");
+
+    public Task<ApiResult> RecalculateLoyaltyTiersAsync() =>
+        _api.PostAsync("customers/loyalty/recalculate-tiers");
 }

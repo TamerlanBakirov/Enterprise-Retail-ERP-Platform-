@@ -14,8 +14,15 @@
                         Command="{Binding SearchCommand}" Margin="8,0,0,0" />
                 <Button Content="+ Add Customer" Style="{StaticResource PrimaryButton}"
                         Click="OnAddCustomer" Margin="8,0,0,0" />
+                <Button Content="Recalc Tiers" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding RecalculateTiersCommand}" Margin="8,0,0,0" />
+                <Button Content="Expire Points" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ExpirePointsCommand}" Margin="8,0,0,0" />
             </StackPanel>
         </DockPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding LoyaltyAdminStatus}" Foreground="{StaticResource TextSecondaryBrush}"
+                   Margin="0,0,0,8" Visibility="{Binding LoyaltyAdminStatus, Converter={StaticResource NullToCollapsedConverter}}" />
 
         <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="3"
                      Foreground="{StaticResource PrimaryBrush}"
