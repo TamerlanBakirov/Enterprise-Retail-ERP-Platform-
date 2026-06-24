@@ -12,6 +12,7 @@ public partial class CustomersViewModel : PagedViewModel
     [ObservableProperty] private CustomerDto? _selectedCustomer;
 
     public ObservableCollection<CustomerDto> Customers { get; } = [];
+    public ObservableCollection<LoyaltyTransactionDto> LoyaltyHistory { get; } = [];
 
     public CustomersViewModel(ICustomerService customerService)
     {
@@ -26,5 +27,21 @@ public partial class CustomersViewModel : PagedViewModel
         ReplaceItems(Customers, result.Items);
         TotalCount = result.TotalCount;
         TotalPages = result.TotalPages;
+    }
+
+    // Loads the selected customer's loyalty ledger into the side panel.
+    partial void OnSelectedCustomerChanged(CustomerDto? value)
+    {
+        LoyaltyHistory.Clear();
+        if (value is null) return;
+        _ = LoadLoyaltyHistoryAsync(value.Id);
+    }
+
+    private async Task LoadLoyaltyHistoryAsync(Guid customerId)
+    {
+        var history = await _customerService.GetLoyaltyHistoryAsync(customerId);
+        // Selection may have changed while awaiting; only apply if still current.
+        if (SelectedCustomer?.Id != customerId) return;
+        ReplaceItems(LoyaltyHistory, history.Items);
     }
 }

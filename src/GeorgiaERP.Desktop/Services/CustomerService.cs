@@ -8,6 +8,7 @@ public interface ICustomerService
     Task<CustomerDto?> CreateCustomerAsync(CreateCustomerRequest request);
     Task<ApiResult> EarnPointsAsync(Guid customerId, EarnPointsRequest request);
     Task<ApiResult> RedeemPointsAsync(Guid customerId, RedeemPointsRequest request);
+    Task<PagedResult<LoyaltyTransactionDto>> GetLoyaltyHistoryAsync(Guid customerId, int page = 1, int pageSize = 20);
 }
 
 public class CustomerService : ICustomerService
@@ -31,4 +32,9 @@ public class CustomerService : ICustomerService
 
     public Task<ApiResult> RedeemPointsAsync(Guid customerId, RedeemPointsRequest request) =>
         _api.PostAsync($"customers/{customerId}/loyalty/redeem", request);
+
+    public async Task<PagedResult<LoyaltyTransactionDto>> GetLoyaltyHistoryAsync(Guid customerId, int page, int pageSize) =>
+        await _api.GetAsync<PagedResult<LoyaltyTransactionDto>>(
+            $"customers/{customerId}/loyalty/transactions?page={page}&pageSize={pageSize}")
+        ?? new PagedResult<LoyaltyTransactionDto>();
 }

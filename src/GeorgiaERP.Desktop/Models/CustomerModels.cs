@@ -11,6 +11,7 @@ public record CustomerDto(
     string? CompanyName,
     string? TaxId,
     string? LoyaltyCardNumber,
+    string? LoyaltyTier,
     int LoyaltyPoints,
     int TotalVisits,
     bool IsActive,
@@ -35,3 +36,14 @@ public record EarnPointsRequest(
 public record RedeemPointsRequest(
     int Points,
     string? Description);
+
+public record LoyaltyTransactionDto(
+    Guid Id,
+    Guid CustomerId,
+    string TransactionType,
+    int Points,
+    int BalanceAfter,
+    string? ReferenceType,
+    Guid? ReferenceId,
+    string? Description,
+    DateTimeOffset CreatedAt);

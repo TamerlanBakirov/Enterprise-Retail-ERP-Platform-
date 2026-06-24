@@ -31,24 +31,56 @@
             </StackPanel>
         </Border>
 
-        <Border Style="{StaticResource Card}" Padding="0">
-            <DataGrid Style="{StaticResource ModernDataGrid}"
-                      ItemsSource="{Binding Customers}"
-                      SelectedItem="{Binding SelectedCustomer}"
-                      ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
-                      RowStyle="{StaticResource ModernDataGridRow}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Binding="{Binding FirstName}" Width="120" />
-                    <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" />
-                    <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="130" />
-                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" />
-                    <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="150" />
-                    <DataGridTextColumn Header="Loyalty Card" Binding="{Binding LoyaltyCardNumber}" Width="120" />
-                    <DataGridTextColumn Header="Points" Binding="{Binding LoyaltyPoints}" Width="70" />
-                    <DataGridTextColumn Header="Visits" Binding="{Binding TotalVisits}" Width="60" />
-                    <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="60" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
+                <DataGrid Style="{StaticResource ModernDataGrid}"
+                          ItemsSource="{Binding Customers}"
+                          SelectedItem="{Binding SelectedCustomer}"
+                          ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                          RowStyle="{StaticResource ModernDataGridRow}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding FirstName}" Width="120" />
+                        <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="120" />
+                        <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="130" />
+                        <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" />
+                        <DataGridTextColumn Header="Company" Binding="{Binding CompanyName}" Width="150" />
+                        <DataGridTextColumn Header="Loyalty Card" Binding="{Binding LoyaltyCardNumber}" Width="120" />
+                        <DataGridTextColumn Header="Tier" Binding="{Binding LoyaltyTier}" Width="70" />
+                        <DataGridTextColumn Header="Points" Binding="{Binding LoyaltyPoints}" Width="70" />
+                        <DataGridTextColumn Header="Visits" Binding="{Binding TotalVisits}" Width="60" />
+                        <DataGridCheckBoxColumn Header="Active" Binding="{Binding IsActive}" Width="60" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Loyalty history side panel for the selected customer -->
+            <Border Grid.Column="1" Style="{StaticResource Card}" Padding="12" Margin="12,0,0,0" Width="360"
+                    Visibility="{Binding SelectedCustomer, Converter={StaticResource NullToCollapsedConverter}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Loyalty History" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                    <TextBlock DockPanel.Dock="Top" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8">
+                        <Run Text="{Binding SelectedCustomer.FirstName, Mode=OneWay}" />
+                        <Run Text="{Binding SelectedCustomer.LastName, Mode=OneWay}" />
+                        <Run Text=" — " /><Run Text="{Binding SelectedCustomer.LoyaltyPoints, Mode=OneWay}" /><Run Text=" pts" />
+                    </TextBlock>
+                    <DataGrid Style="{StaticResource ModernDataGrid}" ItemsSource="{Binding LoyaltyHistory}"
+                              ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                              RowStyle="{StaticResource ModernDataGridRow}" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding CreatedAt, StringFormat=g}" Width="120" />
+                            <DataGridTextColumn Header="Type" Binding="{Binding TransactionType}" Width="70" />
+                            <DataGridTextColumn Header="Points" Binding="{Binding Points}" Width="60" />
+                            <DataGridTextColumn Header="Balance" Binding="{Binding BalanceAfter}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </Grid>
     </DockPanel>
 </UserControl>
