@@ -77,4 +77,20 @@ public class PricingController : ApiControllerBase
             return ToActionResult(result);
         return Created($"/api/v1/pricing/promotions/{result.Value!.Id}", result.Value);
     }
+
+    [HttpPost("promotions/{id:guid}/deactivate")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> DeactivatePromotion(Guid id)
+    {
+        var result = await _mediator.Send(new SetPromotionStatusCommand(id, IsActive: false));
+        return ToActionResult(result);
+    }
+
+    [HttpPost("promotions/{id:guid}/activate")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> ActivatePromotion(Guid id)
+    {
+        var result = await _mediator.Send(new SetPromotionStatusCommand(id, IsActive: true));
+        return ToActionResult(result);
+    }
 }

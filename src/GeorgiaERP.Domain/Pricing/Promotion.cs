@@ -49,4 +49,10 @@ public class Promotion : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
+
+    /// <summary>Stops the promotion (e.g. ended early) without deleting its history.</summary>
+    public void Deactivate() => IsActive = false;
+
+    /// <summary>Re-enables a previously deactivated promotion.</summary>
+    public void Activate() => IsActive = true;
 }
