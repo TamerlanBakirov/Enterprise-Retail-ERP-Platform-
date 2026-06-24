@@ -116,4 +116,21 @@ public class FinanceController : ApiControllerBase
         var result = await _mediator.Send(new BalanceSheetQuery(asOfDate));
         return Ok(result);
     }
+
+    /// <summary>
+    /// General ledger detail for a single account: opening balance, posted
+    /// transactions with running balance, and closing balance.
+    /// </summary>
+    [HttpGet("general-ledger/{accountId:guid}")]
+    public async Task<IActionResult> GetGeneralLedger(
+        Guid accountId,
+        [FromQuery] DateTimeOffset? from = null,
+        [FromQuery] DateTimeOffset? to = null)
+    {
+        if (from.HasValue && to.HasValue && from > to)
+            return BadRequest(new { error = "'from' must be on or before 'to'." });
+
+        var result = await _mediator.Send(new GeneralLedgerQuery(accountId, from, to));
+        return result is null ? NotFound() : Ok(result);
+    }
 }

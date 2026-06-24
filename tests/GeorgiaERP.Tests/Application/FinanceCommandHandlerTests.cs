@@ -387,4 +387,65 @@ public class FinanceCommandHandlerTests
         result.CurrentEarnings.Should().Be(1100m); // 1500 revenue - 400 expense
         result.IsBalanced.Should().BeTrue();
     }
+
+    // === GeneralLedger ===
+
+    [Fact]
+    public async Task GeneralLedger_UnknownAccount_ReturnsNull()
+    {
+        await using var db = NewContext();
+        var handler = new GeneralLedgerQueryHandler(db);
+
+        var result = await handler.Handle(
+            new GeneralLedgerQuery(Guid.NewGuid()), CancellationToken.None);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GeneralLedger_ComputesRunningBalance()
+    {
+        await using var db = NewContext();
+        var (cash, revenue, expense, _, _) = await SeedFullChart(db);
+        var now = DateTimeOffset.UtcNow;
+
+        await PostEntry(db, "JE-1", now.AddDays(-3), (cash, 1000m, 0m), (revenue, 0m, 1000m));
+        await PostEntry(db, "JE-2", now.AddDays(-2), (expense, 200m, 0m), (cash, 0m, 200m));
+        await PostEntry(db, "JE-3", now.AddDays(-1), (cash, 500m, 0m), (revenue, 0m, 500m));
+
+        var handler = new GeneralLedgerQueryHandler(db);
+        var result = await handler.Handle(new GeneralLedgerQuery(cash), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.Lines.Should().HaveCount(3);
+        result.OpeningBalance.Should().Be(0m);
+        // Cash (debit account): +1000, -200, +500 = 1300
+        result.Lines[0].RunningBalance.Should().Be(1000m);
+        result.Lines[1].RunningBalance.Should().Be(800m);
+        result.Lines[2].RunningBalance.Should().Be(1300m);
+        result.ClosingBalance.Should().Be(1300m);
+        result.TotalDebit.Should().Be(1500m);
+        result.TotalCredit.Should().Be(200m);
+    }
+
+    [Fact]
+    public async Task GeneralLedger_OpeningBalance_FromPriorActivity()
+    {
+        await using var db = NewContext();
+        var (cash, revenue, _, _, _) = await SeedFullChart(db);
+        var now = DateTimeOffset.UtcNow;
+
+        // Prior period activity -> opening balance.
+        await PostEntry(db, "JE-PRIOR", now.AddDays(-30), (cash, 700m, 0m), (revenue, 0m, 700m));
+        // In-period activity.
+        await PostEntry(db, "JE-IN", now.AddDays(-2), (cash, 300m, 0m), (revenue, 0m, 300m));
+
+        var handler = new GeneralLedgerQueryHandler(db);
+        var result = await handler.Handle(
+            new GeneralLedgerQuery(cash, now.AddDays(-7), now), CancellationToken.None);
+
+        result!.OpeningBalance.Should().Be(700m);
+        result.Lines.Should().ContainSingle();
+        result.ClosingBalance.Should().Be(1000m);
+    }
 }
