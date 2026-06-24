@@ -57,6 +57,12 @@ public class PosTransactionConfiguration : IEntityTypeConfiguration<PosTransacti
         builder.Property(t => t.VoidReason)
             .HasMaxLength(500);
 
+        builder.Property(t => t.OriginalTransactionId);
+
+        // Returns reference their original sale; index for return-lookup per sale.
+        builder.HasIndex(t => t.OriginalTransactionId)
+            .HasDatabaseName("IX_pos_transactions_original");
+
         builder.HasOne(t => t.Session)
             .WithMany(s => s.Transactions)
             .HasForeignKey(t => t.SessionId)

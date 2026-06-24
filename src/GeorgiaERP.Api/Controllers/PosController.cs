@@ -95,6 +95,20 @@ public class PosController : ApiControllerBase
         var result = await _mediator.Send(command);
         return ToActionResult(result);
     }
+
+    [HttpPost("transactions/{transactionId:guid}/return")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> ReturnTransaction(Guid transactionId, [FromBody] CreateReturnRequest request)
+    {
+        var command = new CreateReturnTransactionCommand(
+            request.SessionId, transactionId, request.Lines, request.Reason);
+        var result = await _mediator.Send(command);
+        if (result.IsFailure)
+            return ToActionResult(result);
+        return Created($"/api/v1/pos/transactions/{result.Value!.TransactionId}", result.Value);
+    }
+
+    public record CreateReturnRequest(Guid SessionId, List<ReturnLineInput> Lines, string? Reason);
     // === Terminals ===
 
     [HttpGet("terminals")]

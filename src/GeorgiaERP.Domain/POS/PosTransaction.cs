@@ -36,6 +36,8 @@ public class PosTransaction : BaseEntity
     public DateTimeOffset? VoidedAt { get; private set; }
     public Guid? VoidedBy { get; private set; }
     public string? VoidReason { get; private set; }
+    /// <summary>For a Return, the Sale transaction being refunded.</summary>
+    public Guid? OriginalTransactionId { get; private set; }
 
     // Navigation properties
     public PosSession Session { get; private set; } = default!;
@@ -74,6 +76,11 @@ public class PosTransaction : BaseEntity
     public void SetCustomer(Guid? customerId)
     {
         CustomerId = customerId;
+    }
+
+    public void SetOriginalTransaction(Guid originalTransactionId)
+    {
+        OriginalTransactionId = originalTransactionId;
     }
 
     public void Complete(string? fiscalReceiptId = null)
