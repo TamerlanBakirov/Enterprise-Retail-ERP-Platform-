@@ -238,12 +238,16 @@ public class ComplianceController : ApiControllerBase
         });
     }
 
+    public record GenerateVatDeclarationRequest(int Year, int Month);
+
     [HttpPost("vat-declarations")]
     [Authorize(Roles = "super_admin,company_admin,accountant")]
     [EnableRateLimiting("write")]
-    public async Task<IActionResult> GenerateVatDeclaration([FromBody] GenerateVatDeclarationCommand command)
+    public async Task<IActionResult> GenerateVatDeclaration([FromBody] GenerateVatDeclarationRequest request)
     {
-        var result = await _mediator.Send(command);
+        // CreatedBy is taken from the authenticated principal, never the request body.
+        var result = await _mediator.Send(
+            new GenerateVatDeclarationCommand(request.Year, request.Month, CurrentUserId));
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetVatDeclaration), new { id = result.Value!.Id }, result.Value)
             : ToActionResult(result);
@@ -254,7 +258,7 @@ public class ComplianceController : ApiControllerBase
     [EnableRateLimiting("write")]
     public async Task<IActionResult> SubmitVatDeclaration(Guid id)
     {
-        var result = await _mediator.Send(new SubmitVatDeclarationCommand(id));
+        var result = await _mediator.Send(new SubmitVatDeclarationCommand(id, CurrentUserId));
         return ToActionResult(result);
     }
 

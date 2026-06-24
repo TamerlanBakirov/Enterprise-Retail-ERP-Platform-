@@ -26,9 +26,10 @@ public class VatDeclarationSubmissionProcessorTests
     {
         var declaration = VatDeclaration.Create(
             new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero));
+            new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero),
+            Guid.NewGuid());
         declaration.SetTotals(170m, 50m);
-        declaration.Submit($"VAT-202603-{declaration.Id:N}");
+        declaration.Submit($"VAT-202603-{declaration.Id:N}", Guid.NewGuid());
 
         var document = FiscalDocument.Create(
             FiscalDocumentType.VatDeclaration,

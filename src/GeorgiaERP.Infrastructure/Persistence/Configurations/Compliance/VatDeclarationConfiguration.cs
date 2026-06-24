@@ -33,6 +33,10 @@ public class VatDeclarationConfiguration : IEntityTypeConfiguration<VatDeclarati
         builder.Property(v => v.RsGeReference)
             .HasMaxLength(100);
 
+        builder.Property(v => v.CreatedBy);
+
+        builder.Property(v => v.SubmittedBy);
+
         builder.Property(v => v.CreatedAt);
 
         builder.HasIndex(v => new { v.PeriodStart, v.PeriodEnd })

@@ -13,7 +13,7 @@ namespace GeorgiaERP.Application.Compliance.Commands;
 /// from completed POS sales (less returns) and input VAT from received purchase
 /// orders in the period. Only one declaration may exist per period.
 /// </summary>
-public record GenerateVatDeclarationCommand(int Year, int Month) : IRequest<Result<VatDeclarationDto>>;
+public record GenerateVatDeclarationCommand(int Year, int Month, Guid CreatedBy) : IRequest<Result<VatDeclarationDto>>;
 
 public class GenerateVatDeclarationCommandHandler
     : IRequestHandler<GenerateVatDeclarationCommand, Result<VatDeclarationDto>>
@@ -69,7 +69,7 @@ public class GenerateVatDeclarationCommandHandler
         }
         else
         {
-            declaration = VatDeclaration.Create(periodStart, periodEnd);
+            declaration = VatDeclaration.Create(periodStart, periodEnd, request.CreatedBy);
             declaration.SetTotals(outputVat, inputVat);
             _dbContext.VatDeclarations.Add(declaration);
         }

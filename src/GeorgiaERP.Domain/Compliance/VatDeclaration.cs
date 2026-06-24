@@ -26,11 +26,13 @@ public class VatDeclaration : BaseEntity
     public VatDeclarationStatus Status { get; private set; }
     public DateTimeOffset? SubmittedAt { get; private set; }
     public string? RsGeReference { get; private set; }
+    public Guid CreatedBy { get; private set; }
+    public Guid? SubmittedBy { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
     private VatDeclaration() { }
 
-    public static VatDeclaration Create(DateTimeOffset periodStart, DateTimeOffset periodEnd)
+    public static VatDeclaration Create(DateTimeOffset periodStart, DateTimeOffset periodEnd, Guid createdBy)
     {
         if (periodEnd <= periodStart)
             throw new InvalidOperationException("VAT declaration period end must be after the period start.");
@@ -40,6 +42,7 @@ public class VatDeclaration : BaseEntity
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
             Status = VatDeclarationStatus.Draft,
+            CreatedBy = createdBy,
             CreatedAt = DateTimeOffset.UtcNow
         };
     }
@@ -61,8 +64,8 @@ public class VatDeclaration : BaseEntity
         NetVat = totalOutputVat - totalInputVat;
     }
 
-    /// <summary>Marks the declaration as filed with RS.GE, recording the returned reference.</summary>
-    public void Submit(string rsGeReference)
+    /// <summary>Marks the declaration as filed with RS.GE, recording the returned reference and acting user.</summary>
+    public void Submit(string rsGeReference, Guid submittedBy)
     {
         if (Status != VatDeclarationStatus.Draft)
             throw new InvalidOperationException(
@@ -73,6 +76,7 @@ public class VatDeclaration : BaseEntity
         Status = VatDeclarationStatus.Submitted;
         RsGeReference = rsGeReference;
         SubmittedAt = DateTimeOffset.UtcNow;
+        SubmittedBy = submittedBy;
     }
 
     /// <summary>RS.GE accepted the filed return (terminal success).</summary>
@@ -106,6 +110,7 @@ public class VatDeclaration : BaseEntity
                 $"Only a Rejected VAT declaration can be reverted to Draft. Current status: {Status}.");
         Status = VatDeclarationStatus.Draft;
         SubmittedAt = null;
+        SubmittedBy = null;
         RsGeReference = null;
     }
 }

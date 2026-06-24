@@ -93,7 +93,7 @@ public class VatDeclarationHandlerTests
         await db.SaveChangesAsync();
 
         var result = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.TotalOutputVat.Should().Be(170m); // (180 + 20) - 30 returns
@@ -112,7 +112,7 @@ public class VatDeclarationHandlerTests
         await db.SaveChangesAsync();
 
         var result = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.TotalInputVat.Should().Be(40m);
@@ -123,16 +123,16 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var periodStart = new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
-        var rejected = VatDeclaration.Create(periodStart, periodStart.AddMonths(1));
+        var rejected = VatDeclaration.Create(periodStart, periodStart.AddMonths(1), Guid.NewGuid());
         rejected.SetTotals(10m, 0m);
-        rejected.Submit("VAT-old");
+        rejected.Submit("VAT-old", Guid.NewGuid());
         rejected.MarkRejected();
         db.VatDeclarations.Add(rejected);
         db.PosTransactions.Add(Sale(77m, new DateTimeOffset(2026, 3, 9, 0, 0, 0, TimeSpan.Zero)));
         await db.SaveChangesAsync();
 
         var result = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be(rejected.Id);           // reused the row
@@ -147,9 +147,9 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var handler = new GenerateVatDeclarationCommandHandler(db);
-        await handler.Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+        await handler.Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
-        var second = await handler.Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+        var second = await handler.Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         second.IsFailure.Should().BeTrue();
         second.ErrorCode.Should().Be("CONFLICT");
@@ -161,7 +161,7 @@ public class VatDeclarationHandlerTests
         await using var db = NewContext();
 
         var result = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.NetVat.Should().Be(0m);
@@ -172,11 +172,11 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var generated = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
         var publisher = Substitute.For<IRsGeQueuePublisher>();
 
         var result = await NewSubmitHandler(db, publisher)
-            .Handle(new SubmitVatDeclarationCommand(generated.Value!.Id), CancellationToken.None);
+            .Handle(new SubmitVatDeclarationCommand(generated.Value!.Id, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Status.Should().Be("Submitted");
@@ -198,13 +198,13 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var generated = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
         var publisher = Substitute.For<IRsGeQueuePublisher>();
         publisher.PublishAsync(Arg.Any<RsGeSubmissionMessage>(), Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("broker down"));
 
         var result = await NewSubmitHandler(db, publisher)
-            .Handle(new SubmitVatDeclarationCommand(generated.Value!.Id), CancellationToken.None);
+            .Handle(new SubmitVatDeclarationCommand(generated.Value!.Id, Guid.NewGuid()), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         (await db.FiscalDocuments.SingleAsync()).Status.Should().Be(FiscalDocumentStatus.Queued);
@@ -215,11 +215,11 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var generated = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
         var submit = NewSubmitHandler(db);
-        await submit.Handle(new SubmitVatDeclarationCommand(generated.Value!.Id), CancellationToken.None);
+        await submit.Handle(new SubmitVatDeclarationCommand(generated.Value!.Id, Guid.NewGuid()), CancellationToken.None);
 
-        var again = await submit.Handle(new SubmitVatDeclarationCommand(generated.Value.Id), CancellationToken.None);
+        var again = await submit.Handle(new SubmitVatDeclarationCommand(generated.Value.Id, Guid.NewGuid()), CancellationToken.None);
 
         again.IsFailure.Should().BeTrue();
         again.ErrorCode.Should().Be("CONFLICT");
@@ -231,7 +231,7 @@ public class VatDeclarationHandlerTests
         await using var db = NewContext();
 
         var result = await NewSubmitHandler(db)
-            .Handle(new SubmitVatDeclarationCommand(Guid.NewGuid()), CancellationToken.None);
+            .Handle(new SubmitVatDeclarationCommand(Guid.NewGuid(), Guid.NewGuid()), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be("NOT_FOUND");
@@ -242,7 +242,7 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var generated = await new GenerateVatDeclarationCommandHandler(db)
-            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+            .Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         var result = await new GetVatDeclarationByIdQueryHandler(db)
             .Handle(new GetVatDeclarationByIdQuery(generated.Value!.Id), CancellationToken.None);
@@ -256,8 +256,8 @@ public class VatDeclarationHandlerTests
     {
         await using var db = NewContext();
         var handler = new GenerateVatDeclarationCommandHandler(db);
-        await handler.Handle(new GenerateVatDeclarationCommand(2026, 1), CancellationToken.None);
-        await handler.Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+        await handler.Handle(new GenerateVatDeclarationCommand(2026, 1, Guid.NewGuid()), CancellationToken.None);
+        await handler.Handle(new GenerateVatDeclarationCommand(2026, 3, Guid.NewGuid()), CancellationToken.None);
 
         var list = await new GetVatDeclarationsQueryHandler(db)
             .Handle(new GetVatDeclarationsQuery(1, 20), CancellationToken.None);

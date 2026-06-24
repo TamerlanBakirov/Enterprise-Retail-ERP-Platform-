@@ -15,6 +15,8 @@ public record VatDeclarationDto(
     string Status,
     DateTimeOffset? SubmittedAt,
     string? RsGeReference,
+    Guid CreatedBy,
+    Guid? SubmittedBy,
     DateTimeOffset CreatedAt)
 {
     public static VatDeclarationDto From(VatDeclaration v) => new(
@@ -27,6 +29,8 @@ public record VatDeclarationDto(
         v.Status.ToString(),
         v.SubmittedAt,
         v.RsGeReference,
+        v.CreatedBy,
+        v.SubmittedBy,
         v.CreatedAt);
 }
 
@@ -60,6 +64,8 @@ public class GetVatDeclarationsQueryHandler
                 v.Status.ToString(),
                 v.SubmittedAt,
                 v.RsGeReference,
+                v.CreatedBy,
+                v.SubmittedBy,
                 v.CreatedAt))
             .ToListAsync(ct);
     }

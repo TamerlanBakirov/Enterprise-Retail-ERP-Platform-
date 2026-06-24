@@ -14,7 +14,7 @@ namespace GeorgiaERP.Application.Compliance.Commands;
 /// Revenue Service round-trip happens asynchronously in the worker. The worker
 /// transitions the declaration to Accepted or Rejected based on the response.
 /// </summary>
-public record SubmitVatDeclarationCommand(Guid Id) : IRequest<Result<VatDeclarationDto>>;
+public record SubmitVatDeclarationCommand(Guid Id, Guid SubmittedBy) : IRequest<Result<VatDeclarationDto>>;
 
 public class SubmitVatDeclarationCommandHandler
     : IRequestHandler<SubmitVatDeclarationCommand, Result<VatDeclarationDto>>
@@ -48,7 +48,7 @@ public class SubmitVatDeclarationCommandHandler
                 $"Only a Draft VAT declaration can be submitted. Current status: {declaration.Status}.");
 
         var reference = $"VAT-{declaration.PeriodStart:yyyyMM}-{declaration.Id:N}";
-        declaration.Submit(reference);
+        declaration.Submit(reference, request.SubmittedBy);
 
         // The fiscal-document tracker carries the RS.GE submission lifecycle and
         // links back to the declaration via ReferenceId, mirroring the waybill flow.
