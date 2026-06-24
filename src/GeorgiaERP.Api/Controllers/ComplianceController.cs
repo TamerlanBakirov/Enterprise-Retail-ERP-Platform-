@@ -262,6 +262,24 @@ public class ComplianceController : ApiControllerBase
         return ToActionResult(result);
     }
 
+    [HttpPost("vat-declarations/{id:guid}/accept")]
+    [Authorize(Roles = "super_admin,company_admin,accountant")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> AcceptVatDeclaration(Guid id)
+    {
+        var result = await _mediator.Send(new ResolveVatDeclarationCommand(id, Accepted: true));
+        return ToActionResult(result);
+    }
+
+    [HttpPost("vat-declarations/{id:guid}/reject")]
+    [Authorize(Roles = "super_admin,company_admin,accountant")]
+    [EnableRateLimiting("write")]
+    public async Task<IActionResult> RejectVatDeclaration(Guid id)
+    {
+        var result = await _mediator.Send(new ResolveVatDeclarationCommand(id, Accepted: false));
+        return ToActionResult(result);
+    }
+
     [HttpGet("vat-declarations")]
     public async Task<IActionResult> GetVatDeclarations(
         [FromQuery] int page = 1,
