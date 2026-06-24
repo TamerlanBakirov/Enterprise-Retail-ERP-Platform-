@@ -57,6 +57,17 @@ public class VatDeclarationHandlerTests
         return po;
     }
 
+    private static PurchaseOrder PartiallyReceivedPo(decimal vat, DateTimeOffset orderDate)
+    {
+        var po = PurchaseOrder.Create($"PO-{Guid.NewGuid():N}", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        po.SetTotals(200m, vat, 200m + vat);
+        po.Approve(Guid.NewGuid());
+        po.Send();
+        po.MarkPartiallyReceived();
+        SetProperty(po, "OrderDate", orderDate);
+        return po;
+    }
+
     // CreatedAt / OrderDate are private-set; the period filters key off them, so
     // tests pin them via reflection to land inside the target month.
     private static void SetCreatedAt(object entity, DateTimeOffset value) =>
@@ -89,6 +100,46 @@ public class VatDeclarationHandlerTests
         result.Value.TotalInputVat.Should().Be(50m);
         result.Value.NetVat.Should().Be(120m);
         result.Value.Status.Should().Be("Draft");
+    }
+
+    [Fact]
+    public async Task Generate_PartiallyReceivedPo_ExcludedFromInputVat()
+    {
+        await using var db = NewContext();
+        var inMonth = new DateTimeOffset(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+        db.PurchaseOrders.Add(ReceivedPo(40m, inMonth));
+        db.PurchaseOrders.Add(PartiallyReceivedPo(100m, inMonth)); // must NOT count
+        await db.SaveChangesAsync();
+
+        var result = await new GenerateVatDeclarationCommandHandler(db)
+            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.TotalInputVat.Should().Be(40m);
+    }
+
+    [Fact]
+    public async Task Generate_AfterRejection_ReusesRowAndRecomputes()
+    {
+        await using var db = NewContext();
+        var periodStart = new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+        var rejected = VatDeclaration.Create(periodStart, periodStart.AddMonths(1));
+        rejected.SetTotals(10m, 0m);
+        rejected.Submit("VAT-old");
+        rejected.MarkRejected();
+        db.VatDeclarations.Add(rejected);
+        db.PosTransactions.Add(Sale(77m, new DateTimeOffset(2026, 3, 9, 0, 0, 0, TimeSpan.Zero)));
+        await db.SaveChangesAsync();
+
+        var result = await new GenerateVatDeclarationCommandHandler(db)
+            .Handle(new GenerateVatDeclarationCommand(2026, 3), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Id.Should().Be(rejected.Id);           // reused the row
+        result.Value.Status.Should().Be("Draft");
+        result.Value.TotalOutputVat.Should().Be(77m);        // recomputed
+        result.Value.RsGeReference.Should().BeNull();        // prior submission cleared
+        (await db.VatDeclarations.CountAsync()).Should().Be(1);
     }
 
     [Fact]

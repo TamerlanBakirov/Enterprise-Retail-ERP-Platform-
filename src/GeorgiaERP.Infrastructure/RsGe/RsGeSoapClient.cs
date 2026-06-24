@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 using GeorgiaERP.Application.Compliance;
@@ -306,9 +307,11 @@ public class RsGeSoapClient : Application.Compliance.IRsGeSoapClient
             new XElement(WaybillNs + "sp", _servicePassword),
             new XElement(WaybillNs + "period_start", request.PeriodStart.ToString("yyyy-MM-dd")),
             new XElement(WaybillNs + "period_end", request.PeriodEnd.ToString("yyyy-MM-dd")),
-            new XElement(WaybillNs + "output_vat", request.TotalOutputVat),
-            new XElement(WaybillNs + "input_vat", request.TotalInputVat),
-            new XElement(WaybillNs + "net_vat", request.NetVat));
+            // Invariant culture: RS.GE expects '.' decimal separator regardless of
+            // the server's ka-GE locale.
+            new XElement(WaybillNs + "output_vat", request.TotalOutputVat.ToString(CultureInfo.InvariantCulture)),
+            new XElement(WaybillNs + "input_vat", request.TotalInputVat.ToString(CultureInfo.InvariantCulture)),
+            new XElement(WaybillNs + "net_vat", request.NetVat.ToString(CultureInfo.InvariantCulture)));
 
         var response = await SendSoapRequestAsync("save_vat_declaration", soapBody);
         return ParseSimpleResult(response, "save_vat_declarationResult");

@@ -27,9 +27,12 @@ public class GenerateVatDeclarationCommandHandler
         var periodStart = new DateTimeOffset(request.Year, request.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var periodEnd = periodStart.AddMonths(1);
 
-        var exists = await _dbContext.VatDeclarations
-            .AnyAsync(v => v.PeriodStart == periodStart, ct);
-        if (exists)
+        // The unique period constraint allows only one row per period. An existing
+        // active (Draft/Submitted/Accepted) declaration blocks regeneration; a
+        // Rejected one is reused — reverted to Draft and recomputed for re-filing.
+        var existing = await _dbContext.VatDeclarations
+            .FirstOrDefaultAsync(v => v.PeriodStart == periodStart, ct);
+        if (existing is not null && existing.Status != VatDeclarationStatus.Rejected)
             return Result.Conflict<VatDeclarationDto>(
                 $"A VAT declaration for {request.Year:D4}-{request.Month:D2} already exists.");
 
@@ -48,18 +51,40 @@ public class GenerateVatDeclarationCommandHandler
 
         var outputVat = Math.Max(0m, sales - returns);
 
-        // Input VAT: VAT paid on purchases that have been received in the period.
+        // Input VAT: VAT on fully received purchases. PartiallyReceived POs are
+        // excluded — claiming their full VatTotal would overstate the credit when
+        // only part of the goods (and invoice) have arrived.
         var inputVat = await _dbContext.PurchaseOrders
-            .Where(p => (p.Status == PurchaseOrderStatus.Received ||
-                         p.Status == PurchaseOrderStatus.PartiallyReceived) &&
+            .Where(p => p.Status == PurchaseOrderStatus.Received &&
                         p.OrderDate >= periodStart && p.OrderDate < periodEnd)
             .SumAsync(p => (decimal?)p.VatTotal, ct) ?? 0m;
 
-        var declaration = VatDeclaration.Create(periodStart, periodEnd);
-        declaration.SetTotals(outputVat, inputVat);
+        VatDeclaration declaration;
+        if (existing is not null)
+        {
+            // Reuse the rejected row for the period; recompute and re-open as Draft.
+            existing.RevertToDraft();
+            existing.SetTotals(outputVat, inputVat);
+            declaration = existing;
+        }
+        else
+        {
+            declaration = VatDeclaration.Create(periodStart, periodEnd);
+            declaration.SetTotals(outputVat, inputVat);
+            _dbContext.VatDeclarations.Add(declaration);
+        }
 
-        _dbContext.VatDeclarations.Add(declaration);
-        await _dbContext.SaveChangesAsync(ct);
+        try
+        {
+            await _dbContext.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // Lost a race against a concurrent generate for the same period; the
+            // unique period index rejected the insert. Surface as a clean conflict.
+            return Result.Conflict<VatDeclarationDto>(
+                $"A VAT declaration for {request.Year:D4}-{request.Month:D2} already exists.");
+        }
 
         return Result.Success(VatDeclarationDto.From(declaration));
     }

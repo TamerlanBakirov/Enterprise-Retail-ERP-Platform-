@@ -92,4 +92,20 @@ public class VatDeclaration : BaseEntity
                 $"Only a Submitted VAT declaration can be rejected. Current status: {Status}.");
         Status = VatDeclarationStatus.Rejected;
     }
+
+    /// <summary>
+    /// Reopens a Rejected declaration for correction so the same period can be
+    /// re-computed and re-filed. The unique period constraint means a fresh row
+    /// cannot be created, so the rejected record is reused. Clears the prior
+    /// submission so a corrected return starts clean.
+    /// </summary>
+    public void RevertToDraft()
+    {
+        if (Status != VatDeclarationStatus.Rejected)
+            throw new InvalidOperationException(
+                $"Only a Rejected VAT declaration can be reverted to Draft. Current status: {Status}.");
+        Status = VatDeclarationStatus.Draft;
+        SubmittedAt = null;
+        RsGeReference = null;
+    }
 }

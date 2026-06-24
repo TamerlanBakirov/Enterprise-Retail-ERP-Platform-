@@ -90,6 +90,10 @@ public partial class ComplianceViewModel : TabbedPagedViewModel
                 ActiveTab = "VatDeclarations";
                 await LoadAsync();
             }
+            else
+            {
+                ErrorMessage = "Could not generate the VAT declaration. It may already exist for this period.";
+            }
         });
     }
 
@@ -97,9 +101,12 @@ public partial class ComplianceViewModel : TabbedPagedViewModel
     private async Task SubmitVatDeclarationAsync()
     {
         if (SelectedVatDeclaration is null) return;
-        var result = await _complianceService.SubmitVatDeclarationAsync(SelectedVatDeclaration.Id);
-        if (result.IsSuccess) await LoadAsync();
-        else ErrorMessage = result.Error;
+        await ExecuteAsync(async () =>
+        {
+            var result = await _complianceService.SubmitVatDeclarationAsync(SelectedVatDeclaration.Id);
+            if (result.IsSuccess) await LoadAsync();
+            else ErrorMessage = result.Error;
+        });
     }
 
     [RelayCommand]

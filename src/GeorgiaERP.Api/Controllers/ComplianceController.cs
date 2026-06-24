@@ -239,6 +239,7 @@ public class ComplianceController : ApiControllerBase
     }
 
     [HttpPost("vat-declarations")]
+    [Authorize(Roles = "super_admin,company_admin,accountant")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> GenerateVatDeclaration([FromBody] GenerateVatDeclarationCommand command)
     {
@@ -249,6 +250,7 @@ public class ComplianceController : ApiControllerBase
     }
 
     [HttpPost("vat-declarations/{id:guid}/submit")]
+    [Authorize(Roles = "super_admin,company_admin,accountant")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> SubmitVatDeclaration(Guid id)
     {
