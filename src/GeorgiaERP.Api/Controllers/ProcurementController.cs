@@ -58,6 +58,13 @@ public class ProcurementController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("purchase-orders/{id:guid}")]
+    public async Task<IActionResult> GetPurchaseOrderById(Guid id)
+    {
+        var result = await _mediator.Send(new GetPurchaseOrderByIdQuery(id));
+        return ToActionResult(result);
+    }
+
     [HttpPost("purchase-orders")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreatePurchaseOrder([FromBody] CreatePurchaseOrderCommand command)
