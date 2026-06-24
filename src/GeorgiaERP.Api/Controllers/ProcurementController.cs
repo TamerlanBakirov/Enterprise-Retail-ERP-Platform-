@@ -35,6 +35,13 @@ public class ProcurementController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("suppliers/{id:guid}")]
+    public async Task<IActionResult> GetSupplierById(Guid id)
+    {
+        var result = await _mediator.Send(new GetSupplierByIdQuery(id));
+        return ToActionResult(result);
+    }
+
     [HttpPost("suppliers")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierCommand command)
