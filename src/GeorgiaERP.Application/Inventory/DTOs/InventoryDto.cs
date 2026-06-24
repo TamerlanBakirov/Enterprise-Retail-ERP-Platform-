@@ -47,6 +47,34 @@ public record TransferOrderDto(
     Guid RequestedBy,
     DateTimeOffset CreatedAt);
 
+public record TransferOrderDetailDto(
+    Guid Id,
+    string TransferNumber,
+    Guid SourceWarehouseId,
+    string? SourceWarehouseName,
+    Guid DestWarehouseId,
+    string? DestWarehouseName,
+    string Status,
+    Guid? RsGeWaybillId,
+    Guid RequestedBy,
+    Guid? ApprovedBy,
+    DateTimeOffset? ShippedAt,
+    DateTimeOffset? ReceivedAt,
+    string? Notes,
+    DateTimeOffset CreatedAt,
+    IReadOnlyList<TransferOrderLineDto> Lines);
+
+public record TransferOrderLineDto(
+    Guid Id,
+    Guid ProductId,
+    string? ProductName,
+    Guid? VariantId,
+    decimal RequestedQty,
+    decimal? ShippedQty,
+    decimal? ReceivedQty,
+    string? BatchNumber,
+    string? SerialNumber);
+
 public record CreateStockMovementRequest(
     string MovementType,
     Guid ProductId,

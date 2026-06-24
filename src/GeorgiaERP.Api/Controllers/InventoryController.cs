@@ -67,6 +67,13 @@ public class InventoryController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("transfers/{id:guid}")]
+    public async Task<IActionResult> GetTransferOrderById(Guid id)
+    {
+        var result = await _mediator.Send(new GetTransferOrderByIdQuery(id));
+        return ToActionResult(result);
+    }
+
     [HttpPost("transfers")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateTransferOrder([FromBody] CreateTransferOrderCommand command)
