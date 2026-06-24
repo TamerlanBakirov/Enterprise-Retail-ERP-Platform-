@@ -53,13 +53,21 @@ public class OrganizationController : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpGet("stores/{id:guid}")]
+    [EnableRateLimiting("read")]
+    public async Task<IActionResult> GetStoreById(Guid id)
+    {
+        var result = await _mediator.Send(new GetStoreByIdQuery(id));
+        return ToActionResult(result);
+    }
+
     [HttpPost("stores")]
     [EnableRateLimiting("write")]
     public async Task<IActionResult> CreateStore([FromBody] CreateStoreCommand command)
     {
         var result = await _mediator.Send(command);
         if (result.IsFailure) return ToActionResult(result);
-        return CreatedAtAction(nameof(GetStores), null, result.Value);
+        return CreatedAtAction(nameof(GetStoreById), new { id = result.Value!.Id }, result.Value);
     }
 
     [HttpPut("stores/{id:guid}")]
