@@ -17,6 +17,8 @@ public interface IComplianceService
     Task<List<VatDeclarationDto>> GetVatDeclarationsAsync(int page = 1, int pageSize = 20);
     Task<VatDeclarationDto?> GenerateVatDeclarationAsync(int year, int month);
     Task<ApiResult> SubmitVatDeclarationAsync(Guid id);
+    Task<ApiResult> AcceptVatDeclarationAsync(Guid id);
+    Task<ApiResult> RejectVatDeclarationAsync(Guid id);
 }
 
 public class ComplianceService : IComplianceService
@@ -74,4 +76,10 @@ public class ComplianceService : IComplianceService
 
     public Task<ApiResult> SubmitVatDeclarationAsync(Guid id) =>
         _api.PostAsync($"compliance/vat-declarations/{id}/submit");
+
+    public Task<ApiResult> AcceptVatDeclarationAsync(Guid id) =>
+        _api.PostAsync($"compliance/vat-declarations/{id}/accept");
+
+    public Task<ApiResult> RejectVatDeclarationAsync(Guid id) =>
+        _api.PostAsync($"compliance/vat-declarations/{id}/reject");
 }

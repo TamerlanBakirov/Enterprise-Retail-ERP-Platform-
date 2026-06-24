@@ -110,6 +110,30 @@ public partial class ComplianceViewModel : TabbedPagedViewModel
     }
 
     [RelayCommand]
+    private async Task AcceptVatDeclarationAsync()
+    {
+        if (SelectedVatDeclaration is null) return;
+        await ExecuteAsync(async () =>
+        {
+            var result = await _complianceService.AcceptVatDeclarationAsync(SelectedVatDeclaration.Id);
+            if (result.IsSuccess) await LoadAsync();
+            else ErrorMessage = result.Error;
+        });
+    }
+
+    [RelayCommand]
+    private async Task RejectVatDeclarationAsync()
+    {
+        if (SelectedVatDeclaration is null) return;
+        await ExecuteAsync(async () =>
+        {
+            var result = await _complianceService.RejectVatDeclarationAsync(SelectedVatDeclaration.Id);
+            if (result.IsSuccess) await LoadAsync();
+            else ErrorMessage = result.Error;
+        });
+    }
+
+    [RelayCommand]
     private async Task LookupTinAsync()
     {
         if (string.IsNullOrWhiteSpace(TinInput)) return;
