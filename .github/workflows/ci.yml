@@ -11,8 +11,10 @@ env:
   DOTNET_NOLOGO: "true"
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
   DOCKER_REGISTRY: ghcr.io
-  DOCKER_IMAGE_API: ghcr.io/${{ github.repository }}/api
-  DOCKER_IMAGE_WORKERS: ghcr.io/${{ github.repository }}/workers
+  # Image names are derived from the owner, not github.repository: the repo name
+  # ends in a hyphen, which is an invalid Docker reference path component.
+  DOCKER_IMAGE_API: ghcr.io/${{ github.repository_owner }}/retail-erp-api
+  DOCKER_IMAGE_WORKERS: ghcr.io/${{ github.repository_owner }}/retail-erp-workers
 
 jobs:
   build-test:
