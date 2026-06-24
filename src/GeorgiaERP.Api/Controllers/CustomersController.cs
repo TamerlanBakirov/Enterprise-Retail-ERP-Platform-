@@ -82,6 +82,16 @@ public class CustomersController : ApiControllerBase
             return ToActionResult(result);
         return Ok(new { balance = result.Value });
     }
+
+    [HttpGet("{customerId:guid}/loyalty/transactions")]
+    public async Task<IActionResult> GetLoyaltyHistory(
+        Guid customerId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var result = await _mediator.Send(new GetLoyaltyHistoryQuery(customerId, page, pageSize));
+        return Ok(result);
+    }
 }
 
 public record EarnPointsRequest(int Points, string? ReferenceType = null, Guid? ReferenceId = null, string? Description = null);
