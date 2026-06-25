@@ -27,11 +27,23 @@ public partial class App : Application
         try
         {
 #if DEBUG
+            var settings = Services.GetRequiredService<ISettingsService>();
             var authService = Services.GetRequiredService<IAuthService>();
-            var (success, _) = await authService.LoginAsync("admin", "Admin@123!");
+            var (success, error) = await authService.LoginAsync("admin", "Admin@123!");
 
             if (!success)
             {
+                // Auto-login failed: without a token every data call returns 401,
+                // so the app would look empty. Surface the reason instead of
+                // silently falling back to a tokenless fake user.
+                MessageBox.Show(
+                    $"Auto-login failed — the app will have NO data.\n\n" +
+                    $"Reason: {error}\n\n" +
+                    $"Make sure the API is running and reachable at:\n{settings.ApiBaseUrl}\n\n" +
+                    $"Start it with:  dotnet run --project src/GeorgiaERP.Api",
+                    "Georgia ERP — API not reachable",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+
                 ((AuthService)authService).CurrentUser = new UserInfo(
                     Guid.Empty, "admin", "admin@dev.local",
                     "Dev", "Admin", "დევ", "ადმინი", "ka",
