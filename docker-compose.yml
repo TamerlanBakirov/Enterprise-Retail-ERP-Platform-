@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: georgia_erp
       POSTGRES_USER: erp_user
-      POSTGRES_PASSWORD: erp_dev_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
     ports:
       - "5432:5432"
     volumes:
@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: erp_user
-      RABBITMQ_DEFAULT_PASS: erp_dev_password
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set in .env}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -93,16 +93,16 @@ services:
     container_name: georgia-erp-api
     restart: unless-stopped
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=erp_dev_password"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=${POSTGRES_PASSWORD}"
       ConnectionStrings__Redis: "redis:6379,abortConnect=false"
       RsGe__Queue__HostName: rabbitmq
       RsGe__Queue__UserName: erp_user
-      RsGe__Queue__Password: erp_dev_password
-      Jwt__SecretKey: "dev-secret-key-change-in-production-must-be-at-least-sixty-four-characters-long-for-hmac"
+      RsGe__Queue__Password: ${RABBITMQ_PASSWORD}
+      Jwt__SecretKey: ${JWT_SECRET_KEY:?set in .env}
       Jwt__Issuer: GeorgiaERP
       Jwt__Audience: GeorgiaERP.Client
-      Licensing__SigningKey: "DEVELOPMENT-ONLY-LICENSE-SIGNING-KEY-CHANGE-IN-PRODUCTION-64-CHARS"
-      Authentication__TotpEncryptionKey: "DEVELOPMENT-ONLY-TOTP-ENCRYPTION-KEY-CHANGE-IN-PRODUCTION"
+      Licensing__SigningKey: ${LICENSE_SIGNING_KEY:?set in .env}
+      Authentication__TotpEncryptionKey: ${TOTP_ENCRYPTION_KEY:?set in .env}
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_ENVIRONMENT: Development
     ports:
@@ -140,11 +140,11 @@ services:
     container_name: georgia-erp-workers
     restart: unless-stopped
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=erp_dev_password"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=georgia_erp;Username=erp_user;Password=${POSTGRES_PASSWORD}"
       ConnectionStrings__Redis: "redis:6379,abortConnect=false"
       RsGe__Queue__HostName: rabbitmq
       RsGe__Queue__UserName: erp_user
-      RsGe__Queue__Password: erp_dev_password
+      RsGe__Queue__Password: ${RABBITMQ_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -203,7 +203,7 @@ services:
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
