@@ -54,9 +54,15 @@
         <DockPanel Visibility="{Binding ActiveTab, Converter={StaticResource StringEqualsConverter}, ConverterParameter=PurchaseOrders}">
             <Button DockPanel.Dock="Top" Content="+ Create Purchase Order" Style="{StaticResource PrimaryButton}"
                     Click="OnAddPurchaseOrder" HorizontalAlignment="Left" Margin="0,0,0,8" />
-            <Border Style="{StaticResource Card}" Padding="0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource Card}" Padding="0">
                 <DataGrid Style="{StaticResource ModernDataGrid}"
                           ItemsSource="{Binding PurchaseOrders}"
+                          SelectedItem="{Binding SelectedPurchaseOrder}"
                           ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
                           RowStyle="{StaticResource ModernDataGridRow}">
                     <DataGrid.Columns>
@@ -78,7 +84,32 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-            </Border>
+                </Border>
+
+                <!-- Selected purchase order line detail -->
+                <Border Grid.Column="1" Style="{StaticResource Card}" Padding="12" Margin="12,0,0,0" Width="420"
+                        Visibility="{Binding SelectedPurchaseOrder, Converter={StaticResource NullToCollapsedConverter}}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Order Lines" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                        <TextBlock DockPanel.Dock="Top" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8">
+                            <Run Text="{Binding SelectedPurchaseOrder.PoNumber, Mode=OneWay}" />
+                            <Run Text=" — " /><Run Text="{Binding SelectedPurchaseOrder.Total, Mode=OneWay, StringFormat=N2}" /><Run Text=" GEL" />
+                        </TextBlock>
+                        <DataGrid Style="{StaticResource ModernDataGrid}" ItemsSource="{Binding SelectedPoLines}"
+                                  ColumnHeaderStyle="{StaticResource ModernDataGridColumnHeader}"
+                                  RowStyle="{StaticResource ModernDataGridRow}" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" />
+                                <DataGridTextColumn Header="Ordered" Binding="{Binding OrderedQty, StringFormat=N2}" Width="70" />
+                                <DataGridTextColumn Header="Recv" Binding="{Binding ReceivedQty, StringFormat=N2}" Width="60" />
+                                <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="70" />
+                                <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="80" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
         </DockPanel>
     </DockPanel>
 </UserControl>

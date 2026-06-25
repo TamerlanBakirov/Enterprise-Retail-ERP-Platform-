@@ -24,7 +24,19 @@ public record PurchaseOrderDto(
     decimal VatTotal,
     decimal Total,
     string? Notes,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    List<PurchaseOrderLineDto>? Lines = null);
+
+public record PurchaseOrderLineDto(
+    Guid Id,
+    int LineNumber,
+    Guid ProductId,
+    string? ProductName,
+    decimal OrderedQty,
+    decimal ReceivedQty,
+    decimal UnitPrice,
+    decimal VatAmount,
+    decimal LineTotal);
 
 public record CreateSupplierRequest(
     string Code,

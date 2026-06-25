@@ -7,6 +7,7 @@ public interface IProcurementService
     Task<PagedResult<SupplierDto>> GetSuppliersAsync(string? search = null, bool? isActive = null, int page = 1, int pageSize = 20);
     Task<SupplierDto?> CreateSupplierAsync(CreateSupplierRequest request);
     Task<PagedResult<PurchaseOrderDto>> GetPurchaseOrdersAsync(Guid? supplierId = null, string? status = null, int page = 1, int pageSize = 20);
+    Task<PurchaseOrderDto?> GetPurchaseOrderByIdAsync(Guid id);
     Task<PurchaseOrderDto?> CreatePurchaseOrderAsync(CreatePurchaseOrderRequest request);
     Task<ApiResult> ApprovePurchaseOrderAsync(Guid id);
     Task<ApiResult> SendPurchaseOrderAsync(Guid id);
@@ -37,6 +38,9 @@ public class ProcurementService : IProcurementService
         if (!string.IsNullOrEmpty(status)) q += $"&status={status}";
         return await _api.GetAsync<PagedResult<PurchaseOrderDto>>(q) ?? new PagedResult<PurchaseOrderDto>();
     }
+
+    public Task<PurchaseOrderDto?> GetPurchaseOrderByIdAsync(Guid id) =>
+        _api.GetAsync<PurchaseOrderDto>($"procurement/purchase-orders/{id}");
 
     public Task<PurchaseOrderDto?> CreatePurchaseOrderAsync(CreatePurchaseOrderRequest request) =>
         _api.PostAsync<CreatePurchaseOrderRequest, PurchaseOrderDto>("procurement/purchase-orders", request);
