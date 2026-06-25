@@ -456,7 +456,10 @@ try
         await SeedData.InitializeAsync(app.Services);
     }
 
-    if (args.Contains("--seed-demo") || app.Configuration.GetValue<bool>("Seed:Demo"))
+    // Seed demo data (products, customers, stock, ...) so a fresh dev environment
+    // is populated rather than showing empty lists. Idempotent: skips when a
+    // company already exists. Opt in elsewhere via --seed-demo or Seed:Demo=true.
+    if (args.Contains("--seed-demo") || app.Configuration.GetValue<bool>("Seed:Demo") || app.Environment.IsDevelopment())
     {
         await SeedDemoData.InitializeAsync(app.Services);
     }
