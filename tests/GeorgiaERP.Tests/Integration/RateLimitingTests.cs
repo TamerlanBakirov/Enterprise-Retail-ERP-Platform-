@@ -29,6 +29,7 @@ namespace GeorgiaERP.Tests.Integration;
 /// Rate limiting tests use their own isolated factory so that the production
 /// rate limit configuration is tested without interference from other tests.
 /// </summary>
+[Collection("Integration")]
 public class RateLimitingTests : IAsyncLifetime
 {
     private RateLimitTestFactory _factory = null!;

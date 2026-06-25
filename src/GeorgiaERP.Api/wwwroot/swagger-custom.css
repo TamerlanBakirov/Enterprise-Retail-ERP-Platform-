@@ -1,0 +1,15 @@
+.swagger-ui .topbar-wrapper img {
+    content: url('/images/logo.svg');
+    height: 40px;
+    width: auto;
+}
+.swagger-ui .topbar {
+    background-color: #1e3a5f;
+}
+.swagger-ui .topbar-wrapper a::after {
+    content: 'Georgia ERP Platform';
+    margin-left: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffd700;
+}

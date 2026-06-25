@@ -266,6 +266,7 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseStaticFiles();
 
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
     {
@@ -274,6 +275,7 @@ try
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Georgia ERP API v1");
             options.DocumentTitle = "Georgia ERP API";
+            options.InjectStylesheet("/swagger-custom.css");
         });
     }
 
