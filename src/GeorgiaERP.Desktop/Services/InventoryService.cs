@@ -12,6 +12,8 @@ public interface IInventoryService
     Task<ApiResult> ShipTransferAsync(Guid id);
     Task<ApiResult> ReceiveTransferAsync(Guid id);
     Task<PagedResult<StockCountDto>> GetStockCountsAsync(Guid? warehouseId = null, string? status = null, int page = 1, int pageSize = 20);
+    Task<TransferOrderDetailDto?> GetTransferByIdAsync(Guid id);
+    Task<StockCountDetailDto?> GetStockCountByIdAsync(Guid id);
     Task<TransferOrderDto?> CreateTransferAsync(CreateTransferOrderRequest request);
     Task<StockCountDto?> CreateStockCountAsync(CreateStockCountRequest request);
     Task<ApiResult> RecordCountLineAsync(Guid countId, Guid lineId, decimal countedQty);
@@ -42,6 +44,12 @@ public class InventoryService : IInventoryService
 
     public Task<ApiResult> AdjustStockAsync(AdjustStockRequest request) =>
         _api.PostAsync("inventory/adjust", request);
+
+    public Task<TransferOrderDetailDto?> GetTransferByIdAsync(Guid id) =>
+        _api.GetAsync<TransferOrderDetailDto>($"inventory/transfers/{id}");
+
+    public Task<StockCountDetailDto?> GetStockCountByIdAsync(Guid id) =>
+        _api.GetAsync<StockCountDetailDto>($"inventory/counts/{id}");
 
     public async Task<PagedResult<TransferOrderDto>> GetTransfersAsync(Guid? warehouseId, string? status, int page, int pageSize)
     {

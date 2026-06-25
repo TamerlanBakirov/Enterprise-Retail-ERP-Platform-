@@ -13,12 +13,16 @@ public partial class InventoryViewModel : TabbedPagedViewModel
 
     [ObservableProperty] private WarehouseDto? _selectedWarehouse;
     [ObservableProperty] private bool _lowStockOnly;
+    [ObservableProperty] private TransferOrderDto? _selectedTransfer;
+    [ObservableProperty] private StockCountDto? _selectedStockCount;
 
     public ObservableCollection<StockLevelDto> StockLevels { get; } = [];
     public ObservableCollection<StockMovementDto> Movements { get; } = [];
     public ObservableCollection<TransferOrderDto> Transfers { get; } = [];
     public ObservableCollection<StockCountDto> StockCounts { get; } = [];
     public ObservableCollection<WarehouseDto> Warehouses { get; } = [];
+    public ObservableCollection<TransferOrderLineDto> SelectedTransferLines { get; } = [];
+    public ObservableCollection<StockCountLineDto> SelectedCountLines { get; } = [];
 
     public InventoryViewModel(IInventoryService inventoryService, IOrganizationService organizationService)
     {
@@ -73,5 +77,33 @@ public partial class InventoryViewModel : TabbedPagedViewModel
         var result = await _inventoryService.CompleteStockCountAsync(count.Id);
         if (result.IsSuccess) await LoadAsync();
         else ErrorMessage = result.Error;
+    }
+
+    partial void OnSelectedTransferChanged(TransferOrderDto? value)
+    {
+        SelectedTransferLines.Clear();
+        if (value is null) return;
+        _ = LoadTransferLinesAsync(value.Id);
+    }
+
+    private async Task LoadTransferLinesAsync(Guid id)
+    {
+        var detail = await _inventoryService.GetTransferByIdAsync(id);
+        if (SelectedTransfer?.Id != id || detail?.Lines is null) return;
+        ReplaceItems(SelectedTransferLines, detail.Lines);
+    }
+
+    partial void OnSelectedStockCountChanged(StockCountDto? value)
+    {
+        SelectedCountLines.Clear();
+        if (value is null) return;
+        _ = LoadCountLinesAsync(value.Id);
+    }
+
+    private async Task LoadCountLinesAsync(Guid id)
+    {
+        var detail = await _inventoryService.GetStockCountByIdAsync(id);
+        if (SelectedStockCount?.Id != id || detail?.Lines is null) return;
+        ReplaceItems(SelectedCountLines, detail.Lines);
     }
 }
