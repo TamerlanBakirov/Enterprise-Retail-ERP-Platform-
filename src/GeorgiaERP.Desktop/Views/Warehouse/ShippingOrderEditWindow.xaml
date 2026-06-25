@@ -23,7 +23,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Order Type" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                            <ComboBox SelectedItem="{Binding OrderType}" Padding="8,6">
+                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding OrderType}" Padding="8,6">
                                 <ComboBoxItem Content="SalesOrder" />
                                 <ComboBoxItem Content="Transfer" />
                                 <ComboBoxItem Content="Return" />

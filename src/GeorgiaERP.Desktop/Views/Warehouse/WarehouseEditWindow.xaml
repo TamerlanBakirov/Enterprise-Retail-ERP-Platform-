@@ -20,7 +20,7 @@
                     <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding NameKa, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" />
 
                     <TextBlock Text="Type *" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                    <ComboBox SelectedItem="{Binding WarehouseType}" Padding="8,6" Margin="0,0,0,12">
+                    <ComboBox SelectedValuePath="Content" SelectedValue="{Binding WarehouseType}" Padding="8,6" Margin="0,0,0,12">
                         <ComboBoxItem Content="Main" />
                         <ComboBoxItem Content="Transit" />
                         <ComboBoxItem Content="Returns" />

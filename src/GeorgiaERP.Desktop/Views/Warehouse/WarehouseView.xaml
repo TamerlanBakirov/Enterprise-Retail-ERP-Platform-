@@ -12,15 +12,15 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ComboBox ItemsSource="{Binding Warehouses}" DisplayMemberPath="Name"
                           SelectedItem="{Binding SelectedWarehouse}" Width="200" Padding="8,6" Margin="0,0,8,0" />
-                <ComboBox SelectedValue="{Binding StatusFilter}" Width="140" Padding="8,6" Margin="0,0,8,0">
-                    <ComboBoxItem Content="All Statuses" IsSelected="True" />
-                    <ComboBoxItem Content="Expected" />
-                    <ComboBoxItem Content="InProgress" />
-                    <ComboBoxItem Content="Completed" />
-                    <ComboBoxItem Content="Draft" />
-                    <ComboBoxItem Content="Picking" />
-                    <ComboBoxItem Content="Packed" />
-                    <ComboBoxItem Content="Shipped" />
+                <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding StatusFilter}" Width="140" Padding="8,6" Margin="0,0,8,0">
+                    <ComboBoxItem Content="All Statuses" Tag="" IsSelected="True" />
+                    <ComboBoxItem Content="Expected" Tag="Expected" />
+                    <ComboBoxItem Content="InProgress" Tag="InProgress" />
+                    <ComboBoxItem Content="Completed" Tag="Completed" />
+                    <ComboBoxItem Content="Draft" Tag="Draft" />
+                    <ComboBoxItem Content="Picking" Tag="Picking" />
+                    <ComboBoxItem Content="Packed" Tag="Packed" />
+                    <ComboBoxItem Content="Shipped" Tag="Shipped" />
                 </ComboBox>
                 <Button Content="+ Add Warehouse" Style="{StaticResource PrimaryButton}"
                         Click="OnAddWarehouse" Margin="0,0,8,0" />

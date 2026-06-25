@@ -22,7 +22,7 @@
                     <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding NameKa, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" />
 
                     <TextBlock Text="Account Type *" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                    <ComboBox SelectedItem="{Binding AccountType}" Padding="8,6" Margin="0,0,0,12">
+                    <ComboBox SelectedValuePath="Content" SelectedValue="{Binding AccountType}" Padding="8,6" Margin="0,0,0,12">
                         <ComboBoxItem Content="Asset" />
                         <ComboBoxItem Content="Liability" />
                         <ComboBoxItem Content="Equity" />

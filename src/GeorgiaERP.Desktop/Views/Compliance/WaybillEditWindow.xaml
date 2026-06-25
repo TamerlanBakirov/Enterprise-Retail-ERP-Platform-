@@ -20,7 +20,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Waybill Type" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                            <ComboBox SelectedItem="{Binding WaybillType}" Padding="8,6">
+                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding WaybillType}" Padding="8,6">
                                 <ComboBoxItem Content="Inner" />
                                 <ComboBoxItem Content="Transport" />
                                 <ComboBoxItem Content="Return" />
@@ -29,7 +29,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Transport Type" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                            <ComboBox SelectedItem="{Binding TransportType}" Padding="8,6">
+                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding TransportType}" Padding="8,6">
                                 <ComboBoxItem Content="Auto" />
                                 <ComboBoxItem Content="Railway" />
                                 <ComboBoxItem Content="Aviation" />

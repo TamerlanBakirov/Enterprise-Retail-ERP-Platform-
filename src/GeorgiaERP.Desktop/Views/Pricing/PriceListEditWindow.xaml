@@ -27,7 +27,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Type" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
-                            <ComboBox SelectedItem="{Binding PriceType}" Padding="8,6">
+                            <ComboBox SelectedValuePath="Content" SelectedValue="{Binding PriceType}" Padding="8,6">
                                 <ComboBoxItem Content="Retail" />
                                 <ComboBoxItem Content="Wholesale" />
                                 <ComboBoxItem Content="Promotional" />
