@@ -6,7 +6,10 @@ using GeorgiaERP.Domain.Finance;
 using GeorgiaERP.Domain.Identity;
 using GeorgiaERP.Domain.Inventory;
 using GeorgiaERP.Domain.Licensing;
+using GeorgiaERP.Domain.Notifications;
 using GeorgiaERP.Domain.Organization;
+using GeorgiaERP.Domain.Payments;
+using GeorgiaERP.Domain.Reports;
 using GeorgiaERP.Domain.Warehouse;
 using WarehouseEntity = GeorgiaERP.Domain.Organization.Warehouse;
 using GeorgiaERP.Domain.POS;
@@ -106,6 +109,15 @@ public class AppDbContext : DbContext, IAppDbContext
 
     // Compliance – Audit
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    // Payments
+    public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+
+    // Reports
+    public DbSet<ScheduledReport> ScheduledReports => Set<ScheduledReport>();
+
+    // Notifications
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -9,6 +9,9 @@ using GeorgiaERP.Domain.Compliance;
 using GeorgiaERP.Domain.Finance;
 using GeorgiaERP.Domain.CRM;
 using GeorgiaERP.Domain.Licensing;
+using GeorgiaERP.Domain.Notifications;
+using GeorgiaERP.Domain.Payments;
+using GeorgiaERP.Domain.Reports;
 using GeorgiaERP.Domain.Warehouse;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,6 +74,15 @@ public interface IAppDbContext
 
     // Compliance – Audit
     DbSet<AuditLog> AuditLogs { get; }
+
+    // Payments
+    DbSet<PaymentTransaction> PaymentTransactions { get; }
+
+    // Reports
+    DbSet<ScheduledReport> ScheduledReports { get; }
+
+    // Notifications
+    DbSet<Notification> Notifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

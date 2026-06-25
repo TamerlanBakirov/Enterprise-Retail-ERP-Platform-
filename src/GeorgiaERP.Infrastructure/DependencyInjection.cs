@@ -2,12 +2,14 @@ using System.Text;
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Compliance;
 using GeorgiaERP.Application.Licensing;
+using GeorgiaERP.Application.Payments;
 using GeorgiaERP.Infrastructure.Caching;
 using GeorgiaERP.Infrastructure.Email;
 using GeorgiaERP.Infrastructure.HealthChecks;
 using GeorgiaERP.Infrastructure.Identity;
 using GeorgiaERP.Infrastructure.Licensing;
 using GeorgiaERP.Infrastructure.Messaging;
+using GeorgiaERP.Infrastructure.Payments;
 using GeorgiaERP.Infrastructure.Persistence;
 using GeorgiaERP.Infrastructure.Reporting;
 using GeorgiaERP.Infrastructure.RsGe;
@@ -125,6 +127,16 @@ public static class DependencyInjection
         services.AddSingleton<IExcelService, ExcelService>();
 
         services.AddSingleton<IEmailService, SmtpEmailService>();
+
+        // Payment gateways
+        services.AddHttpClient<BogPaymentGateway>();
+        services.AddHttpClient<TbcPaymentGateway>();
+        services.AddScoped<IPaymentGateway, BogPaymentGateway>();
+        services.AddScoped<IPaymentGateway, TbcPaymentGateway>();
+        services.AddScoped<IPaymentGatewayFactory, PaymentGatewayFactory>();
+
+        // Report scheduler
+        services.AddHostedService<ReportSchedulerService>();
 
         return services;
     }

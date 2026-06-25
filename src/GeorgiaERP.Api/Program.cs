@@ -44,6 +44,8 @@ try
 
     builder.Services.AddControllers(options =>
         options.Filters.Add<GeorgiaERP.Api.Middleware.PermissionAuthorizationFilter>());
+    builder.Services.AddSignalR();
+    builder.Services.AddScoped<GeorgiaERP.Application.Common.INotificationHub, GeorgiaERP.Api.Hubs.SignalRNotificationService>();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -286,6 +288,7 @@ try
     app.MapMetrics("/metrics"); // Exposes /metrics endpoint for Prometheus scraping
 
     app.MapControllers();
+    app.MapHub<GeorgiaERP.Api.Hubs.NotificationHub>("/hubs/notifications");
 
     // ── Health Check Endpoints ────────────────────────────────────────
 
