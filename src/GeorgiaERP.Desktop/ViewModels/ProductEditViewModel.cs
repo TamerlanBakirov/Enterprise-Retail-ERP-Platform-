@@ -80,14 +80,29 @@ public partial class ProductEditViewModel : DialogViewModel
             }
             else
             {
+                var barcodes = string.IsNullOrWhiteSpace(Barcode)
+                    ? null
+                    : new List<CreateBarcodeRequest> { new(Barcode!.Trim(), "Ean13", true) };
+
                 var request = new CreateProductRequest(
                     Sku, Name, NameKa, null, CategoryId.Value,
-                    UnitOfMeasure, RetailPrice, WholesalePrice,
-                    VatRate, Barcode, false, false, false, null);
+                    UnitOfMeasure, VatApplicable: VatRate > 0,
+                    WeightKg: null, IsSerialized: false, IsBatchTracked: false, HasExpiry: false,
+                    Barcodes: barcodes);
 
-                var result = await _productService.CreateProductAsync(request);
-                if (result is not null) SaveAndClose();
-                else ErrorMessage = "Failed to save product.";
+                var created = await _productService.CreateProductAsync(request);
+                if (created is null)
+                {
+                    ErrorMessage = "Failed to save product.";
+                    return;
+                }
+
+                // Price is stored separately (Pricing module). Set the retail price
+                // on the default price list so the product is sellable.
+                if (RetailPrice > 0)
+                    await _productService.SetRetailPriceAsync(created.Id, RetailPrice);
+
+                SaveAndClose();
             }
         }
         catch (Exception ex)

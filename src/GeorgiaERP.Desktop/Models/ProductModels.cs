@@ -28,6 +28,8 @@ public record CategoryDto(
     Guid? ParentId,
     bool IsActive);
 
+// Matches the API CreateProductRequest. Price is NOT part of product creation
+// (it lives in the Pricing module); only the catalog fields + barcodes are sent.
 public record CreateProductRequest(
     string Sku,
     string Name,
@@ -35,14 +37,14 @@ public record CreateProductRequest(
     string? Description,
     Guid CategoryId,
     string UnitOfMeasure,
-    decimal RetailPrice,
-    decimal? WholesalePrice,
-    decimal VatRate,
-    string? Barcode,
-    bool TrackSerials,
-    bool TrackBatches,
-    bool TrackExpiry,
-    decimal? Weight);
+    bool VatApplicable,
+    decimal? WeightKg,
+    bool IsSerialized,
+    bool IsBatchTracked,
+    bool HasExpiry,
+    List<CreateBarcodeRequest>? Barcodes);
+
+public record CreateBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
 
 public record UpdateProductRequest(
     string? Name,
