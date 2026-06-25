@@ -43,7 +43,10 @@ try
     builder.Services.AddJwtAuthentication(builder.Configuration);
 
     builder.Services.AddControllers(options =>
-        options.Filters.Add<GeorgiaERP.Api.Middleware.PermissionAuthorizationFilter>());
+    {
+        options.Filters.Add<GeorgiaERP.Api.Middleware.PermissionAuthorizationFilter>();
+        options.Filters.Add<GeorgiaERP.Api.Filters.LocalizedResponseFilter>();
+    });
     builder.Services.AddSignalR();
     builder.Services.AddScoped<GeorgiaERP.Application.Common.INotificationHub, GeorgiaERP.Api.Hubs.SignalRNotificationService>();
     builder.Services.AddEndpointsApiExplorer();
@@ -280,6 +283,7 @@ try
     }
 
     app.UseCors("AllowFrontend");
+    app.UseMiddleware<GeorgiaERP.Api.Middleware.LocalizationMiddleware>();
     app.UseAuthentication();
     app.UseRateLimiter();
     app.UseMiddleware<GeorgiaERP.Api.Middleware.AuditContextMiddleware>();
