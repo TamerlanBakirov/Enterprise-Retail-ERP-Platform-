@@ -19,7 +19,7 @@ public class SettingsService : ISettingsService
     public string ApiBaseUrl { get; set; } = "http://localhost:5262/api/v1/";
     public string? AccessToken { get; set; }
     public string? RefreshToken { get; set; }
-    public string Language { get; set; } = "ka";
+    public string Language { get; set; } = "en";
 
     public SettingsService()
     {
