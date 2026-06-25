@@ -80,8 +80,22 @@ public partial class App : Application
         }
     }
 
+    private static readonly string ErrorLogPath = System.IO.Path.Combine(
+        System.IO.Path.GetTempPath(), "georgiaerp-error.log");
+
+    private static void LogError(string source, Exception ex)
+    {
+        try
+        {
+            System.IO.File.AppendAllText(ErrorLogPath,
+                $"[{DateTimeOffset.Now:HH:mm:ss}] {source}: {ex}\n\n");
+        }
+        catch { }
+    }
+
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        LogError("Dispatcher", e.Exception);
         MessageBox.Show(
             $"An unexpected error occurred:\n\n{e.Exception.Message}",
             "Georgia ERP — Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -90,6 +104,9 @@ public partial class App : Application
 
     private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
+        // Was silently swallowed — log it so background/fire-and-forget failures
+        // (e.g. a view's data load) are diagnosable instead of vanishing.
+        LogError("UnobservedTask", e.Exception);
         e.SetObserved();
     }
 
