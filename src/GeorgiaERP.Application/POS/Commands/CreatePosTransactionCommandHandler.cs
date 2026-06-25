@@ -195,46 +195,74 @@ public class CreatePosTransactionCommandHandler
     private async Task<Result<List<ResolvedLine>>> ResolveLines(
         List<PosLineInput> inputs, Guid warehouseId, CancellationToken ct)
     {
-        var result = new List<ResolvedLine>();
+        // Batch-resolve barcodes to product/variant ids (one query, not one per line).
+        var scannedBarcodes = inputs
+            .Where(i => !i.ProductId.HasValue && !string.IsNullOrEmpty(i.Barcode))
+            .Select(i => i.Barcode!)
+            .Distinct()
+            .ToList();
 
+        var barcodeMap = scannedBarcodes.Count == 0
+            ? new Dictionary<string, (Guid ProductId, Guid? VariantId)>()
+            : (await _dbContext.ProductBarcodes.AsNoTracking()
+                    .Where(b => scannedBarcodes.Contains(b.Barcode))
+                    .Select(b => new { b.Barcode, b.ProductId, b.VariantId })
+                    .ToListAsync(ct))
+                .GroupBy(b => b.Barcode)
+                .ToDictionary(g => g.Key, g => (g.First().ProductId, g.First().VariantId));
+
+        // Resolve each input's (productId, variantId), failing on the first bad line.
+        var resolvedKeys = new List<(PosLineInput Input, Guid ProductId, Guid? VariantId)>();
         foreach (var input in inputs)
         {
-            Guid productId;
-            Guid? variantId = null;
-            string? barcode = input.Barcode;
-
             if (input.ProductId.HasValue)
             {
-                productId = input.ProductId.Value;
+                resolvedKeys.Add((input, input.ProductId.Value, null));
             }
             else if (!string.IsNullOrEmpty(input.Barcode))
             {
-                var barcodeEntry = await _dbContext.ProductBarcodes
-                    .FirstOrDefaultAsync(b => b.Barcode == input.Barcode, ct);
-
-                if (barcodeEntry is null)
+                if (!barcodeMap.TryGetValue(input.Barcode, out var key))
                     return Result.Failure<List<ResolvedLine>>($"Product not found for barcode '{input.Barcode}'.");
-
-                productId = barcodeEntry.ProductId;
-                variantId = barcodeEntry.VariantId;
+                resolvedKeys.Add((input, key.ProductId, key.VariantId));
             }
             else
             {
                 return Result.Failure<List<ResolvedLine>>("Each line must have either ProductId or Barcode.");
             }
+        }
 
-            var product = await _dbContext.Products
-                .FirstOrDefaultAsync(p => p.Id == productId && p.IsActive, ct);
+        var productIds = resolvedKeys.Select(k => k.ProductId).Distinct().ToList();
 
-            if (product is null)
+        var products = (await _dbContext.Products.AsNoTracking()
+                .Where(p => productIds.Contains(p.Id) && p.IsActive)
+                .ToListAsync(ct))
+            .ToDictionary(p => p.Id);
+
+        // Stock levels for the page's products in this warehouse; matched on variant in memory.
+        var stockLevels = await _dbContext.StockLevels
+            .Where(s => productIds.Contains(s.ProductId) && s.WarehouseId == warehouseId)
+            .ToListAsync(ct);
+
+        // Primary barcodes for lines that were entered by product id (no scanned barcode).
+        var needPrimary = resolvedKeys
+            .Where(k => string.IsNullOrEmpty(k.Input.Barcode))
+            .Select(k => k.ProductId).Distinct().ToList();
+        var primaryBarcodes = needPrimary.Count == 0
+            ? new Dictionary<Guid, string>()
+            : (await _dbContext.ProductBarcodes.AsNoTracking()
+                    .Where(b => needPrimary.Contains(b.ProductId) && b.IsPrimary)
+                    .Select(b => new { b.ProductId, b.Barcode })
+                    .ToListAsync(ct))
+                .GroupBy(b => b.ProductId)
+                .ToDictionary(g => g.Key, g => g.First().Barcode);
+
+        var result = new List<ResolvedLine>();
+        foreach (var (input, productId, variantId) in resolvedKeys)
+        {
+            if (!products.TryGetValue(productId, out var product))
                 return Result.Failure<List<ResolvedLine>>($"Product '{productId}' not found or inactive.");
 
-            var stockLevel = await _dbContext.StockLevels
-                .FirstOrDefaultAsync(s =>
-                    s.ProductId == productId &&
-                    s.WarehouseId == warehouseId &&
-                    s.VariantId == variantId, ct);
-
+            var stockLevel = stockLevels.FirstOrDefault(s => s.ProductId == productId && s.VariantId == variantId);
             if (stockLevel is null)
                 return Result.Failure<List<ResolvedLine>>($"No stock record for product '{product.Name}' in this store.");
 
@@ -242,12 +270,7 @@ public class CreatePosTransactionCommandHandler
                 return Result.Failure<List<ResolvedLine>>(
                     $"Insufficient stock for '{product.Name}': available {stockLevel.AvailableQuantity}, requested {input.Quantity}.");
 
-            if (barcode is null)
-            {
-                var primaryBarcode = await _dbContext.ProductBarcodes
-                    .FirstOrDefaultAsync(b => b.ProductId == productId && b.IsPrimary, ct);
-                barcode = primaryBarcode?.Barcode;
-            }
+            var barcode = input.Barcode ?? primaryBarcodes.GetValueOrDefault(productId);
 
             result.Add(new ResolvedLine(
                 productId, variantId, product.Name, barcode,

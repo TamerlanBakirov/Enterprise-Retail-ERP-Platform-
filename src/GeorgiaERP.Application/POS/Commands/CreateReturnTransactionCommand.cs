@@ -81,6 +81,13 @@ public class CreateReturnTransactionCommandHandler
         if (original.CustomerId.HasValue)
             ret.SetCustomer(original.CustomerId);
 
+        // Batch-load the stock levels for all returned products in this warehouse
+        // (one query instead of one per line); matched on variant in memory.
+        var returnProductIds = request.Lines.Select(l => l.ProductId).Distinct().ToList();
+        var stockLevels = await _dbContext.StockLevels
+            .Where(s => returnProductIds.Contains(s.ProductId) && s.WarehouseId == warehouse.Id)
+            .ToListAsync(ct);
+
         decimal subtotal = 0, vatTotal = 0, total = 0;
         var lineNumber = 1;
         var stockReturns = new List<StockMovement>();
@@ -119,9 +126,8 @@ public class CreateReturnTransactionCommandHandler
             total += lineTotal;
 
             // Goods come back into stock.
-            var stock = await _dbContext.StockLevels.FirstOrDefaultAsync(s =>
-                s.ProductId == input.ProductId && s.WarehouseId == warehouse.Id &&
-                s.VariantId == input.VariantId, ct);
+            var stock = stockLevels.FirstOrDefault(s =>
+                s.ProductId == input.ProductId && s.VariantId == input.VariantId);
             stock?.AddStock(input.Quantity, MovementType.Return, ret.Id);
 
             stockReturns.Add(StockMovement.Create(
