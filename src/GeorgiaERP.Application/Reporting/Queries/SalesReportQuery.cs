@@ -32,8 +32,13 @@ public class SalesReportQueryHandler : IRequestHandler<SalesReportQuery, SalesRe
 
     public async Task<SalesReport> Handle(SalesReportQuery request, CancellationToken ct)
     {
+        // Npgsql cannot bind a DateTimeOffset with a non-UTC offset to a
+        // timestamptz column; normalise the client-supplied range to UTC.
+        var from = request.From.ToUniversalTime();
+        var to = request.To.ToUniversalTime();
+
         var txQuery = _dbContext.PosTransactions.AsNoTracking()
-            .Where(t => t.CreatedAt >= request.From && t.CreatedAt <= request.To);
+            .Where(t => t.CreatedAt >= from && t.CreatedAt <= to);
 
         if (request.StoreId.HasValue)
             txQuery = txQuery.Where(t => t.StoreId == request.StoreId.Value);

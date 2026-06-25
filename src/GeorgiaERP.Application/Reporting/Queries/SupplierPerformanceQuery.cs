@@ -50,7 +50,7 @@ public class SupplierPerformanceQueryHandler : IRequestHandler<SupplierPerforman
     {
         // Get purchase orders in the date range
         var poQuery = _dbContext.PurchaseOrders.AsNoTracking()
-            .Where(po => po.OrderDate >= request.From && po.OrderDate <= request.To);
+            .Where(po => po.OrderDate >= request.From.ToUniversalTime() && po.OrderDate <= request.To.ToUniversalTime());
 
         if (request.SupplierId.HasValue)
             poQuery = poQuery.Where(po => po.SupplierId == request.SupplierId.Value);

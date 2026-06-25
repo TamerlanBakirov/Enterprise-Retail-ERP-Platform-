@@ -65,8 +65,8 @@ public class ProfitMarginReportQueryHandler : IRequestHandler<ProfitMarginReport
         // Get completed transactions in date range
         var txQuery = _dbContext.PosTransactions.AsNoTracking()
             .Where(t => t.Status == PosTransactionStatus.Completed
-                        && t.CreatedAt >= request.From
-                        && t.CreatedAt <= request.To);
+                        && t.CreatedAt >= request.From.ToUniversalTime()
+                        && t.CreatedAt <= request.To.ToUniversalTime());
 
         if (request.StoreId.HasValue)
             txQuery = txQuery.Where(t => t.StoreId == request.StoreId.Value);
