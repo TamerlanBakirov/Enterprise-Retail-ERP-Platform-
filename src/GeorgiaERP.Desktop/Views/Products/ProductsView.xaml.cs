@@ -25,7 +25,7 @@ public partial class ProductsView : UserControl
 
     private async void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (e.NewValue is Visibility v && v == Visibility.Visible && _viewModel.Products.Count == 0)
+        if (e.NewValue is true && _viewModel.Products.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
 

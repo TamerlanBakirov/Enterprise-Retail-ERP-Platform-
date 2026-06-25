@@ -25,7 +25,7 @@ public partial class ProcurementView : UserControl
 
     private async void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (e.NewValue is Visibility v && v == Visibility.Visible && _viewModel.Suppliers.Count == 0 && _viewModel.PurchaseOrders.Count == 0)
+        if (e.NewValue is true && _viewModel.Suppliers.Count == 0 && _viewModel.PurchaseOrders.Count == 0)
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
 

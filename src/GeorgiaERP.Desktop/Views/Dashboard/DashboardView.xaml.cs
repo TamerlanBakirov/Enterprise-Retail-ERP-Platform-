@@ -25,7 +25,7 @@ public partial class DashboardView : UserControl
 
     private async void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (e.NewValue is Visibility v && v == Visibility.Visible)
+        if (e.NewValue is true)
             await _viewModel.LoadDataCommand.ExecuteAsync(null);
     }
 }
