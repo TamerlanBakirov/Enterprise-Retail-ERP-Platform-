@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading;
 using GeorgiaERP.Application.Common;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,10 @@ namespace GeorgiaERP.Infrastructure.Caching;
 /// Redis-backed implementation of <see cref="ICacheService"/> using IDistributedCache.
 /// Falls back gracefully when Redis is unavailable -- cache misses return null,
 /// writes are silently dropped, so the application keeps working without Redis.
+///
+/// A lightweight circuit breaker prevents the connect-timeout penalty (several
+/// seconds per call) from being paid on every request when Redis is down: after
+/// one failure the cache is bypassed entirely for a short cooldown.
 /// </summary>
 public sealed class RedisCacheService : ICacheService
 {
@@ -21,6 +26,17 @@ public sealed class RedisCacheService : ICacheService
         WriteIndented = false
     };
 
+    private static readonly TimeSpan CircuitCooldown = TimeSpan.FromSeconds(30);
+    private static long _circuitOpenUntilTicks; // UTC ticks; cache bypassed while now < this
+
+    private static bool CircuitOpen => Volatile.Read(ref _circuitOpenUntilTicks) > DateTime.UtcNow.Ticks;
+
+    private void TripCircuit(string op, Exception ex)
+    {
+        Volatile.Write(ref _circuitOpenUntilTicks, DateTime.UtcNow.Add(CircuitCooldown).Ticks);
+        _logger.LogWarning(ex, "Redis cache {Op} failed; bypassing cache for {Seconds}s.", op, CircuitCooldown.TotalSeconds);
+    }
+
     public RedisCacheService(IDistributedCache cache, ILogger<RedisCacheService> logger)
     {
         _cache = cache;
@@ -29,6 +45,7 @@ public sealed class RedisCacheService : ICacheService
 
     public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) where T : class
     {
+        if (CircuitOpen) return null;
         try
         {
             var bytes = await _cache.GetAsync(key, cancellationToken).ConfigureAwait(false);
@@ -39,13 +56,14 @@ public sealed class RedisCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis cache GET failed for key {CacheKey}. Falling back to uncached.", key);
+            TripCircuit("GET", ex);
             return null;
         }
     }
 
     public async Task SetAsync<T>(string key, T value, TimeSpan? absoluteExpiration = null, CancellationToken cancellationToken = default) where T : class
     {
+        if (CircuitOpen) return;
         try
         {
             var bytes = JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions);
@@ -58,19 +76,20 @@ public sealed class RedisCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis cache SET failed for key {CacheKey}. Continuing without cache.", key);
+            TripCircuit("SET", ex);
         }
     }
 
     public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
     {
+        if (CircuitOpen) return;
         try
         {
             await _cache.RemoveAsync(key, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redis cache REMOVE failed for key {CacheKey}.", key);
+            TripCircuit("REMOVE", ex);
         }
     }
 
