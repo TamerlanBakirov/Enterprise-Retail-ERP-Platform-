@@ -44,5 +44,9 @@ public class ProductBarcodeConfiguration : IEntityTypeConfiguration<ProductBarco
         // FK index for product barcode lookups
         builder.HasIndex(b => b.ProductId)
             .HasDatabaseName("IX_product_barcodes_product");
+
+        // Primary-barcode lookup on the POS hot path (resolve a product's barcode).
+        builder.HasIndex(b => new { b.ProductId, b.IsPrimary })
+            .HasDatabaseName("IX_product_barcodes_product_primary");
     }
 }

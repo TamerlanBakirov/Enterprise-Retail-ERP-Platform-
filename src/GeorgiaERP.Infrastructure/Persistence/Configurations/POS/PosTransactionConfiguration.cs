@@ -63,6 +63,11 @@ public class PosTransactionConfiguration : IEntityTypeConfiguration<PosTransacti
         builder.HasIndex(t => t.OriginalTransactionId)
             .HasDatabaseName("IX_pos_transactions_original");
 
+        // Composite for reports filtering completed sales by date
+        // (sales report, profit margin, daily closing, top-selling).
+        builder.HasIndex(t => new { t.Status, t.CreatedAt })
+            .HasDatabaseName("IX_pos_transactions_status_date");
+
         builder.HasOne(t => t.Session)
             .WithMany(s => s.Transactions)
             .HasForeignKey(t => t.SessionId)

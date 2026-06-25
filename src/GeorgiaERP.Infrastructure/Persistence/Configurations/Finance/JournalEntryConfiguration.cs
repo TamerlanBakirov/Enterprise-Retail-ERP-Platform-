@@ -64,6 +64,11 @@ public class JournalEntryConfiguration : IEntityTypeConfiguration<JournalEntry>
         builder.HasIndex(j => j.Status)
             .HasDatabaseName("IX_journal_entries_status");
 
+        // Composite for financial reports filtering posted entries by date
+        // (trial balance, income statement, balance sheet, general ledger).
+        builder.HasIndex(j => new { j.Status, j.EntryDate })
+            .HasDatabaseName("IX_journal_entries_status_entry_date");
+
         // Date ordering for chronological listing
         builder.HasIndex(j => j.CreatedAt)
             .HasDatabaseName("IX_journal_entries_created_at");
