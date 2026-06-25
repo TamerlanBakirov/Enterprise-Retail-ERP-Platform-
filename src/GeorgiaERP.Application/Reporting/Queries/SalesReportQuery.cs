@@ -47,7 +47,9 @@ public class SalesReportQueryHandler : IRequestHandler<SalesReportQuery, SalesRe
         var totalDiscount = await completed.SumAsync(t => (decimal?)t.DiscountTotal, ct) ?? 0;
         var txCount = await completed.CountAsync(ct);
 
-        var completedIds = await completed.Select(t => t.Id).ToListAsync(ct);
+        // Subquery rather than a materialized id list: lines/payments filter via
+        // WHERE transaction_id IN (SELECT ...), not a large IN (...) parameter set.
+        var completedIds = completed.Select(t => t.Id);
 
         var itemsSold = await _dbContext.PosTransactionLines.AsNoTracking()
             .Where(l => completedIds.Contains(l.TransactionId))

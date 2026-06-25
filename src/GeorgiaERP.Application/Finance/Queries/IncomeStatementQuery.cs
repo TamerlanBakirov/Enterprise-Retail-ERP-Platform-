@@ -40,11 +40,11 @@ public class IncomeStatementQueryHandler : IRequestHandler<IncomeStatementQuery,
         var from = request.From;
         var to = request.To;
 
-        var postedEntryIds = await _db.JournalEntries
+        // Subquery (see TrialBalance): IN (SELECT ...) instead of a materialized id list.
+        var postedEntryIds = _db.JournalEntries
             .AsNoTracking()
             .Where(j => j.Status == JournalEntryStatus.Posted && j.EntryDate >= from && j.EntryDate <= to)
-            .Select(j => j.Id)
-            .ToListAsync(ct);
+            .Select(j => j.Id);
 
         var aggregates = await _db.JournalEntryLines
             .AsNoTracking()

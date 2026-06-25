@@ -71,15 +71,14 @@ public class ProfitMarginReportQueryHandler : IRequestHandler<ProfitMarginReport
         if (request.StoreId.HasValue)
             txQuery = txQuery.Where(t => t.StoreId == request.StoreId.Value);
 
-        var txIds = await txQuery.Select(t => t.Id).ToListAsync(ct);
-
-        if (txIds.Count == 0)
+        if (!await txQuery.AnyAsync(ct))
         {
             return new ProfitMarginReport(0, 0, 0, 0, 0, request.From, request.To,
                 new List<ProductProfitItem>(), new List<CategoryProfitItem>(), new List<DailyProfitItem>());
         }
 
-        // Get transaction lines with cost/revenue data
+        // Subquery rather than a materialized id list for the transaction lines.
+        var txIds = txQuery.Select(t => t.Id);
         var lines = await _dbContext.PosTransactionLines.AsNoTracking()
             .Where(l => txIds.Contains(l.TransactionId))
             .ToListAsync(ct);

@@ -35,11 +35,13 @@ public class TrialBalanceQueryHandler : IRequestHandler<TrialBalanceQuery, Trial
     {
         var asOf = request.AsOfDate ?? DateTimeOffset.UtcNow;
 
-        var postedEntryIds = await _db.JournalEntries
+        // Subquery (not a materialized id list): EF translates Contains over an
+        // IQueryable to WHERE journal_entry_id IN (SELECT ...), avoiding loading
+        // every posted entry id into memory and a huge IN (...) parameter list.
+        var postedEntryIds = _db.JournalEntries
             .AsNoTracking()
             .Where(j => j.Status == JournalEntryStatus.Posted && j.EntryDate <= asOf)
-            .Select(j => j.Id)
-            .ToListAsync(ct);
+            .Select(j => j.Id);
 
         var lineAggregates = await _db.JournalEntryLines
             .AsNoTracking()

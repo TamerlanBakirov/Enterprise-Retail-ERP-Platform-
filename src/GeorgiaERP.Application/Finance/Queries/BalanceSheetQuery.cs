@@ -41,11 +41,11 @@ public class BalanceSheetQueryHandler : IRequestHandler<BalanceSheetQuery, Balan
     {
         var asOf = request.AsOfDate ?? DateTimeOffset.UtcNow;
 
-        var postedEntryIds = await _db.JournalEntries
+        // Subquery (see TrialBalance): IN (SELECT ...) instead of a materialized id list.
+        var postedEntryIds = _db.JournalEntries
             .AsNoTracking()
             .Where(j => j.Status == JournalEntryStatus.Posted && j.EntryDate <= asOf)
-            .Select(j => j.Id)
-            .ToListAsync(ct);
+            .Select(j => j.Id);
 
         var aggregates = await _db.JournalEntryLines
             .AsNoTracking()
