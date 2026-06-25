@@ -9,6 +9,8 @@ public record ProductDto(
     Guid CategoryId,
     string? CategoryName,
     string UnitOfMeasure,
+    decimal RetailPrice,
+    decimal VatRate,
     bool VatApplicable,
     decimal? WeightKg,
     bool IsSerialized,

@@ -1,5 +1,6 @@
 using GeorgiaERP.Application.Common;
 using GeorgiaERP.Application.Products.DTOs;
+using GeorgiaERP.Domain.Pricing;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,6 +51,14 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
                 p.CategoryId,
                 p.Category.Name,
                 p.UnitOfMeasure,
+                _dbContext.PriceListItems
+                    .Where(i => i.ProductId == p.Id && i.VariantId == null &&
+                        _dbContext.PriceLists.Any(pl => pl.Id == i.PriceListId
+                            && pl.PriceType == PriceType.Retail && pl.IsActive))
+                    .OrderBy(i => i.MinQty)
+                    .Select(i => i.Price)
+                    .FirstOrDefault(),
+                p.VatApplicable ? 0.18m : 0m,
                 p.VatApplicable,
                 p.WeightKg,
                 p.IsSerialized,
@@ -96,6 +105,14 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
                 p.CategoryId,
                 p.Category.Name,
                 p.UnitOfMeasure,
+                _dbContext.PriceListItems
+                    .Where(i => i.ProductId == p.Id && i.VariantId == null &&
+                        _dbContext.PriceLists.Any(pl => pl.Id == i.PriceListId
+                            && pl.PriceType == PriceType.Retail && pl.IsActive))
+                    .OrderBy(i => i.MinQty)
+                    .Select(i => i.Price)
+                    .FirstOrDefault(),
+                p.VatApplicable ? 0.18m : 0m,
                 p.VatApplicable,
                 p.WeightKg,
                 p.IsSerialized,
@@ -134,6 +151,14 @@ public class GetProductByBarcodeQueryHandler : IRequestHandler<GetProductByBarco
                 p.CategoryId,
                 p.Category.Name,
                 p.UnitOfMeasure,
+                _dbContext.PriceListItems
+                    .Where(i => i.ProductId == p.Id && i.VariantId == null &&
+                        _dbContext.PriceLists.Any(pl => pl.Id == i.PriceListId
+                            && pl.PriceType == PriceType.Retail && pl.IsActive))
+                    .OrderBy(i => i.MinQty)
+                    .Select(i => i.Price)
+                    .FirstOrDefault(),
+                p.VatApplicable ? 0.18m : 0m,
                 p.VatApplicable,
                 p.WeightKg,
                 p.IsSerialized,
