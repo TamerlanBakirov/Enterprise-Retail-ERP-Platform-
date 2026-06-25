@@ -103,7 +103,11 @@ public class FilesController : ApiControllerBase
             return ToActionResult(result);
 
         var file = result.Value!;
-        return File(file.Content, file.ContentType, file.FileName);
+        // Defend against content sniffing / stored-XSS from user-uploaded files:
+        // never let the browser re-interpret the content type, and force a
+        // download rather than inline rendering (e.g. a .svg/.html with script).
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return File(file.Content, file.ContentType, file.FileName, enableRangeProcessing: false);
     }
 
     private IActionResult? ValidateFile(IFormFile? file, bool imageOnly)
@@ -121,6 +125,11 @@ public class FilesController : ApiControllerBase
             var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
             if (!imageExtensions.Contains(extension))
                 return BadRequest(new { error = $"Invalid image file type. Allowed: {string.Join(", ", imageExtensions)}", errorCode = "VALIDATION_ERROR" });
+
+            // Verify the actual bytes are a real image, not a script-bearing file
+            // (e.g. .svg/.html) renamed with an image extension and spoofed type.
+            if (!HasValidImageSignature(file))
+                return BadRequest(new { error = "File content does not match a supported image format.", errorCode = "VALIDATION_ERROR" });
         }
         else if (_fileOptions.AllowedExtensions.Length > 0 && !_fileOptions.AllowedExtensions.Contains(extension))
         {
@@ -133,5 +142,28 @@ public class FilesController : ApiControllerBase
         }
 
         return null;
+    }
+
+    /// <summary>Checks the leading bytes against common raster image signatures.</summary>
+    private static bool HasValidImageSignature(IFormFile file)
+    {
+        Span<byte> h = stackalloc byte[12];
+        using var s = file.OpenReadStream();
+        var read = s.Read(h);
+        if (read < 4) return false;
+
+        // JPEG FF D8 FF
+        if (h[0] == 0xFF && h[1] == 0xD8 && h[2] == 0xFF) return true;
+        // PNG 89 50 4E 47
+        if (h[0] == 0x89 && h[1] == 0x50 && h[2] == 0x4E && h[3] == 0x47) return true;
+        // GIF 47 49 46 38
+        if (h[0] == 0x47 && h[1] == 0x49 && h[2] == 0x46 && h[3] == 0x38) return true;
+        // BMP 42 4D
+        if (h[0] == 0x42 && h[1] == 0x4D) return true;
+        // WEBP "RIFF"...."WEBP"
+        if (read >= 12 && h[0] == 0x52 && h[1] == 0x49 && h[2] == 0x46 && h[3] == 0x46
+            && h[8] == 0x57 && h[9] == 0x45 && h[10] == 0x42 && h[11] == 0x50) return true;
+
+        return false;
     }
 }

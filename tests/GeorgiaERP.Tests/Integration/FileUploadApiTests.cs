@@ -65,7 +65,9 @@ public class FileUploadApiTests : IntegrationTestBase
         var fakeProductId = Guid.NewGuid();
 
         var content = new MultipartFormDataContent();
-        var fileContent = new ByteArrayContent(new byte[] { 1, 2, 3 });
+        // Valid PNG signature so the file passes validation and reaches the
+        // product-existence check (which is what this test asserts).
+        var fileContent = new ByteArrayContent(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         content.Add(fileContent, "file", "test.png");
 
