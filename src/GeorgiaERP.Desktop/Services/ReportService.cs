@@ -19,7 +19,7 @@ public class ReportService : IReportService
 
     public Task<SalesReportDto?> GetSalesReportAsync(Guid? storeId, DateTimeOffset from, DateTimeOffset to)
     {
-        var q = $"reports/sales?from={from:O}&to={to:O}";
+        var q = $"reports/sales?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
         if (storeId.HasValue) q += $"&storeId={storeId}";
         return _api.GetAsync<SalesReportDto>(q);
     }
@@ -43,21 +43,21 @@ public class ReportService : IReportService
 
     public Task<ProfitMarginReportDto?> GetProfitMarginAsync(DateTimeOffset from, DateTimeOffset to, Guid? storeId)
     {
-        var q = $"reports/profit-margin?from={from:O}&to={to:O}";
+        var q = $"reports/profit-margin?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
         if (storeId.HasValue) q += $"&storeId={storeId}";
         return _api.GetAsync<ProfitMarginReportDto>(q);
     }
 
     public Task<TopSellingProductsReportDto?> GetTopSellingAsync(DateTimeOffset from, DateTimeOffset to, Guid? storeId, int top, string sortBy)
     {
-        var q = $"reports/top-selling?from={from:O}&to={to:O}&top={top}&sortBy={sortBy}";
+        var q = $"reports/top-selling?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}&top={top}&sortBy={sortBy}";
         if (storeId.HasValue) q += $"&storeId={storeId}";
         return _api.GetAsync<TopSellingProductsReportDto>(q);
     }
 
     public Task<SupplierPerformanceReportDto?> GetSupplierPerformanceAsync(DateTimeOffset from, DateTimeOffset to, Guid? supplierId)
     {
-        var q = $"reports/supplier-performance?from={from:O}&to={to:O}";
+        var q = $"reports/supplier-performance?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
         if (supplierId.HasValue) q += $"&supplierId={supplierId}";
         return _api.GetAsync<SupplierPerformanceReportDto>(q);
     }
