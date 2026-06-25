@@ -176,6 +176,18 @@
                                      CommandParameter="Users" />
 
                         <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Audit Log"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Audit}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Audit" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
+                                     Content="Backups"
+                                     IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Backups}"
+                                     Command="{Binding NavigateCommand}"
+                                     CommandParameter="Backups" />
+
+                        <RadioButton Style="{StaticResource NavButton}"
                                      Content="Settings"
                                      IsChecked="{Binding CurrentView, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}"
                                      Command="{Binding NavigateCommand}"
@@ -200,6 +212,8 @@
                 <compliance:ComplianceView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Compliance}" />
                 <reports:ReportsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Reports}" />
                 <admin:UsersView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Users}" />
+                <admin:AuditView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Audit}" />
+                <settings:BackupView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Backups}" />
                 <settings:SettingsView Visibility="{Binding DataContext.CurrentView, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}" />
             </Grid>
         </Border>

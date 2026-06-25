@@ -29,6 +29,15 @@ public partial class WarehouseView : UserControl
             await _viewModel.LoadCommand.ExecuteAsync(null);
     }
 
+    private async void OnAddWarehouse(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<WarehouseEditViewModel>();
+        var window = new WarehouseEditWindow { DataContext = vm, Owner = Window.GetWindow(this) };
+        window.ShowDialog();
+        if (vm.Saved)
+            await _viewModel.ReloadWarehousesAsync();
+    }
+
     private async void OnCreateReceiving(object sender, RoutedEventArgs e)
     {
         var vm = App.Services.GetRequiredService<ReceivingOrderEditViewModel>();

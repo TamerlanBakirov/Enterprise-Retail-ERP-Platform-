@@ -59,6 +59,16 @@ public partial class BackupViewModel : BaseViewModel
     });
 
     [RelayCommand]
+    private Task RestoreBackupAsync(BackupRecordDto backup) => ExecuteAsync(async () =>
+    {
+        var result = await _backupService.RestoreBackupAsync(backup.Id);
+        if (result.IsSuccess)
+            await LoadBackupsAsync();
+        else
+            ErrorMessage = result.Error ?? "Restore failed.";
+    });
+
+    [RelayCommand]
     private Task NextPageAsync() => ExecuteAsync(async () =>
     {
         if (CurrentPage < TotalPages)

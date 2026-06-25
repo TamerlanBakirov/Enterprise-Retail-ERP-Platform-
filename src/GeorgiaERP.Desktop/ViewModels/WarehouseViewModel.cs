@@ -28,6 +28,15 @@ public partial class WarehouseViewModel : TabbedPagedViewModel
         ActiveTab = "Receiving";
     }
 
+    /// <summary>
+    /// Reloads the warehouse list (e.g. after a new warehouse is created).
+    /// </summary>
+    public async Task ReloadWarehousesAsync()
+    {
+        var whs = await _organizationService.GetWarehousesAsync(true);
+        ReplaceItems(Warehouses, whs);
+    }
+
     protected override async Task LoadCoreAsync()
     {
         if (Warehouses.Count == 0)

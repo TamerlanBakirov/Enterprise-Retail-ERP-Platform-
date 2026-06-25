@@ -22,7 +22,9 @@
                     <ComboBoxItem Content="Packed" />
                     <ComboBoxItem Content="Shipped" />
                 </ComboBox>
-                <Button Content="Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding LoadCommand}" />
+                <Button Content="+ Add Warehouse" Style="{StaticResource PrimaryButton}"
+                        Click="OnAddWarehouse" Margin="0,0,8,0" />
+                <Button Content="Refresh" Style="{StaticResource SecondaryButton}" Command="{Binding LoadCommand}" />
             </StackPanel>
         </DockPanel>
 
