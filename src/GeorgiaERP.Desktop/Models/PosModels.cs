@@ -71,6 +71,15 @@ public record PosPaymentRequest(
     string PaymentMethod,
     decimal Amount);
 
+public record TerminalDto(
+    Guid Id,
+    string Code,
+    string Name,
+    Guid StoreId,
+    string TerminalType,
+    bool IsActive,
+    DateTimeOffset CreatedAt);
+
 public record OpenPosSessionRequest(
     Guid TerminalId,
     decimal OpeningBalance);

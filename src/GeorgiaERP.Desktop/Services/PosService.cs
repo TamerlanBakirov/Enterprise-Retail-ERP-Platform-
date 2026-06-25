@@ -4,6 +4,7 @@ namespace GeorgiaERP.Desktop.Services;
 
 public interface IPosService
 {
+    Task<List<TerminalDto>> GetTerminalsAsync(Guid? storeId = null, bool? isActive = null);
     Task<PosSessionDto?> OpenSessionAsync(OpenPosSessionRequest request);
     Task<ApiResult> CloseSessionAsync(Guid sessionId, ClosePosSessionRequest request);
     Task<PagedResult<PosSessionDto>> GetSessionsAsync(Guid? terminalId = null, string? status = null, int page = 1, int pageSize = 20);
@@ -17,6 +18,15 @@ public class PosService : IPosService
 {
     private readonly IApiClient _api;
     public PosService(IApiClient api) => _api = api;
+
+    public async Task<List<TerminalDto>> GetTerminalsAsync(Guid? storeId, bool? isActive)
+    {
+        var q = "pos/terminals";
+        var sep = "?";
+        if (storeId.HasValue) { q += $"{sep}storeId={storeId}"; sep = "&"; }
+        if (isActive.HasValue) { q += $"{sep}isActive={isActive}"; }
+        return await _api.GetAsync<List<TerminalDto>>(q) ?? [];
+    }
 
     public Task<PosSessionDto?> OpenSessionAsync(OpenPosSessionRequest request) =>
         _api.PostAsync<OpenPosSessionRequest, PosSessionDto>("pos/sessions", request);

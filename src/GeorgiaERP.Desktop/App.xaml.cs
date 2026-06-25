@@ -125,7 +125,11 @@ public partial class App : Application
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        services.AddSingleton<AuthTokenHandler>();
+        // DelegatingHandlers MUST be transient: IHttpClientFactory rebuilds the
+        // handler chain periodically and sets InnerHandler each time. A cached/
+        // singleton handler is reused with a non-null InnerHandler and throws
+        // "The 'InnerHandler' property must be null...".
+        services.AddTransient<AuthTokenHandler>();
         services.AddHttpClient("api-auth", (sp, client) =>
         {
             var settings = sp.GetRequiredService<ISettingsService>();

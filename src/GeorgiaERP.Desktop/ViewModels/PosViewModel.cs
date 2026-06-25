@@ -17,7 +17,29 @@ public partial class PosViewModel : BaseViewModel
     [ObservableProperty] private string _selectedPaymentMethod = "Cash";
     [ObservableProperty] private string? _successMessage;
 
+    [ObservableProperty] private TerminalDto? _selectedTerminal;
+    [ObservableProperty] private decimal _openingBalance;
+
+    public ObservableCollection<TerminalDto> Terminals { get; } = [];
     public ObservableCollection<PosCartItem> CartItems { get; } = [];
+
+    /// <summary>True when a POS session is open and sales can be made.</summary>
+    public bool HasSession => CurrentSession is not null;
+
+    /// <summary>True when no session is open (terminal picker is shown).</summary>
+    public bool NoSession => CurrentSession is null;
+
+    /// <summary>Header text describing the current session state.</summary>
+    public string SessionInfo => CurrentSession is null
+        ? "No open session"
+        : $"Session open — {CurrentSession.TerminalName} · cashier {CurrentSession.CashierName} · opened {CurrentSession.OpenedAt.LocalDateTime:g}";
+
+    partial void OnCurrentSessionChanged(PosSessionDto? value)
+    {
+        OnPropertyChanged(nameof(HasSession));
+        OnPropertyChanged(nameof(NoSession));
+        OnPropertyChanged(nameof(SessionInfo));
+    }
 
     public decimal SubTotal => CartItems.Sum(x => x.LineTotal);
     public decimal TotalVat => CartItems.Sum(x => x.VatAmount);
@@ -31,6 +53,76 @@ public partial class PosViewModel : BaseViewModel
     {
         _posService = posService;
         _productService = productService;
+    }
+
+    /// <summary>
+    /// Loads any already-open session for this user; if none exists, loads the
+    /// terminal list so the cashier can open a new session.
+    /// </summary>
+    public async Task InitializeAsync()
+    {
+        await ExecuteAsync(async () =>
+        {
+            var open = await _posService.GetSessionsAsync(status: "Open", pageSize: 1);
+            if (open.Items.Count > 0)
+            {
+                CurrentSession = open.Items[0];
+                return;
+            }
+
+            var terminals = await _posService.GetTerminalsAsync(isActive: true);
+            ReplaceItems(Terminals, terminals);
+            SelectedTerminal ??= Terminals.FirstOrDefault();
+        });
+    }
+
+    [RelayCommand]
+    private async Task OpenSessionAsync()
+    {
+        if (SelectedTerminal is null)
+        {
+            ErrorMessage = "Select a terminal to open a session.";
+            return;
+        }
+
+        await ExecuteAsync(async () =>
+        {
+            var session = await _posService.OpenSessionAsync(
+                new OpenPosSessionRequest(SelectedTerminal.Id, OpeningBalance));
+            if (session is not null)
+            {
+                CurrentSession = session;
+                SuccessMessage = $"Session opened on {session.TerminalName}.";
+            }
+            else
+            {
+                ErrorMessage = "Failed to open session.";
+            }
+        });
+    }
+
+    [RelayCommand]
+    private async Task CloseSessionAsync()
+    {
+        if (CurrentSession is null) return;
+
+        await ExecuteAsync(async () =>
+        {
+            var result = await _posService.CloseSessionAsync(
+                CurrentSession.Id, new ClosePosSessionRequest(CashReceived));
+            if (result.IsSuccess)
+            {
+                CurrentSession = null;
+                CartItems.Clear();
+                NotifyCartTotals();
+                SuccessMessage = "Session closed.";
+                await InitializeAsync();
+            }
+            else
+            {
+                ErrorMessage = result.Error ?? "Failed to close session.";
+            }
+        });
     }
 
     private void NotifyCartTotals()
@@ -65,7 +157,7 @@ public partial class PosViewModel : BaseViewModel
             }
             else
             {
-                CartItems.Add(new PosCartItem
+                var item = new PosCartItem
                 {
                     ProductId = product.Id,
                     Barcode = product.Barcode,
@@ -73,7 +165,10 @@ public partial class PosViewModel : BaseViewModel
                     UnitPrice = product.RetailPrice,
                     VatRate = product.VatRate,
                     Quantity = 1
-                });
+                };
+                item.Recalculate();
+                item.PropertyChanged += (_, _) => NotifyCartTotals();
+                CartItems.Add(item);
             }
             NotifyCartTotals();
         }

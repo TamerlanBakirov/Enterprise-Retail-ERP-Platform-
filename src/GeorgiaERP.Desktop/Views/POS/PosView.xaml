@@ -13,6 +13,37 @@
             <TextBlock DockPanel.Dock="Top" Text="Point of Sale" FontSize="22" FontWeight="SemiBold"
                        Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16" />
 
+            <!-- Session bar -->
+            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,16,12" Padding="12">
+                <Grid>
+                    <!-- Active session -->
+                    <DockPanel Visibility="{Binding HasSession, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button DockPanel.Dock="Right" Content="Close Session"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CloseSessionCommand}" />
+                        <TextBlock Text="{Binding SessionInfo}" VerticalAlignment="Center"
+                                   Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
+                    </DockPanel>
+
+                    <!-- No session: open one -->
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding NoSession, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="No open session." VerticalAlignment="Center"
+                                   Foreground="{StaticResource DangerBrush}" Margin="0,0,12,0" />
+                        <TextBlock Text="Terminal" VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0" />
+                        <ComboBox Width="160" ItemsSource="{Binding Terminals}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding SelectedTerminal}" Padding="8,6" Margin="0,0,12,0" />
+                        <TextBlock Text="Opening cash" VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0" />
+                        <TextBox Style="{StaticResource ModernTextBox}" Width="100"
+                                 Text="{Binding OpeningBalance, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0" />
+                        <Button Content="Open Session" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding OpenSessionCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- Barcode scanner -->
             <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,16,12" Padding="12">
                 <Grid>
@@ -27,6 +58,7 @@
                     <Button Grid.Column="1" Content="Add"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding ScanBarcodeCommand}"
+                            IsEnabled="{Binding HasSession}"
                             Margin="8,0,0,0" />
                 </Grid>
             </Border>
@@ -110,6 +142,7 @@
                 <Button Content="Complete Sale"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding CompleteSaleCommand}"
+                        IsEnabled="{Binding HasSession}"
                         HorizontalAlignment="Stretch"
                         Margin="0,0,0,8" />
                 <Button Content="Clear Cart"
