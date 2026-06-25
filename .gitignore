@@ -50,3 +50,6 @@ appsettings.Local.json
 nginx/ssl/*.pem
 nginx/ssl/*.key
 nginx/ssl/*.crt
+
+# WPF temporary build project files
+*_wpftmp.csproj
